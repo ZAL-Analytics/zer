@@ -1,0 +1,26 @@
+[package]
+name    = "multi-source-linkage"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+description = "Multi-source linkage demo: BRP ↔ KvK with LinkOnly and LinkAndDedupe modes"
+
+[features]
+default = []
+cuda   = ["zer-compute/cuda"]
+vulkan = ["zer-compute/vulkan"]
+avx2   = ["zer-compute/avx2"]
+
+[dependencies]
+demo-common    = { path = "../common" }
+zer-pipeline   = { path = "../../crates/zer-pipeline" }
+zer-core       = { path = "../../crates/zer-core" }
+zer-cluster    = { path = "../../crates/zer-cluster" }
+zer-compute    = { path = "../../crates/zer-compute" }
+tokio          = { workspace = true }
+csv            = "1"
+serde          = { workspace = true, features = ["derive"] }
+
+[[bin]]
+name = "multi_source_linkage"
+path = "src/main.rs"

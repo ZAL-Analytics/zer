@@ -1,0 +1,50 @@
+[package]
+name    = "zer-bench"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "zer-bench"
+path = "src/main.rs"
+
+[features]
+default = []
+cpu            = ["zer-lib/cpu"]
+cuda           = ["zer-lib/cuda"]
+avx2           = ["zer-lib/avx2"]
+vulkan         = ["zer-lib/vulkan"]
+judge_cuda     = ["zer-judge/judge_cuda"]
+judge_tensorrt = ["zer-judge/judge_tensorrt"]
+judge_rocm     = ["zer-judge/judge_rocm"]
+judge_directml = ["zer-judge/judge_directml"]
+judge_openvino = ["zer-judge/judge_openvino"]
+# Enable NVTX tracing bridge, maps tracing spans to Nsight Systems ranges.
+nvtx           = ["zer-prof/nvtx"]
+# Print human-readable pipeline stage progress during accuracy runs.
+progress       = []
+# Print per-phase timing metrics (blocking_ms, compare_ms, etc.) during accuracy runs.
+perf-metrics   = []
+# Collect all scored pairs after judging for unbiased PR-AUC computation.
+# Propagates to zer-pipeline/collect-pairs; incurs allocation cost per run.
+collect-pairs  = ["zer-pipeline/collect-pairs"]
+
+[dependencies]
+zer-lib      = { path = "../zer-lib",     features = ["pipeline"] }
+zer-core     = { path = "../zer-core" }
+zer-pipeline = { path = "../zer-pipeline" }
+zer-adapters = { path = "../zer-adapters" }
+zer-prof     = { path = "../zer-prof" }
+zer-judge    = { path = "../zer-judge" }
+
+anyhow              = "1"
+clap                = { version = "4", features = ["derive"] }
+serde               = { version = "1", features = ["derive"] }
+serde_json          = "1"
+toml                = { workspace = true }
+csv                 = "1"
+tempfile            = "3"
+tokio               = { version = "1", features = ["full"] }
+tracing             = { workspace = true }
+tracing-subscriber  = { workspace = true }
+sysinfo             = { workspace = true }

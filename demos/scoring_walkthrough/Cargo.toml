@@ -1,0 +1,15 @@
+[package]
+name    = "scoring-walkthrough"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+description = "Step-by-step walkthrough of field comparison and Fellegi-Sunter scoring"
+
+[dependencies]
+demo-common  = { path = "../common" }
+zer-compare  = { path = "../../crates/zer-compare" }
+zer-core     = { path = "../../crates/zer-core" }
+
+[[bin]]
+name = "scoring_walkthrough"
+path = "src/main.rs"

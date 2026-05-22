@@ -1,0 +1,25 @@
+[package]
+name        = "zer-compare"
+version     = "1.0.0"
+edition     = "2021"
+description = "Fellegi-Sunter field comparison, similarity functions, and EM scoring for zer"
+license     = "Apache-2.0"
+repository  = "https://github.com/ZAL-Analytics/zer"
+keywords    = ["entity-resolution", "record-linkage", "fellegi-sunter", "similarity"]
+categories  = ["algorithms", "text-processing"]
+readme      = "README.md"
+
+[dependencies]
+zer-core = { path = "../zer-core", version = "1.0" }
+strsim               = "0.11"
+rphonetic            = "3"
+unicode-normalization = "0.1"
+edit-distance        = "2"
+rayon      = { workspace = true }
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+
+[dev-dependencies]
+csv        = "1"
+serde_json = "1"

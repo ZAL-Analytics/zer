@@ -1,0 +1,22 @@
+[package]
+name    = "hello-backend"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+description = "Verifies that backends execute and DummyJudge wires correctly"
+
+[features]
+default = []
+cuda   = ["zer-compute/cuda"]
+vulkan = ["zer-compute/vulkan"]
+avx2   = ["zer-compute/avx2"]
+
+[dependencies]
+demo-common = { path = "../common" }
+zer-compute = { path = "../../crates/zer-compute" }
+zer-judge   = { path = "../../crates/zer-judge" }
+zer-core    = { path = "../../crates/zer-core" }
+
+[[bin]]
+name = "hello_backend"
+path = "src/main.rs"

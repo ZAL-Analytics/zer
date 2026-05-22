@@ -1,0 +1,18 @@
+[package]
+name        = "zer-core"
+version     = "1.0.0"
+edition     = "2021"
+description = "Core traits and types for the zer entity-resolution library"
+license     = "Apache-2.0"
+repository  = "https://github.com/ZAL-Analytics/zer"
+keywords    = ["entity-resolution", "record-linkage", "deduplication"]
+categories  = ["algorithms", "data-structures"]
+readme      = "README.md"
+
+[dependencies]
+serde     = { workspace = true }
+thiserror = { workspace = true }
+ahash     = { workspace = true }
+
+[dev-dependencies]
+serde_json = "1"

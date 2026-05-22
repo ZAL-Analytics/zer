@@ -1,0 +1,19 @@
+[package]
+name    = "cross-source-linkage"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+description = "Cross-source record linkage: linking a municipal register to a benefits register"
+
+[dependencies]
+demo-common    = { path = "../common" }
+zer-pipeline   = { path = "../../crates/zer-pipeline" }
+zer-core       = { path = "../../crates/zer-core" }
+zer-cluster    = { path = "../../crates/zer-cluster" }
+tokio          = { workspace = true }
+csv            = "1"
+serde          = { workspace = true, features = ["derive"] }
+
+[[bin]]
+name = "cross_source_linkage"
+path = "src/main.rs"

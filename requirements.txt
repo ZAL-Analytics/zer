@@ -1,0 +1,3 @@
+-r data_generator/requirement.txt
+-r docs/sphinx/requirements.txt
+-r models/requirements.txt

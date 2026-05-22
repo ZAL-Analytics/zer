@@ -1,0 +1,4 @@
+sphinxawesome-theme>=5.2
+sphinx>=7.3
+sphinx-copybutton>=0.5
+sphinx-design>=0.6

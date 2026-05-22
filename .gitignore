@@ -1,0 +1,47 @@
+# Rust build artifacts
+/target/
+**/target/
+
+# Cargo lock (keep for binaries, optional for libs)
+# Cargo.lock  # uncomment to ignore
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+*.cert
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+
+data/**
+.venv/
+.claude
+.claudeignore
+
+**/__pycache__/
+
+models/**
+!models/generate_onnx_model.py
+!models/requirements.txt
+
+bench_results/
+
+docs/sphinx/out/**

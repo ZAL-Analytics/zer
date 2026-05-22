@@ -1,0 +1,17 @@
+[package]
+name    = "blocking-explorer"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+description = "Explore and compare blocking strategies for a person registry dataset"
+
+[dependencies]
+demo-common  = { path = "../common" }
+zer-blocking = { path = "../../crates/zer-blocking" }
+zer-core     = { path = "../../crates/zer-core" }
+csv          = "1"
+serde        = { workspace = true, features = ["derive"] }
+
+[[bin]]
+name = "blocking_explorer"
+path = "src/main.rs"

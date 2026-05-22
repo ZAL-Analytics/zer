@@ -1,0 +1,204 @@
+/*
+ * rustdoc color override — shadcn/ui Stone palette
+ *
+ * Targets ALL rustdoc themes (light, dark, ayu) so the stone palette
+ * is applied regardless of OS/browser dark-mode preference.
+ *
+ * Stone scale:
+ *   50:  #fafaf9   100: #f5f5f4   200: #e7e5e4   300: #d6d3d1
+ *   400: #a8a29e   500: #78716c   600: #57534e   700: #44403c
+ *   800: #292524   900: #1c1917   950: #0c0a09
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Apply to every rustdoc theme variant                                         */
+/* -------------------------------------------------------------------------- */
+
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"],
+:root[data-theme="ayu"],
+:root[data-color-scheme="light"] {
+  /* Page */
+  --main-background-color:              #fafaf9;
+  --main-color:                         #1c1917;
+  --headings-color:                     #0c0a09;
+  --headings-border-bottom-color:       #e7e5e4;
+
+  /* Sidebar */
+  --sidebar-background-color:           #f5f5f4;
+  --sidebar-background-color-hover:     #e7e5e4;
+  --sidebar-border-color:               #e7e5e4;
+  --sidebar-color:                      #57534e;
+  --sidebar-link-color:                 #1c1917;
+  --sidebar-current-link-background-color: #e7e5e4;
+
+  /* Links — stone-800, not colored */
+  --link-color:                         #292524;
+  --link-visited-color:                 #57534e;
+  --type-link-color:                    #292524;
+  --trait-link-color:                   #44403c;
+  --assoc-item-link-color:              #292524;
+  --function-link-color:                #292524;
+  --macro-link-color:                   #44403c;
+  --keyword-link-color:                 #57534e;
+  --attribute-link-color:               #57534e;
+  --mod-link-color:                     #292524;
+
+  /* Code blocks */
+  --code-block-background-color:        #f5f5f4;
+  --code-block-border-color:            #e7e5e4;
+  --code-highlight-html-color:          #1c1917;
+  --docblock-color:                     #44403c;
+  --docblock-code-color:                #1c1917;
+  --docblock-code-background:           #f5f5f4;
+  --code-attribute-color:               #78716c;
+
+  /* Tables */
+  --table-border-color:                 #e7e5e4;
+  --table-header-background:            #f5f5f4;
+
+  /* Borders and dividers */
+  --border-color:                       #e7e5e4;
+
+  /* Buttons / toggles */
+  --button-background-color:            #f5f5f4;
+  --settings-input-color:               #1c1917;
+  --settings-input-border-color:        #d6d3d1;
+  --settings-button-color:              #44403c;
+  --settings-button-border-focus:       #a8a29e;
+  --toggles-color:                      #78716c;
+  --toggle-filter:                      none;
+  --mobile-sidebar-menu-filter:         none;
+
+  /* Search */
+  --search-input-focused-border-color:  #292524;
+
+  /* Copy button */
+  --copy-path-button-color:             #a8a29e;
+  --copy-path-img-filter:               none;
+  --copy-path-img-hover-filter:         none;
+  --code-example-button-color:          #78716c;
+  --code-example-button-hover-color:    #44403c;
+
+  /* Right sidebar (section headings) */
+  --right-side-color:                   #78716c;
+
+  /* Scrollbar */
+  --scrollbar-track-background-color:   #f5f5f4;
+  --scrollbar-thumb-background-color:   #d6d3d1;
+  --scrollbar-color:                    #d6d3d1 #f5f5f4;
+
+  /* Warning/error codeblock annotations */
+  --codeblock-error-hover-color:        #292524;
+  --codeblock-error-color:              rgba(28,25,23,.4);
+  --codeblock-ignore-hover-color:       #44403c;
+  --codeblock-ignore-color:             rgba(68,64,60,.5);
+  --warning-border-color:               #a8a29e;
+
+  /* Navbar */
+  --navbar-background-color:            #1c1917;
+  --navbar-foreground-color:            #e7e5e4;
+  --navbar-link-color:                  #e7e5e4;
+  --navbar-link-color-hover:            #ffffff;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sidebar                                                                      */
+/* -------------------------------------------------------------------------- */
+
+nav.sidebar,
+#sidebar {
+  background-color: #f5f5f4;
+  border-right: 1px solid #e7e5e4;
+  color: #57534e;
+}
+
+.sidebar a,
+.sidebar h2 a,
+.sidebar h3 a {
+  color: #1c1917 !important;
+}
+
+.sidebar a:hover {
+  background-color: #e7e5e4 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Main content & breadcrumbs                                                   */
+/* -------------------------------------------------------------------------- */
+
+.rustdoc nav.main .breadcrumbs a,
+nav.main .breadcrumbs {
+  color: #78716c;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Type-label badges (struct, fn, enum …)                                       */
+/* -------------------------------------------------------------------------- */
+
+.item-table .item-left a,
+.item-table td:first-child a,
+.struct,
+.enum,
+.fn,
+.trait,
+.type,
+.macro {
+  color: #1c1917 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Search                                                                       */
+/* -------------------------------------------------------------------------- */
+
+#crate-search,
+#search-input {
+  background-color: #ffffff;
+  border: 1px solid #e7e5e4;
+  border-radius: 4px;
+  color: #1c1917;
+}
+
+#search-input:focus {
+  border-color: #292524;
+  outline: 2px solid #e7e5e4;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Code & source view                                                            */
+/* -------------------------------------------------------------------------- */
+
+.src-line-numbers,
+pre.rust {
+  background-color: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stability badges                                                              */
+/* -------------------------------------------------------------------------- */
+
+.stab.unstable {
+  background-color: #f5f5f4;
+  border-color: #a8a29e;
+  color: #44403c;
+}
+
+.stab.deprecated {
+  background-color: #f5f5f4;
+  border-color: #78716c;
+  color: #292524;
+}
+
+/* Suppress legacy back-link banner if present in cached HTML */
+#zer-docs-banner {
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+

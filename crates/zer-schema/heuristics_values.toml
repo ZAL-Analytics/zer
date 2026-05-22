@@ -1,0 +1,56 @@
+# Value-pattern sampling heuristics for SchemaInferrer.
+#
+# When the column name gives no signal, SchemaInferrer samples up to 50 non-null
+# text values and evaluates each pattern below in order. The first pattern whose
+# ALL conditions are satisfied is returned.
+#
+# Fields per pattern:
+#   kind           , FieldKind to assign (same names as the Rust enum variants)
+#   regex          , regex applied to each sample; set to "" to skip regex matching
+#   threshold      , minimum fraction of samples that must match the regex (0.0–1.0)
+#   unique_rate_min, optional lower bound on (unique values / total samples)
+#   unique_rate_max, optional upper bound on (unique values / total samples)
+#   avg_len_min    , optional lower bound on mean string length
+#   avg_len_max    , optional upper bound on mean string length
+#
+# A pattern with regex = "" and threshold = 0.0 matches purely on statistical
+# conditions (unique_rate_*, avg_len_*).
+#
+# The [fallback] section sets the kind returned when no pattern matches.
+
+[[patterns]]
+kind      = "Date"
+regex     = '^\d{4}[-/]\d{2}[-/]\d{2}$'
+threshold = 0.8
+
+[[patterns]]
+kind      = "Phone"
+regex     = '^[\d\s\-\+\(\)]{7,15}$'
+threshold = 0.8
+
+[[patterns]]
+kind      = "Numeric"
+regex     = '^\d+(\.\d+)?$'
+threshold = 0.9
+
+[[patterns]]
+kind            = "Id"
+regex           = '^[A-Z0-9\-]{4,20}$'
+threshold       = 0.8
+unique_rate_min = 0.9
+
+[[patterns]]
+kind            = "Name"
+regex           = ""
+threshold       = 0.0
+unique_rate_min = 0.7
+avg_len_max     = 30.0
+
+[[patterns]]
+kind            = "Categorical"
+regex           = ""
+threshold       = 0.0
+unique_rate_max = 0.2
+
+[fallback]
+default_kind = "FreeText"

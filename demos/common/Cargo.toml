@@ -1,0 +1,9 @@
+[package]
+name    = "demo-common"
+version     = "1.0.0"
+edition = "2021"
+publish = false
+description = "Shared section header and ASCII visualizers used by all zer demos"
+
+[dependencies]
+zer-core           = { path = "../../crates/zer-core" }

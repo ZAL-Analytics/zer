@@ -1,0 +1,375 @@
+/*
+ * zer docs — theme-aware palette
+ *
+ * Dark  (html.dark):  zinc-dark background, white accent
+ * Light (html:not(.dark)): white background, black accent
+ *
+ * The sphinxawesome_theme adds/removes the `dark` class on <html>
+ * based on user preference stored in localStorage.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* CSS custom properties — light defaults, dark overrides                      */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --bg:          #ffffff;
+  --surface:     #f4f4f5;
+  --elevated:    #e4e4e7;
+  --border:      #d4d4d8;
+  --fg:          #09090b;
+  --fg-sec:      #3f3f46;
+  --fg-muted:    #71717a;
+  --accent:      #09090b;
+  --accent-hover:#3f3f46;
+
+  /* sphinxawesome brand variables */
+  --color-brand-primary:   #09090b;
+  --color-brand-secondary: #3f3f46;
+  --color-brand-content:   #09090b;
+}
+
+:root.dark {
+  --bg:          #09090b;
+  --surface:     #18181b;
+  --elevated:    #27272a;
+  --border:      #3f3f46;
+  --fg:          #fafafa;
+  --fg-sec:      #d4d4d8;
+  --fg-muted:    #a1a1aa;
+  --accent:      #fafafa;
+  --accent-hover:#d4d4d8;
+
+  /* sphinxawesome brand variables */
+  --color-brand-primary:   #fafafa;
+  --color-brand-secondary: #d4d4d8;
+  --color-brand-content:   #fafafa;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page background & text                                                       */
+/* -------------------------------------------------------------------------- */
+
+html,
+body,
+.sphinx-bs .container {
+  background-color: var(--bg) !important;
+  color: var(--fg) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sidebar                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.sidebar-drawer,
+nav.sidebar,
+.sidebar {
+  background-color: var(--surface) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+.sidebar a,
+nav.sidebar a {
+  color: var(--fg-sec) !important;
+}
+
+.sidebar a:hover,
+nav.sidebar a:hover,
+.sidebar a.current,
+nav.sidebar a.current {
+  color: var(--fg) !important;
+  background-color: var(--elevated) !important;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Main content area                                                            */
+/* -------------------------------------------------------------------------- */
+
+article.bd-article,
+div.document,
+.rst-content,
+.wy-nav-content,
+[role="main"] {
+  background-color: var(--bg) !important;
+  color: var(--fg) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Headings                                                                     */
+/* -------------------------------------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6,
+.rst-content h1,
+.rst-content h2,
+.rst-content h3 {
+  color: var(--fg) !important;
+  font-weight: 600;
+}
+
+h1 { border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+
+/* -------------------------------------------------------------------------- */
+/* Links                                                                        */
+/* -------------------------------------------------------------------------- */
+
+a,
+.rst-content a {
+  color: var(--accent) !important;
+  text-decoration: none;
+}
+
+a:hover,
+.rst-content a:hover {
+  color: var(--accent-hover) !important;
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Inline code                                                                  */
+/* -------------------------------------------------------------------------- */
+
+code,
+.rst-content code,
+tt.literal,
+code.literal {
+  background-color: var(--elevated) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.875em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Code blocks                                                                  */
+/* -------------------------------------------------------------------------- */
+
+div.highlight,
+pre,
+.rst-content pre {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+div.highlight pre {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0;
+  margin: 0;
+  color: var(--fg);
+}
+
+div.highlight span.filename {
+  background-color: var(--elevated);
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px 4px 0 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Admonitions                                                                  */
+/* -------------------------------------------------------------------------- */
+
+div.admonition {
+  border-radius: 6px;
+  border-left-width: 4px;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  background-color: var(--surface);
+  border-color: var(--border);
+  color: var(--fg);
+}
+
+div.note,
+div.admonition.note {
+  border-left-color: var(--accent);
+}
+
+div.warning,
+div.admonition.warning {
+  border-left-color: #f97316;
+}
+
+div.tip,
+div.admonition.tip {
+  border-left-color: #22c55e;
+}
+
+div.admonition > .admonition-title {
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 0.5rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tables                                                                       */
+/* -------------------------------------------------------------------------- */
+
+table.docutils {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+table.docutils th {
+  background-color: var(--elevated);
+  color: var(--fg);
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+table.docutils td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  color: var(--fg-sec);
+}
+
+table.docutils tr:nth-child(even) td {
+  background-color: var(--surface);
+}
+
+table.docutils tr:hover td {
+  background-color: var(--elevated);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Header / topbar                                                              */
+/* -------------------------------------------------------------------------- */
+
+header,
+.topbar,
+nav.topbar {
+  background-color: var(--bg) !important;
+  border-bottom: 1px solid var(--elevated) !important;
+}
+
+header a,
+.topbar a,
+nav.topbar a {
+  color: var(--fg-sec) !important;
+}
+
+header a:hover,
+.topbar a:hover,
+nav.topbar a:hover {
+  color: var(--fg) !important;
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Breadcrumbs                                                                  */
+/* -------------------------------------------------------------------------- */
+
+nav.breadcrumbs,
+.breadcrumb {
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+
+nav.breadcrumbs a,
+.breadcrumb a {
+  color: var(--fg-muted) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Previous / Next navigation                                                   */
+/* -------------------------------------------------------------------------- */
+
+.prev-next-area a {
+  color: var(--accent) !important;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}
+
+.prev-next-area a:hover {
+  background-color: var(--surface);
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Search                                                                       */
+/* -------------------------------------------------------------------------- */
+
+input[type="search"],
+input.search {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px;
+  color: var(--fg) !important;
+  padding: 0.375rem 0.75rem;
+}
+
+input[type="search"]:focus {
+  border-color: var(--accent) !important;
+  outline: 2px solid var(--elevated);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scrollbar                                                                    */
+/* -------------------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* sphinx-design cards                                                          */
+/* -------------------------------------------------------------------------- */
+
+.sd-card {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background-color: var(--surface) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.sd-card:hover {
+  border-color: var(--fg-muted) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.sd-card-title {
+  color: var(--fg) !important;
+  font-weight: 600 !important;
+}
+
+.sd-card-text {
+  color: var(--fg-muted) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* "API Docs" link badge                                                        */
+/* -------------------------------------------------------------------------- */
+
+a[href$="index.html"].api-badge {
+  background-color: var(--accent);
+  color: var(--bg);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+}

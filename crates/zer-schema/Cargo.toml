@@ -1,0 +1,24 @@
+[package]
+name        = "zer-schema"
+version     = "1.0.0"
+edition     = "2021"
+description = "Schema inference and Fellegi-Sunter model registry for the zer entity-resolution library"
+license     = "Apache-2.0"
+repository  = "https://github.com/ZAL-Analytics/zer"
+keywords    = ["entity-resolution", "schema", "model-registry"]
+categories  = ["algorithms", "data-structures"]
+readme      = "README.md"
+
+[dependencies]
+zer-core    = { path = "../zer-core", version = "1.0" }
+bincode       = "1"
+serde         = { workspace = true }
+toml          = { workspace = true }
+sha2          = "0.10"
+regex         = "1"
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+
+[dev-dependencies]
+csv      = "1"
+tempfile = "3"

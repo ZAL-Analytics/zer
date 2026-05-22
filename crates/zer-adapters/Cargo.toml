@@ -1,0 +1,42 @@
+[package]
+name        = "zer-adapters"
+version     = "1.0.0"
+edition     = "2021"
+description = "Type adapters for zer, bridging Polars, Arrow, and other data-frame libraries to zer-core Records without a string round-trip."
+license     = "Apache-2.0"
+repository  = "https://github.com/ZAL-Analytics/zer"
+keywords    = ["polars", "arrow", "entity-resolution", "dataframe"]
+categories  = ["data-structures", "algorithms"]
+readme      = "README.md"
+
+[features]
+default = []
+polars  = ["dep:polars-core"]
+arrow   = ["dep:arrow-array", "dep:arrow-schema"]
+
+[dependencies]
+zer-core   = { path = "../zer-core", version = "1.0" }
+serde      = { workspace = true }
+serde_json = "1"
+csv        = "1"
+thiserror  = { workspace = true }
+
+[dependencies.polars-core]
+version  = "0.46"
+optional = true
+default-features = false
+features = ["lazy", "dtype-date", "dtype-datetime", "dtype-duration"]
+
+[dependencies.arrow-array]
+version  = "54"
+optional = true
+
+[dependencies.arrow-schema]
+version  = "54"
+optional = true
+
+[dev-dependencies]
+polars-core = { version = "0.46", default-features = false, features = ["lazy", "dtype-date", "dtype-datetime", "dtype-duration"] }
+arrow-array  = "54"
+arrow-schema = "54"
+tempfile     = "3"

@@ -1,0 +1,58 @@
+# Name-based field kind heuristics for SchemaInferrer.
+#
+# Rules are evaluated top-to-bottom; the first rule that matches a column name wins.
+# Each rule supports four match types, all applied to the lowercased column name:
+#   exact     , full-string equality
+#   contains  , substring match
+#   starts_with, prefix match
+#   ends_with , suffix match
+#
+# Any combination may be used; omit a key to skip that match type.
+# Valid `kind` values mirror the FieldKind enum:
+#   Name, Date, Phone, Address, Id, Numeric, LicensePlate, GpsCoordinate,
+#   Timestamp, FreeText, Categorical, Alias
+
+[[rules]]
+kind        = "Name"
+contains    = ["first", "fname", "given", "voornamen", "last", "lname", "surname", "family"]
+exact       = ["name", "voornamen", "achternaam", "naam"]
+ends_with   = ["_name"]
+
+[[rules]]
+kind        = "Date"
+contains    = ["dob", "birth", "born", "geboortedatum", "date", "_dt", "activatiedatum"]
+ends_with   = ["_at"]
+
+[[rules]]
+kind        = "Phone"
+contains    = ["phone", "telefoon", "mobile", "cell"]
+exact       = ["msisdn", "tel"]
+starts_with = ["tel_"]
+ends_with   = ["_tel"]
+
+[[rules]]
+kind        = "Address"
+contains    = ["addr", "street", "straat", "city", "woonplaats", "huisnummer",
+               "zip", "postcode", "postal"]
+
+[[rules]]
+kind        = "Id"
+contains    = ["ssn", "passport", "license", "document_nummer", "_id"]
+exact       = ["bsn", "imsi", "iccid"]
+ends_with   = ["id", "_nr", "nummer"]
+
+[[rules]]
+kind        = "Numeric"
+contains    = ["age", "count", "score", "amount", "lengte"]
+
+[[rules]]
+kind        = "LicensePlate"
+contains    = ["kenteken", "plate", "license_plate"]
+
+[[rules]]
+kind        = "GpsCoordinate"
+exact       = ["lat", "lon", "latitude", "longitude"]
+
+[[rules]]
+kind        = "Timestamp"
+contains    = ["tijdstip", "timestamp", "datetime"]

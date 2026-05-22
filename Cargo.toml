@@ -1,0 +1,44 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/zer-core",
+    "crates/zer-blocking",
+    "crates/zer-compare",
+    "crates/zer-lib",
+    "crates/zer-schema",
+    "crates/zer-compute",
+    "crates/zer-prof",
+    "crates/zer-bench",
+    "crates/zer-cluster",
+    "crates/zer-pipeline",
+    "crates/zer-judge",
+    "crates/zer-adapters",
+    "crates/zer-test-utils",
+    # Demos
+    "demos/common",
+    "demos/hello_backend",
+    "demos/person_deduplication",
+    "demos/cross_source_linkage",
+    "demos/multi_source_linkage",
+    "demos/blocking_explorer",
+    "demos/scoring_walkthrough",
+    "demos/custom_components",
+]
+
+[workspace.dependencies]
+serde               = { version = "1", features = ["derive"] }
+thiserror           = "2"
+tracing             = "0.1"
+tracing-subscriber  = { version = "0.3", features = ["env-filter", "fmt"] }
+tokio               = { version = "1", features = ["full"] }
+rayon               = "1"
+ahash               = { version = "0.8", features = ["serde"] }
+toml                = "0.8"
+sysinfo             = "0.32"
+
+[profile.debug-full]
+inherits = "dev"
+codegen-units = 1
+incremental = false
+debug = 2
+strip = "none"

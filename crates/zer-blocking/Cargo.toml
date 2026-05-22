@@ -1,0 +1,23 @@
+[package]
+name        = "zer-blocking"
+version     = "1.0.0"
+edition     = "2021"
+description = "Blocking strategies and inverted index for candidate pair generation in zer"
+license     = "Apache-2.0"
+repository  = "https://github.com/ZAL-Analytics/zer"
+keywords    = ["entity-resolution", "blocking", "record-linkage", "phonetic"]
+categories  = ["algorithms", "text-processing"]
+readme      = "README.md"
+
+[dependencies]
+zer-core           = { path = "../zer-core", version = "1.0" }
+rphonetic            = "3"
+unicode-normalization = "0.1"
+any_ascii            = "0.3"
+rayon                = { workspace = true }
+serde                = { workspace = true }
+thiserror            = { workspace = true }
+
+[dev-dependencies]
+csv        = "1"
+serde_json = "1"
