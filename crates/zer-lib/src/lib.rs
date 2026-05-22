@@ -1,9 +1,9 @@
 //! `zer-lib`, unified entity resolution library.
 //!
 //! Provides [`Comparator`], [`Scorer`], and a [`Backend`] abstraction that
-//! selects GPU acceleration automatically when compiled with the `cuda` feature
-//! and an NVIDIA GPU is present.  Without that feature the crate compiles and
-//! runs entirely on CPU via `zer-compare`.
+//! selects GPU acceleration automatically when compiled with the `cuda` or
+//! `vulkan` features and suitable hardware is present.  Without those features
+//! the crate compiles and runs entirely on CPU via `zer-compare`.
 //!
 //! # Quick start
 //!
@@ -15,17 +15,38 @@
 //!     .field("datum", FieldKind::Date)
 //!     .build().unwrap();
 //!
-//! let backend    = Backend::auto_detect();        // CUDA → AVX2 → CPU
+//! let backend    = Backend::auto_detect();        // CUDA → Vulkan → AVX2 → CPU
 //! let comparator = Comparator::new(&schema, &backend);
 //! let scorer     = Scorer::new(&backend);
 //! ```
 //!
 //! # Feature flags
 //!
-//! | Flag     | Description                                       |
-//! |----------|---------------------------------------------------|
-//! | `cuda`   | NVIDIA CUDA via `zer-compute`, requires CUDA toolkit |
-//! | `avx2`   | x86_64 AVX2 SIMD via `zer-compute`, no external toolchain |
+//! **Compute backends** (mutually exclusive in practice; pick one):
+//!
+//! | Flag             | Description                                                              |
+//! |------------------|--------------------------------------------------------------------------|
+//! | `cuda`           | NVIDIA CUDA via `zer-compute`, requires CUDA Toolkit 13.1+ and `nvcc`   |
+//! | `vulkan`         | Vulkan 1.3 compute via `zer-compute`, requires `slangc` on `PATH`        |
+//! | `avx2`           | x86_64 AVX2 SIMD via `zer-compute`, no external toolchain required       |
+//! | `cpu`            | Explicit scalar CPU path via `zer-compute` (Rayon parallel)              |
+//! | `debug-shaders`  | Embed debug info in CUDA kernels for `cuda-gdb` / Nsight (needs `cuda`) |
+//!
+//! **Pipeline integration:**
+//!
+//! | Flag       | Description                                                              |
+//! |------------|--------------------------------------------------------------------------|
+//! | `pipeline` | Enable `Pipeline`, `Ingester`, and related types from `zer-pipeline`     |
+//!
+//! **Neural judge ORT execution providers** (independent of compute backend):
+//!
+//! | Flag             | Description                                                              |
+//! |------------------|--------------------------------------------------------------------------|
+//! | `judge_cpu`      | Scalar CPU execution provider for ORT (no extra dependencies)            |
+//! | `judge_cuda`     | NVIDIA CUDA execution provider for ORT                                   |
+//! | `judge_rocm`     | AMD ROCm execution provider for ORT                                      |
+//! | `judge_directml` | Windows DirectML execution provider for ORT                              |
+//! | `judge_openvino` | Intel OpenVINO execution provider for ORT                                |
 //!
 //! # CPU-only usage
 //!

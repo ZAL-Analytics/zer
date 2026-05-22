@@ -26,10 +26,13 @@
 //!
 //! # Feature flags
 //!
-//! | Flag     | Description |
-//! |----------|---|
-//! | `cuda`   | NVIDIA CUDA via `cudarc`, requires CUDA toolkit at build time |
-//! | `avx2`   | x86_64 AVX2 SIMD via `std::arch`, no external toolchain required |
+//! | Flag             | Description |
+//! |------------------|---|
+//! | `cuda`           | NVIDIA CUDA via `cudarc`, requires CUDA Toolkit 13.1+ and `nvcc` at build time |
+//! | `vulkan`         | Vulkan 1.3 compute via `ash`, requires `slangc` on `PATH` at build time |
+//! | `avx2`           | x86_64 AVX2 SIMD via `std::arch`, no external toolchain required |
+//! | `cpu`            | Explicit scalar CPU path backed by `zer-compare` (Rayon parallel) |
+//! | `debug-shaders`  | Embed debug info in compiled CUDA kernels for `cuda-gdb` / Nsight stepping |
 //!
 //! When no flag is set the crate compiles and runs normally using the
 //! always-available scalar CPU fallback backed by `zer-compare`.

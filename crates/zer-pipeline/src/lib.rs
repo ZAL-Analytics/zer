@@ -1,4 +1,10 @@
 //! End-to-end entity resolution pipeline: ingestion, blocking, comparison, scoring, and clustering.
+//!
+//! # Feature flags
+//!
+//! | Flag             | Description                                                                     |
+//! |------------------|---------------------------------------------------------------------------------|
+//! | `collect-pairs`  | Collect all scored pairs after judging for PR-AUC / optimal-threshold analysis. Incurs allocation cost proportional to candidate pair count; disable in production. |
 
 pub mod batch;
 pub mod cluster_view;

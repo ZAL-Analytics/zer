@@ -21,6 +21,7 @@
 //!
 //! | Feature  | Effect                                                                      |
 //! |----------|-----------------------------------------------------------------------------|
+//! | `nvtx`   | Activates NVTX standalone, without any compute backend                      |
 //! | `cuda`   | Activates NVTX; `trace_cuda!` active; `trace_vulkan!` is a no-op           |
 //! | `vulkan` | Activates NVTX; `trace_vulkan!` active; `trace_cuda!` is a no-op           |
 //! | `avx2`   | Activates NVTX; `trace_cuda!` and `trace_vulkan!` are no-ops               |

@@ -36,6 +36,7 @@
 //!
 //! | Flag               | Description                                                          |
 //! |--------------------|----------------------------------------------------------------------|
+//! | `judge_cpu`        | Scalar CPU execution provider for ORT (always available, no extras) |
 //! | `judge_cuda`       | NVIDIA CUDA execution provider for ORT                               |
 //! | `judge_tensorrt`   | NVIDIA TensorRT EP, FP16 + engine caching (requires `judge_cuda`)   |
 //! | `judge_rocm`       | AMD ROCm execution provider for ORT                                  |

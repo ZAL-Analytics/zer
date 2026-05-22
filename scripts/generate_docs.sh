@@ -87,7 +87,7 @@ rm -rf "$REPO_ROOT/target/doc/zer"
 echo "==> Building rustdoc..."
 (
   cd "$REPO_ROOT"
-  RUSTDOCFLAGS="--extend-css $RUSTDOC_CSS" \
+  RUSTDOCFLAGS="--extend-css $RUSTDOC_CSS --default-theme dark" \
     cargo doc \
       --workspace \
       --no-deps \

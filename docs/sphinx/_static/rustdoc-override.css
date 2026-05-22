@@ -1,131 +1,130 @@
 /*
- * rustdoc color override,shadcn/ui Stone palette
+ * rustdoc color override — shadcn/ui Stone dark palette
  *
- * Targets ALL rustdoc themes (light, dark, ayu) so the stone palette
- * is applied regardless of OS/browser dark-mode preference.
+ * Forced dark on ALL theme variants. Theme switching is hidden.
  *
- * Stone scale:
- *   50:  #fafaf9   100: #f5f5f4   200: #e7e5e4   300: #d6d3d1
- *   400: #a8a29e   500: #78716c   600: #57534e   700: #44403c
- *   800: #292524   900: #1c1917   950: #0c0a09
+ * Stone scale (dark end):
+ *   950: #0c0a09   900: #1c1917   800: #292524   700: #44403c
+ *   600: #57534e   500: #78716c   400: #a8a29e   300: #d6d3d1
+ *   200: #e7e5e4   100: #f5f5f4    50: #fafaf9
  */
 
 /* -------------------------------------------------------------------------- */
-/* Apply to every rustdoc theme variant                                         */
+/* Force dark stone palette for every rustdoc theme variant                   */
 /* -------------------------------------------------------------------------- */
 
 :root,
 :root[data-theme="light"],
 :root[data-theme="dark"],
-:root[data-theme="ayu"],
-:root[data-color-scheme="light"] {
+:root[data-theme="ayu"] {
   /* Page */
-  --main-background-color:              #fafaf9;
-  --main-color:                         #1c1917;
-  --headings-color:                     #0c0a09;
-  --headings-border-bottom-color:       #e7e5e4;
+  --main-background-color:              #1c1917;
+  --main-color:                         #e7e5e4;
+  --headings-color:                     #fafaf9;
+  --headings-border-bottom-color:       #44403c;
 
   /* Sidebar */
-  --sidebar-background-color:           #f5f5f4;
-  --sidebar-background-color-hover:     #e7e5e4;
-  --sidebar-border-color:               #e7e5e4;
-  --sidebar-color:                      #57534e;
-  --sidebar-link-color:                 #1c1917;
-  --sidebar-current-link-background-color: #e7e5e4;
+  --sidebar-background-color:           #0c0a09;
+  --sidebar-background-color-hover:     #292524;
+  --sidebar-border-color:               #44403c;
+  --sidebar-color:                      #a8a29e;
+  --sidebar-link-color:                 #e7e5e4;
+  --sidebar-current-link-background-color: #292524;
 
-  /* Links,stone-800, not colored */
-  --link-color:                         #292524;
-  --link-visited-color:                 #57534e;
-  --type-link-color:                    #292524;
-  --trait-link-color:                   #44403c;
-  --assoc-item-link-color:              #292524;
-  --function-link-color:                #292524;
-  --macro-link-color:                   #44403c;
-  --keyword-link-color:                 #57534e;
-  --attribute-link-color:               #57534e;
-  --mod-link-color:                     #292524;
+  /* Links */
+  --link-color:                         #d6d3d1;
+  --link-visited-color:                 #a8a29e;
+  --type-link-color:                    #d6d3d1;
+  --trait-link-color:                   #a8a29e;
+  --assoc-item-link-color:              #d6d3d1;
+  --function-link-color:                #d6d3d1;
+  --macro-link-color:                   #a8a29e;
+  --keyword-link-color:                 #78716c;
+  --attribute-link-color:               #78716c;
+  --mod-link-color:                     #d6d3d1;
 
   /* Code blocks */
-  --code-block-background-color:        #f5f5f4;
-  --code-block-border-color:            #e7e5e4;
-  --code-highlight-html-color:          #1c1917;
-  --docblock-color:                     #44403c;
-  --docblock-code-color:                #1c1917;
-  --docblock-code-background:           #f5f5f4;
+  --code-block-background-color:        #0c0a09;
+  --code-block-border-color:            #44403c;
+  --code-highlight-html-color:          #e7e5e4;
+  --docblock-color:                     #d6d3d1;
+  --docblock-code-color:                #e7e5e4;
+  --docblock-code-background:           #0c0a09;
   --code-attribute-color:               #78716c;
 
   /* Tables */
-  --table-border-color:                 #e7e5e4;
-  --table-header-background:            #f5f5f4;
+  --table-border-color:                 #44403c;
+  --table-header-background:            #292524;
+  --table-alt-row-background-color:     #292524;
 
   /* Borders and dividers */
-  --border-color:                       #e7e5e4;
+  --border-color:                       #44403c;
 
   /* Buttons / toggles */
-  --button-background-color:            #f5f5f4;
-  --settings-input-color:               #1c1917;
-  --settings-input-border-color:        #d6d3d1;
-  --settings-button-color:              #44403c;
-  --settings-button-border-focus:       #a8a29e;
-  --toggles-color:                      #78716c;
-  --toggle-filter:                      none;
-  --mobile-sidebar-menu-filter:         none;
+  --button-background-color:            #292524;
+  --settings-input-color:               #e7e5e4;
+  --settings-input-border-color:        #57534e;
+  --settings-button-color:              #d6d3d1;
+  --settings-button-border-focus:       #78716c;
+  --toggles-color:                      #a8a29e;
+  --toggle-filter:                      invert(1);
+  --mobile-sidebar-menu-filter:         invert(1);
 
   /* Search */
-  --search-input-focused-border-color:  #292524;
+  --search-input-focused-border-color:  #a8a29e;
 
   /* Copy button */
-  --copy-path-button-color:             #a8a29e;
-  --copy-path-img-filter:               none;
-  --copy-path-img-hover-filter:         none;
+  --copy-path-button-color:             #57534e;
+  --copy-path-img-filter:               invert(1);
+  --copy-path-img-hover-filter:         invert(0.8);
   --code-example-button-color:          #78716c;
-  --code-example-button-hover-color:    #44403c;
+  --code-example-button-hover-color:    #a8a29e;
 
   /* Right sidebar (section headings) */
   --right-side-color:                   #78716c;
 
   /* Scrollbar */
-  --scrollbar-track-background-color:   #f5f5f4;
-  --scrollbar-thumb-background-color:   #d6d3d1;
-  --scrollbar-color:                    #d6d3d1 #f5f5f4;
+  --scrollbar-track-background-color:   #0c0a09;
+  --scrollbar-thumb-background-color:   #44403c;
+  --scrollbar-color:                    #44403c #0c0a09;
 
   /* Warning/error codeblock annotations */
-  --codeblock-error-hover-color:        #292524;
-  --codeblock-error-color:              rgba(28,25,23,.4);
-  --codeblock-ignore-hover-color:       #44403c;
-  --codeblock-ignore-color:             rgba(68,64,60,.5);
-  --warning-border-color:               #a8a29e;
+  --codeblock-error-hover-color:        #fafaf9;
+  --codeblock-error-color:              rgba(250,250,249,.4);
+  --codeblock-ignore-hover-color:       #d6d3d1;
+  --codeblock-ignore-color:             rgba(214,211,209,.5);
+  --warning-border-color:               #78716c;
 
   /* Navbar */
-  --navbar-background-color:            #1c1917;
-  --navbar-foreground-color:            #e7e5e4;
-  --navbar-link-color:                  #e7e5e4;
-  --navbar-link-color-hover:            #ffffff;
+  --navbar-background-color:            #0c0a09;
+  --navbar-foreground-color:            #d6d3d1;
+  --navbar-link-color:                  #d6d3d1;
+  --navbar-link-color-hover:            #fafaf9;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Sidebar                                                                      */
+/* Sidebar                                                                     */
 /* -------------------------------------------------------------------------- */
 
 nav.sidebar,
 #sidebar {
-  background-color: #f5f5f4;
-  border-right: 1px solid #e7e5e4;
-  color: #57534e;
+  background-color: #0c0a09;
+  border-right: 1px solid #44403c;
+  color: #a8a29e;
 }
 
 .sidebar a,
 .sidebar h2 a,
 .sidebar h3 a {
-  color: #1c1917 !important;
+  color: #e7e5e4 !important;
 }
 
 .sidebar a:hover {
-  background-color: #e7e5e4 !important;
+  background-color: #292524 !important;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Main content & breadcrumbs                                                   */
+/* Main content & breadcrumbs                                                  */
 /* -------------------------------------------------------------------------- */
 
 .rustdoc nav.main .breadcrumbs a,
@@ -134,7 +133,7 @@ nav.main .breadcrumbs {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Type-label badges (struct, fn, enum …)                                       */
+/* Type-label badges (struct, fn, enum …)                                      */
 /* -------------------------------------------------------------------------- */
 
 .item-table .item-left a,
@@ -145,54 +144,97 @@ nav.main .breadcrumbs {
 .trait,
 .type,
 .macro {
-  color: #1c1917 !important;
+  color: #d6d3d1 !important;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Search                                                                       */
+/* Search                                                                      */
 /* -------------------------------------------------------------------------- */
 
 #crate-search,
 #search-input {
-  background-color: #ffffff;
-  border: 1px solid #e7e5e4;
+  background-color: #0c0a09;
+  border: 1px solid #44403c;
   border-radius: 4px;
-  color: #1c1917;
+  color: #e7e5e4;
 }
 
 #search-input:focus {
-  border-color: #292524;
-  outline: 2px solid #e7e5e4;
+  border-color: #a8a29e;
+  outline: 2px solid #292524;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Code & source view                                                            */
+/* Code & source view                                                          */
 /* -------------------------------------------------------------------------- */
 
 .src-line-numbers,
 pre.rust {
-  background-color: #f5f5f4;
-  border: 1px solid #e7e5e4;
+  background-color: #0c0a09;
+  border: 1px solid #44403c;
   border-radius: 4px;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Stability badges                                                              */
+/* Stability badges                                                            */
 /* -------------------------------------------------------------------------- */
 
 .stab.unstable {
-  background-color: #f5f5f4;
-  border-color: #a8a29e;
-  color: #44403c;
+  background-color: #292524;
+  border-color: #57534e;
+  color: #d6d3d1;
 }
 
 .stab.deprecated {
-  background-color: #f5f5f4;
+  background-color: #292524;
   border-color: #78716c;
-  color: #292524;
+  color: #a8a29e;
 }
 
-/* Suppress legacy back-link banner if present in cached HTML */
+/* -------------------------------------------------------------------------- */
+/* Tables — force dark everywhere, override alt-row zebra stripe              */
+/* -------------------------------------------------------------------------- */
+
+.docblock table,
+table {
+  background-color: #1c1917 !important;
+  color: #e7e5e4 !important;
+  border-color: #44403c !important;
+}
+
+.docblock table th,
+table th {
+  background-color: #292524 !important;
+  color: #fafaf9 !important;
+  border-color: #44403c !important;
+}
+
+.docblock table td,
+table td {
+  background-color: #1c1917 !important;
+  color: #e7e5e4 !important;
+  border-color: #44403c !important;
+}
+
+.docblock table tr:nth-child(even) td,
+table tr:nth-child(even) td {
+  background-color: #292524 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hide theme switcher in settings page                                        */
+/* -------------------------------------------------------------------------- */
+
+.setting-line:has(input[name="theme"]),
+.setting-line:has(input[name="preferred-light-theme"]),
+.setting-line:has(input[name="preferred-dark-theme"]) {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Suppress legacy back-link banner                                            */
+/* -------------------------------------------------------------------------- */
+
 #zer-docs-banner {
   visibility: hidden !important;
   width: 0 !important;
@@ -201,4 +243,3 @@ pre.rust {
   padding: 0 !important;
   margin: 0 !important;
 }
-
