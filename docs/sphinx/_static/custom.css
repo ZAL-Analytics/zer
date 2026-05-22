@@ -1,5 +1,5 @@
 /*
- * zer docs — theme-aware palette
+ * zer docs,theme-aware palette
  *
  * Dark  (html.dark):  zinc-dark background, white accent
  * Light (html:not(.dark)): white background, black accent
@@ -9,7 +9,7 @@
  */
 
 /* -------------------------------------------------------------------------- */
-/* CSS custom properties — light defaults, dark overrides                      */
+/* CSS custom properties,light defaults, dark overrides                      */
 /* -------------------------------------------------------------------------- */
 
 :root {

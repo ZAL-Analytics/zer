@@ -1,6 +1,6 @@
 # zer
 
-**Zero-shot entity resolution for Dutch-centric data.** Given multiple datasets with records about the same people, vehicles, or organisations — but no shared unique key and noisy data — zer finds which records belong together.
+**Zero-shot entity resolution for Dutch-centric data.** Given multiple datasets with records about the same people, vehicles, or organisations,but no shared unique key and noisy data,zer finds which records belong together.
 
 [![crates.io](https://img.shields.io/crates/v/zer-lib.svg)](https://crates.io/crates/zer-lib)
 [![docs](https://img.shields.io/badge/docs-docs.zal--analytics.ch-blue)](https://docs.zal-analytics.ch/zer)
@@ -12,7 +12,7 @@
 
 Entity resolution (also called record linkage or deduplication) is the problem of deciding that two records refer to the same real-world entity even when there is no shared identifier. The same person might appear in a BRP register, a KvK extract, and a benefits system under slightly different names, with different address formats, and with OCR errors throughout.
 
-zer solves this with a six-stage pipeline — **Schema → Blocker → Comparator → Scorer → Clusterer → Entity Store** — using Dutch-specific blocking keys (phonetic name encoding, tussenvoegsel normalisation, licence-plate variants), Fellegi-Sunter probabilistic scoring, and an optional neural cross-encoder judge for borderline pairs.
+zer solves this with a six-stage pipeline,**Schema → Blocker → Comparator → Scorer → Clusterer → Entity Store**,using Dutch-specific blocking keys (phonetic name encoding, tussenvoegsel normalisation, licence-plate variants), Fellegi-Sunter probabilistic scoring, and an optional neural cross-encoder judge for borderline pairs.
 
 No labelled training data is required. The EM parameters are estimated from the data itself and cached in a `.zsm` model file for incremental updates.
 
@@ -74,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
     println!("entities created: {}", report.entities_created);
 
     for (entity, members) in &pipeline.cluster_view() {
-        println!("entity {} — {} records", entity.id, members.len());
+        println!("entity {},{} records", entity.id, members.len());
     }
 
     Ok(())
@@ -148,10 +148,10 @@ Expected layout after download:
 ~/.cache/zer/models/
   zjudge/
     nli-base/
-      base/        # FP32 — CPU / CUDA
+      base/        # FP32,CPU / CUDA
         model.onnx
         tokenizer.json
-      fp16/        # FP16 — GPU / TensorRT
+      fp16/        # FP16,GPU / TensorRT
         model.onnx
         tokenizer.json
 ```
@@ -184,7 +184,7 @@ Generate demo-specific data and run:
 
 ```bash
 ./scripts/generate_data.sh --demos
-cargo run -p hello-backend          # sanity check — no data needed
+cargo run -p hello-backend          # sanity check,no data needed
 cargo run -p person-deduplication   # single-source dedup, ~1 000 records
 cargo run -p cross-source-linkage   # two-source record linkage
 cargo run -p multi-source-linkage   # LinkOnly vs LinkAndDedupe side-by-side

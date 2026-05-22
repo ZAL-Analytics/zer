@@ -36,7 +36,7 @@
     var btn = document.getElementById('zer-theme-btn');
     if (btn) {
       btn.setAttribute('data-mode', pref);
-      btn.title = 'Theme: ' + pref + ' — click to cycle';
+      btn.title = 'Theme: ' + pref + ',click to cycle';
     }
   }
 
@@ -80,16 +80,16 @@
     btn.type      = 'button';
     btn.className = old.className;
     btn.setAttribute('data-mode', cur);
-    btn.title     = 'Theme: ' + cur + ' — click to cycle';
+    btn.title     = 'Theme: ' + cur + ',click to cycle';
     btn.onclick   = window.__zerCycleTheme;
 
-    // Sun icon — shown in 'light' mode
+    // Sun icon,shown in 'light' mode
     var sun = '<svg data-icon="light" fill="currentColor" height="16" width="16" viewBox="0 96 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M480 685q45 0 77-32t32-77q0-45-32-77t-77-32q-45 0-77 32t-32 77q0 45 32 77t77 32Zm0 91q-83 0-141.5-58.5T280 576q0-83 58.5-141.5T480 376q83 0 141.5 58.5T680 576q0 83-58.5 141.5T480 776ZM80 621.5q-19 0-32.5-13.5T34 576q0-19 13.5-32.5T80 530h80q19 0 32.5 13.5T206 576q0 19-13.5 32.5T160 621.5H80Zm720 0q-19 0-32.5-13.5T754 576q0-19 13.5-32.5T800 530h80q19 0 32.5 13.5T926 576q0 19-13.5 32.5T880 621.5h-80ZM480 302q-19 0-32.5-13.5T434 256v-80q0-19 13.5-32.5T480 130q19 0 32.5 13.5T526 176v80q0 19-13.5 32.5T480 302Zm0 720q-19 0-32.5-13.5T434 976v-80q0-19 13.5-32.5T480 850q19 0 32.5 13.5T526 896v80q0 19-13.5 32.5T480 1022ZM222 382l-43-43q-14-13-13.5-32.5T179 274q13-14 32.5-14t32.5 14l43 43q13 13 12.5 31.5T287 380q-13 14-31.5 13.5T222 382Zm494 494-42-43q-13-13-13-31.5t13-31.5q13-14 32-13.5t32 13.5l43 42q13 13 13.5 32.5T781 877q-14 13-32.5 13T716 876Zm-42-494Q660 369 661 350t13-32l42-43q13-14 32.5-13.5T781 275q14 14 14 32.5t-14 32.5l-43 42q-13 13-31.5 12.5T674 382ZM179 877q-14-13-13.5-32.5T179 812l43-43q13-13 31.5-13t31.5 13q14 14 13.5 32.5T285 833l-43 43q-13 13-32 13t-31-12ZM480 576Z"/></svg>';
 
-    // Moon icon — shown in 'dark' mode
+    // Moon icon,shown in 'dark' mode
     var moon = '<svg data-icon="dark" fill="currentColor" height="16" width="16" viewBox="0 96 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M480 936q-151 0-255.5-104.5T120 576q0-138 90-239.5T440 218q25-3 39 18t-1 44q-17 26-25.5 55T444 396q0 90 63 153t153 63q31 0 61.5-9t54.5-25q21-14 43-1.5t19 39.5q-14 138-117.5 229T480 936Zm0-80q88 0 158-48.5T740 681q-20 5-40 8t-40 3q-123 0-209.5-86.5T364 396q0-20 3-40t8-40q-78 32-126.5 102T200 576q0 116 82 198t198 82Zm-10-270Z"/></svg>';
 
-    // Monitor icon — shown in 'system' mode
+    // Monitor icon,shown in 'system' mode
     var monitor = '<svg data-icon="system" fill="currentColor" height="16" width="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5l-1 1v2h10v-2l-1-1h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12H3V5h18v10z"/></svg>';
 
     btn.innerHTML = sun + moon + monitor;

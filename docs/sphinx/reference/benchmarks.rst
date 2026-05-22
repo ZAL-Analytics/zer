@@ -161,7 +161,7 @@ the same ~22 200-record BRP and KvK dedupe datasets.
 
    Splink runs on the host CPU in all cases; the backend column refers
    to the zer compute backend selected for that run.  zer always uses
-   the same CPU for blocking and comparison — only the EM scoring stage
+   the same CPU for blocking and comparison,only the EM scoring stage
    is accelerated by AVX2/CUDA/Vulkan.
 
 BRP deduplication (22 200 records, ~2.68 M candidate pairs)
@@ -244,7 +244,7 @@ KvK deduplication (22 200 records, ~2.64 M candidate pairs)
 
    <div style="margin: 1.5rem 0;">
      <img src="../res/throughput_comparison_cuda.svg"
-          alt="Throughput comparison — CUDA backend"
+          alt="Throughput comparison,CUDA backend"
           style="max-width:100%; border-radius:6px;" />
    </div>
 
@@ -252,7 +252,7 @@ KvK deduplication (22 200 records, ~2.64 M candidate pairs)
 
    <div style="margin: 1.5rem 0;">
      <img src="../res/throughput_comparison_avx2.svg"
-          alt="Throughput comparison — AVX2 backend"
+          alt="Throughput comparison,AVX2 backend"
           style="max-width:100%; border-radius:6px;" />
    </div>
 
@@ -315,16 +315,16 @@ Run the benchmarks
    # Accuracy benchmarks (all scenarios, all libraries)
    cargo run -p zer-bench -- accuracy
 
-   # Throughput — CPU backend
+   # Throughput,CPU backend
    cargo run -p zer-bench -- throughput
 
-   # Throughput — AVX2 backend
+   # Throughput,AVX2 backend
    cargo run -p zer-bench --features avx2 -- throughput
 
-   # Throughput — CUDA backend
+   # Throughput,CUDA backend
    cargo run -p zer-bench --features cuda -- throughput
 
-   # Throughput — Vulkan backend
+   # Throughput,Vulkan backend
    cargo run -p zer-bench --features vulkan -- throughput
 
 The Python Splink comparison benchmarks are in ``benchmarks/splink/``:

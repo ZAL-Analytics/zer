@@ -47,7 +47,7 @@ info "Resume log: $UPLOAD_LOG"
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-# verify <crate-path> — cargo package check (no registry resolution)
+# verify <crate-path>,cargo package check (no registry resolution)
 verify() {
     local crate_path="$1"
     local crate_name
@@ -97,8 +97,8 @@ publish() {
     # crates.io needs time to index the new version before dependent crates
     # can resolve it. 60 s is enough in practice; increase if you see
     # "no matching version" errors on the next crate.
-    warn "Waiting 60 s for crates.io to index $crate_name ..."
-    sleep 60
+    warn "Waiting 120 s for crates.io to index $crate_name ..."
+    sleep 120
 }
 
 # ── Sanity check: ensure the working tree is clean ────────────────────────────

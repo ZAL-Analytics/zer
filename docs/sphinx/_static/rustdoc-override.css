@@ -1,5 +1,5 @@
 /*
- * rustdoc color override — shadcn/ui Stone palette
+ * rustdoc color override,shadcn/ui Stone palette
  *
  * Targets ALL rustdoc themes (light, dark, ayu) so the stone palette
  * is applied regardless of OS/browser dark-mode preference.
@@ -33,7 +33,7 @@
   --sidebar-link-color:                 #1c1917;
   --sidebar-current-link-background-color: #e7e5e4;
 
-  /* Links — stone-800, not colored */
+  /* Links,stone-800, not colored */
   --link-color:                         #292524;
   --link-visited-color:                 #57534e;
   --type-link-color:                    #292524;
