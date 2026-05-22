@@ -1,0 +1,3 @@
+[submodule "zer/benchmarks"]
+	path = zer/benchmarks
+	url = git@github.com:ZAL-Analytics/zer-external-libs-benchmarks.git
