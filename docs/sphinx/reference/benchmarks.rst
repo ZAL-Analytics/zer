@@ -132,14 +132,14 @@ side-by-side.  zer consistently achieves higher recall; Splink can
 yield higher precision on clean-field dedupe tasks (BRP/KvK) at the
 cost of substantially lower recall on cross-source linkage.
 
-PR-AUC bars
-~~~~~~~~~~~
+PR curves
+~~~~~~~~~
 
 .. raw:: html
 
    <div style="margin: 1.5rem 0;">
-     <img src="../res/pr_auc_bars.svg"
-          alt="PR-AUC comparison bar chart"
+     <img src="../res/pr_curves.svg"
+          alt="Precision-recall curves across all scenarios"
           style="max-width:100%; border-radius:6px;" />
    </div>
 
@@ -244,15 +244,7 @@ KvK deduplication (22 200 records, ~2.64 M candidate pairs)
 
    <div style="margin: 1.5rem 0;">
      <img src="../res/throughput_comparison_cuda.svg"
-          alt="Throughput comparison,CUDA backend"
-          style="max-width:100%; border-radius:6px;" />
-   </div>
-
-.. raw:: html
-
-   <div style="margin: 1.5rem 0;">
-     <img src="../res/throughput_comparison_avx2.svg"
-          alt="Throughput comparison,AVX2 backend"
+          alt="Throughput comparison, CUDA backend"
           style="max-width:100%; border-radius:6px;" />
    </div>
 

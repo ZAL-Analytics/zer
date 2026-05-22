@@ -146,21 +146,36 @@ code.literal {
 /* Code blocks                                                                  */
 /* -------------------------------------------------------------------------- */
 
-div.highlight,
-pre,
-.rst-content pre {
+/* Single visual box: only div.highlight is the styled container */
+div.highlight {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  position: relative;
+}
+
+/* Pre inside highlight: fully transparent — no double-box */
+div.highlight pre,
+.highlight pre {
+  background-color: transparent !important;
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 1rem !important;
+  margin: 0 !important;
+  overflow-x: auto;
+  color: var(--fg);
+}
+
+/* Standalone pre (outside any highlight container) */
+pre:not(.highlight pre) {
   background-color: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: 6px;
   padding: 1rem;
   overflow-x: auto;
-}
-
-div.highlight pre {
-  background-color: transparent !important;
-  border: none !important;
-  padding: 0;
-  margin: 0;
   color: var(--fg);
 }
 
@@ -170,6 +185,26 @@ div.highlight span.filename {
   font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: 4px 4px 0 0;
+}
+
+/* Copy button: no focus/active highlight */
+button.copy:focus,
+button.copy:active,
+button.copy:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Tooltip: flip from above (tooltipped-n) to below the button */
+button.copy.tooltipped-n::after {
+  bottom: auto !important;
+  top: calc(100% + 6px) !important;
+  margin-bottom: 0 !important;
+}
+
+/* Hide the upward-pointing arrow caret */
+button.copy.tooltipped-n::before {
+  display: none !important;
 }
 
 /* -------------------------------------------------------------------------- */

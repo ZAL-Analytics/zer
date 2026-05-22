@@ -63,16 +63,12 @@ if [[ $WITH_BENCH_FIGURES -eq 1 ]]; then
     "$RES_DIR/accuracy_comparison.svg"
 
   copy_bench_figure \
-    "$PLOTS/accuracy_all/pr_auc_bars/pr_auc_bars.svg" \
-    "$RES_DIR/pr_auc_bars.svg"
+    "$PLOTS/accuracy_all/pr_curves/pr_curves.svg" \
+    "$RES_DIR/pr_curves.svg"
 
   copy_bench_figure \
     "$PLOTS/throughput_all_cuda/throughput_comparison.svg" \
     "$RES_DIR/throughput_comparison_cuda.svg"
-
-  copy_bench_figure \
-    "$PLOTS/throughput_all_avx2/throughput_comparison.svg" \
-    "$RES_DIR/throughput_comparison_avx2.svg"
 
   echo "    Benchmark figures: $RES_DIR"
 fi
