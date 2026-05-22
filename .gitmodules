@@ -1,0 +1,3 @@
+[submodule "benchmarks"]
+	path = benchmarks
+	url = https://github.com/ZAL-Analytics/zer-external-libs-benchmarks
