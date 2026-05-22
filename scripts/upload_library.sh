@@ -41,6 +41,19 @@ fi
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+# verify <crate-path> — cargo package check (no registry resolution)
+verify() {
+    local crate_path="$1"
+    local crate_name
+    crate_name="$(basename "$crate_path")"
+    cargo package \
+        --no-verify \
+        --manifest-path "$crate_path/Cargo.toml" \
+        > /dev/null 2>&1 \
+        && info "  $crate_name: package OK" \
+        || { error "  $crate_name: package FAILED"; exit 1; }
+}
+
 # publish <relative-crate-path>
 publish() {
     local rel_path="$1"
@@ -49,6 +62,8 @@ publish() {
     crate_name="$(basename "$crate_path")"
 
     echo ""
+    # Verify just before publishing so deps are already live on crates.io
+    verify "$crate_path"
     info "Publishing $crate_name ..."
 
     local args=(
@@ -80,30 +95,11 @@ if [[ "$DRY_RUN" != "1" ]]; then
     fi
 fi
 
-# ── Verify cargo package for every crate first ────────────────────────────────
-info "Verifying all crates with 'cargo package' ..."
-for crate_path in \
-    "$REPO_ROOT/crates/zer-core" \
-    "$REPO_ROOT/crates/zer-prof" \
-    "$REPO_ROOT/crates/zer-compare" \
-    "$REPO_ROOT/crates/zer-blocking" \
-    "$REPO_ROOT/crates/zer-schema" \
-    "$REPO_ROOT/crates/zer-cluster" \
-    "$REPO_ROOT/crates/zer-compute" \
-    "$REPO_ROOT/crates/zer-pipeline" \
-    "$REPO_ROOT/crates/zer-judge" \
-    "$REPO_ROOT/crates/zer-adapters" \
-    "$REPO_ROOT/crates/zer-lib"
-do
-    crate_name="$(basename "$crate_path")"
-    cargo package \
-        --no-verify \
-        --manifest-path "$crate_path/Cargo.toml" \
-        --token "$ZER_CRATES_IO_TOKEN" \
-        > /dev/null 2>&1 \
-        && info "  $crate_name: package OK" \
-        || { error "  $crate_name: package FAILED"; exit 1; }
-done
+# ── Pre-flight: verify only the leaf crates (no internal deps) ────────────────
+# Dependent crates are verified in publish() once their deps are live on crates.io
+info "Verifying leaf crates with 'cargo package' ..."
+verify "$REPO_ROOT/crates/zer-core"
+verify "$REPO_ROOT/crates/zer-prof"
 
 # ── Publish in topological order (leaf crates first) ──────────────────────────
 #
