@@ -67,7 +67,8 @@ fully configurable for any domain.
       SchemaCategory presets, and benchmark results.
 
    .. grid-item-card:: API Docs
-      :link: api/zer/index.html
+      :link: reference/api
+      :link-type: doc
 
       Full rustdoc API reference for all zer crates.
 
