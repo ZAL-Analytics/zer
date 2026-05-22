@@ -14,6 +14,10 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRY_RUN="${DRY_RUN:-0}"
+UPLOAD_LOG="${UPLOAD_LOG:-/tmp/cargo-publish-uploaded.txt}"
+
+# Create the log file if it doesn't exist yet
+touch "$UPLOAD_LOG"
 
 # ── Colour output ──────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -39,6 +43,8 @@ if [[ "$DRY_RUN" == "1" ]]; then
     warn "DRY_RUN=1, no crates will be uploaded."
 fi
 
+info "Resume log: $UPLOAD_LOG"
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 # verify <crate-path> — cargo package check (no registry resolution)
@@ -62,6 +68,13 @@ publish() {
     crate_name="$(basename "$crate_path")"
 
     echo ""
+
+    # Skip if already recorded in the upload log
+    if grep -qx "$crate_name" "$UPLOAD_LOG" 2>/dev/null; then
+        info "  $crate_name: already published, skipping."
+        return
+    fi
+
     # Verify just before publishing so deps are already live on crates.io
     verify "$crate_path"
     info "Publishing $crate_name ..."
@@ -78,6 +91,7 @@ publish() {
     fi
 
     cargo publish "${args[@]}"
+    echo "$crate_name" >> "$UPLOAD_LOG"
     info "$crate_name published successfully."
 
     # crates.io needs time to index the new version before dependent crates
