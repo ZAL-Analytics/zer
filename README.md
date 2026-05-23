@@ -130,6 +130,28 @@ CPU-only builds (`pipeline` only) have no external dependencies beyond Rust itse
 | TensorRT | ≥ 8.0 | `judge_tensorrt` |
 | Python | ≥ 3.10 | demo data generators only |
 
+### Linux system packages
+
+> Windows and macOS instructions will be added in a future update. Feel free to raise an issue with steps you took. 
+
+**Ubuntu / Debian**
+```bash
+sudo apt-get install \
+    build-essential pkg-config \
+    libssl-dev libonig-dev \
+    libvulkan-dev vulkan-tools
+```
+
+**Fedora / RHEL**
+```bash
+sudo dnf install \
+    gcc gcc-c++ make pkgconfig \
+    openssl-devel oniguruma-devel \
+    vulkan-devel
+```
+
+For a complete post-install setup on RHEL 10 (Rust toolchain, CUDA, Vulkan, developer tools) see [ZAL-Analytics/rhel10-post-install](https://github.com/ZAL-Analytics/rhel10-post-install).
+
 See the [full installation guide](https://docs.zal-analytics.ch/zer/introduction/installation.html) for GPU driver versions, ORT configuration, and per-flag build instructions.
 
 ---

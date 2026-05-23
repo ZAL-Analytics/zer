@@ -57,6 +57,36 @@ external dependencies beyond Rust itself.
      - Only needed to run the synthetic demo data generators in
        ``scripts/``. Not required to build or use the library.
 
+Linux system packages
+~~~~~~~~~~~~~~~~~~~~~
+
+.. note::
+
+   Windows and macOS installation instructions will be added in a future update.
+
+.. tab-set::
+
+   .. tab-item:: Ubuntu / Debian
+
+      .. code-block:: bash
+
+         sudo apt-get install \
+             build-essential pkg-config \
+             libssl-dev libonig-dev \
+             libvulkan-dev vulkan-tools
+
+   .. tab-item:: Fedora / RHEL
+
+      .. code-block:: bash
+
+         sudo dnf install \
+             gcc gcc-c++ make pkgconfig \
+             openssl-devel oniguruma-devel \
+             vulkan-devel
+
+For a complete post-install setup on RHEL 10 (Rust toolchain, CUDA, Vulkan, developer tools),
+see `ZAL-Analytics/rhel10-post-install <https://github.com/ZAL-Analytics/rhel10-post-install>`_.
+
 ----
 
 Add to Cargo.toml

@@ -32,6 +32,7 @@ rsync \
     --archive \
     --compress \
     --delete \
+    --filter='protect res/' \
     --human-readable \
     --progress \
     ${DRY_RUN} \
