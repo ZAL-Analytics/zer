@@ -59,6 +59,23 @@ fully configurable for any domain.
 .. grid:: 2
    :gutter: 3
 
+   .. grid-item-card:: Developers
+      :link: developers/index
+      :link-type: doc
+
+      Extend zer for your own use cases: custom entity stores, record stores,
+      blocking keys, similarity functions, and streaming pipelines.
+
+   .. grid-item-card:: Contribution
+      :link: contribution/index
+      :link-type: doc
+
+      Report bugs, run and share benchmarks, generate test datasets, and
+      get in touch with the team.
+
+.. grid:: 2
+   :gutter: 3
+
    .. grid-item-card:: Reference
       :link: reference/index
       :link-type: doc
@@ -80,4 +97,6 @@ fully configurable for any domain.
    tutorials/index
    how-to/index
    explanation/index
+   developers/index
+   contribution/index
    reference/index

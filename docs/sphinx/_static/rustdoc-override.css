@@ -1,5 +1,5 @@
 /*
- * rustdoc color override — shadcn/ui Stone dark palette
+ * rustdoc color override,shadcn/ui Stone dark palette
  *
  * Forced dark on ALL theme variants. Theme switching is hidden.
  *
@@ -192,7 +192,7 @@ pre.rust {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Tables — force dark everywhere, override alt-row zebra stripe              */
+/* Tables,force dark everywhere, override alt-row zebra stripe              */
 /* -------------------------------------------------------------------------- */
 
 .docblock table,

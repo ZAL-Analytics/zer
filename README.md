@@ -12,9 +12,14 @@
 
 Entity resolution (also called record linkage or deduplication) is the problem of deciding that two records refer to the same real-world entity even when there is no shared identifier. The same person might appear in a BRP register, a KvK extract, and a benefits system under slightly different names, with different address formats, and with OCR errors throughout.
 
-zer solves this with a six-stage pipeline,**Schema → Blocker → Comparator → Scorer → Clusterer → Entity Store**,using Dutch-specific blocking keys (phonetic name encoding, tussenvoegsel normalisation, licence-plate variants), Fellegi-Sunter probabilistic scoring, and an optional neural cross-encoder judge for borderline pairs.
+zer solves this with a six-stage pipeline:
+- **Schema → Blocker → Comparator → Scorer → Clusterer → Entity Store**
+
+It uses Dutch-specific blocking keys (phonetic name encoding, tussenvoegsel normalisation, licence-plate variants), Fellegi-Sunter probabilistic scoring, and an optional neural cross-encoder judge for borderline pairs.
 
 No labelled training data is required. The EM parameters are estimated from the data itself and cached in a `.zsm` model file for incremental updates.
+
+Work with sync and async pipelines.
 
 ---
 

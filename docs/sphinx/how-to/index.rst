@@ -12,3 +12,4 @@ Task-oriented recipes. Each guide answers one specific "how do I…" question.
    neural-judge
    polars-arrow
    gpu-backend
+   async-ingestion

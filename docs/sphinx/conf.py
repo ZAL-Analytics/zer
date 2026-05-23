@@ -28,4 +28,4 @@ html_title = "zer an Entity Resolution library for Dutch Administrative Data"
 # --------------------------------------------------------------------------- #
 
 pygments_style       = "friendly"
-pygments_dark_style  = "monokai"
+pygments_style_dark  = "monokai"

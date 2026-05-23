@@ -146,27 +146,40 @@ code.literal {
 /* Code blocks                                                                  */
 /* -------------------------------------------------------------------------- */
 
-/* Single visual box: only div.highlight is the styled container */
+/* div.highlight: positioning shell only,pre is the visible box */
 div.highlight {
-  background-color: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 6px !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
   position: relative;
 }
 
-/* Pre inside highlight: fully transparent — no double-box */
+/* pre IS the single visual container */
 div.highlight pre,
 .highlight pre {
-  background-color: transparent !important;
-  background: none !important;
-  border: none !important;
-  border-radius: 0 !important;
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
   box-shadow: none !important;
   outline: none !important;
-  padding: 1rem !important;
+  /* Theme adds padding-inline via [id^=line-] spans,don't double it */
+  padding-block: 0 !important;
+  padding-inline: 0 !important;
   margin: 0 !important;
   overflow-x: auto;
   color: var(--fg);
+}
+
+/* Reset inline-code styles for the block <code> element inside highlight pre */
+.highlight pre code,
+div.highlight pre code {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  display: block;
+  padding-block: 0.6rem !important;
 }
 
 /* Standalone pre (outside any highlight container) */
@@ -257,13 +270,13 @@ table.docutils th {
   background-color: var(--elevated);
   color: var(--fg);
   font-weight: 600;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem !important;
   border: 1px solid var(--border);
   text-align: left;
 }
 
 table.docutils td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem !important;
   border: 1px solid var(--border);
   color: var(--fg-sec);
 }
@@ -396,6 +409,56 @@ input[type="search"]:focus {
 .sd-card-text {
   color: var(--fg-muted) !important;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Dark-mode syntax highlighting (monokai palette, scoped to .dark class)      */
+/* pygments.css uses @media(prefers-color-scheme:dark) but the theme toggles   */
+/* via a .dark class,these overrides ensure the class-based toggle works.    */
+/* -------------------------------------------------------------------------- */
+
+/* Comments */
+.dark .highlight .c,  .dark .highlight .ch, .dark .highlight .cm,
+.dark .highlight .cp, .dark .highlight .cpf,.dark .highlight .c1,
+.dark .highlight .cs  { color: #75715e !important; font-style: italic; }
+/* Keywords */
+.dark .highlight .k,  .dark .highlight .kn, .dark .highlight .kr { color: #f92672 !important; font-weight: bold; }
+.dark .highlight .kc, .dark .highlight .kd, .dark .highlight .kp, .dark .highlight .kt { color: #66d9ef !important; }
+/* Operators */
+.dark .highlight .o,  .dark .highlight .ow  { color: #f92672 !important; }
+/* Numbers */
+.dark .highlight .m,  .dark .highlight .mb, .dark .highlight .mf,
+.dark .highlight .mh, .dark .highlight .mi, .dark .highlight .mo,
+.dark .highlight .il  { color: #ae81ff !important; }
+/* Strings */
+.dark .highlight .s,  .dark .highlight .sa, .dark .highlight .sb,
+.dark .highlight .sc, .dark .highlight .dl, .dark .highlight .sd,
+.dark .highlight .s2, .dark .highlight .se, .dark .highlight .sh,
+.dark .highlight .si, .dark .highlight .sx, .dark .highlight .sr,
+.dark .highlight .s1, .dark .highlight .ss  { color: #e6db74 !important; }
+/* Names */
+.dark .highlight .na  { color: #a6e22e !important; }
+.dark .highlight .nb, .dark .highlight .bp  { color: #f8f8f2 !important; }
+.dark .highlight .nc  { color: #a6e22e !important; font-weight: bold; }
+.dark .highlight .no  { color: #66d9ef !important; }
+.dark .highlight .nd  { color: #a6e22e !important; }
+.dark .highlight .ni  { color: #f8f8f2 !important; font-weight: bold; }
+.dark .highlight .ne  { color: #a6e22e !important; font-weight: bold; }
+.dark .highlight .nf, .dark .highlight .fm  { color: #a6e22e !important; }
+.dark .highlight .nl  { color: #f8f8f2 !important; font-weight: bold; }
+.dark .highlight .nn  { color: #f8f8f2 !important; }
+.dark .highlight .nt  { color: #f92672 !important; }
+.dark .highlight .nv, .dark .highlight .vc, .dark .highlight .vg,
+.dark .highlight .vi, .dark .highlight .vm  { color: #f8f8f2 !important; }
+.dark .highlight .w   { color: #f8f8f2 !important; }
+/* Generics */
+.dark .highlight .err { border: 1px solid #f92672 !important; }
+.dark .highlight .gd  { color: #f92672 !important; }
+.dark .highlight .gi  { color: #a6e22e !important; }
+.dark .highlight .go  { color: #888888 !important; }
+.dark .highlight .gp  { color: #75715e !important; font-weight: bold; }
+.dark .highlight .gu  { color: #75715e !important; font-weight: bold; }
+.dark .highlight .gt  { color: #f92672 !important; }
+.dark .highlight .gh  { color: #75715e !important; font-weight: bold; }
 
 /* -------------------------------------------------------------------------- */
 /* "API Docs" link badge                                                        */
