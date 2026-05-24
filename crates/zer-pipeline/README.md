@@ -23,11 +23,6 @@ Ties together ingestion, blocking, comparison, scoring, and clustering into a si
 
 ## Usage
 
-```toml
-[dependencies]
-zer = { version = "1.0", features = ["pipeline"] }
-```
-
 ```rust
 use zer::pipeline::{Pipeline, PipelineBuilder, PipelineConfig, LinkMode};
 
@@ -39,6 +34,6 @@ let pipeline = PipelineBuilder::new(schema)
 let report = pipeline.run(ingester).await?;
 ```
 
-## Part of the zer ecosystem
+## License
 
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

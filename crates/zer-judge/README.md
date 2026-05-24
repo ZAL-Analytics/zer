@@ -31,13 +31,6 @@ These are independent from `zer-compute`'s `cuda`/`avx2`/`vulkan` flags.
 
 ## Usage
 
-```toml
-[dependencies]
-zer = { version = "1.0", features = ["judge_cpu"] }
-# or directly:
-zer-judge = { version = "1.0", features = ["judge_cpu"] }
-```
-
 ```rust
 use zer_judge::{spec_from_env, ModelPrecision, backend::JudgeBackend};
 
@@ -50,6 +43,6 @@ use zer_judge::spec::DebertaBaseSpec;
 let spec = DebertaBaseSpec::from_env(ModelPrecision::Base);
 ```
 
-## Part of the zer ecosystem
+## License
 
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

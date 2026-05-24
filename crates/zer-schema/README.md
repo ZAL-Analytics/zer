@@ -16,13 +16,6 @@ This crate handles two concerns: automatically detecting the schema of an incomi
 
 ## Usage
 
-```toml
-[dependencies]
-zer = { version = "1.0" }  # includes zer-schema
-# or directly:
-zer-schema = "0.1"
-```
-
 ```rust
 use zer_schema::{SchemaInferrer, SchemaRegistry};
 
@@ -31,6 +24,6 @@ let registry = SchemaRegistry::open("./model-store")?;
 let mode     = registry.lookup_startup_mode(&schema, &fingerprint)?;
 ```
 
-## Part of the zer ecosystem
+## License
 
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

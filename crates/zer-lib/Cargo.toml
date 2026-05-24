@@ -1,6 +1,6 @@
 [package]
 name        = "zer-lib"
-version     = "1.0.0"
+version     = "1.0.1"
 edition     = "2021"
 description = "Zero-shot entity resolution pipeline for Dutch-centric data, with GPU acceleration and neural judging"
 license     = "Apache-2.0"

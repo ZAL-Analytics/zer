@@ -16,15 +16,6 @@ This crate defines the fundamental building blocks that every other `zer-*` crat
 | `Comparator` / `Scorer` traits | Interfaces implemented by `zer-compare` and `zer-compute` |
 | `ZerError` | Unified error type for the whole ecosystem |
 
-## Usage
+## License
 
-```toml
-[dependencies]
-zer-core = "0.1"
-```
-
-Most users should depend on the [`zer`](https://crates.io/crates/zer) facade crate instead, which re-exports everything needed.
-
-## Part of the zer ecosystem
-
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

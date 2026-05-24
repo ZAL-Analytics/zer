@@ -95,10 +95,11 @@ publish() {
     info "$crate_name published successfully."
 
     # crates.io needs time to index the new version before dependent crates
-    # can resolve it. 60 s is enough in practice; increase if you see
-    # "no matching version" errors on the next crate.
-    warn "Waiting 120 s for crates.io to index $crate_name ..."
-    sleep 120
+    # can resolve it. 600 s is enough in practice; increase if you see
+    # "no matching version" errors on the next crate. Also prevent rate limit errors 
+    # by spacing out the uploads.
+    warn "Waiting 600s for crates.io to index $crate_name ..."
+    sleep 600
 }
 
 # ── Sanity check: ensure the working tree is clean ────────────────────────────

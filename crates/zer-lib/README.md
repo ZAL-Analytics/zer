@@ -4,19 +4,9 @@ Zero-shot entity resolution pipeline for Dutch-centric administrative data, with
 
 `zer-lib` is the top-level facade crate. It re-exports all sub-crates under a single dependency and exposes feature flags to opt into GPU backends and the neural judge.
 
-## Quick start
-
-```toml
-[dependencies]
-# CPU-only, full pipeline (blocking + compare + scoring + clustering)
-zer-lib = { version = "1.0", features = ["pipeline"] }
-
-# With CUDA compute backend
-zer-lib = { version = "1.0", features = ["pipeline", "cuda"] }
-
-# With neural DeBERTa judge (CPU ORT)
-zer-lib = { version = "1.0", features = ["pipeline", "judge_cpu"] }
-```
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## Feature flags
 

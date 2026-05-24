@@ -17,11 +17,6 @@ Provides `trace!`, `trace_cuda!`, and `trace_vulkan!` macros that wrap code bloc
 
 ## Usage
 
-```toml
-[dependencies]
-zer-prof = { version = "1.0", features = ["cuda"] }
-```
-
 ```rust
 zer_prof::init(); // call once in main()
 
@@ -35,6 +30,6 @@ Filter by CUDA regions in Nsight Compute:
 ncu --nvtx --nvtx-include "regex:^CUDA:.*" ./your_binary
 ```
 
-## Part of the zer ecosystem
+## License
 
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

@@ -14,15 +14,6 @@ After the comparison and scoring phase produces a set of match/non-match decisio
 | `ResolutionEvent` | Provenance record: which records were merged, when, and why |
 | `partition_by_band` / `BandedPairs` | LSH-style banded partitioning for large pair sets |
 
-## Usage
+## License
 
-```toml
-[dependencies]
-zer = { version = "1.0" }  # includes zer-cluster
-# or directly:
-zer-cluster = "0.1"
-```
-
-## Part of the zer ecosystem
-
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

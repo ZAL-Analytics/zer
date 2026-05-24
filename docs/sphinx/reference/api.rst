@@ -155,7 +155,7 @@ Versioning
 ----------
 
 The API docs are built from the workspace root. All crates share the
-same ``0.1.0`` version defined in their individual ``Cargo.toml`` files.
+same ``1.0`` version defined in their individual ``Cargo.toml`` files.
 The ``zer-lib`` facade crate re-exports the subset of the API intended for
 downstream consumers, if a type is not re-exported there, treat it as
 an implementation detail subject to change without notice.

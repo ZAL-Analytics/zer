@@ -17,13 +17,6 @@ When no flag is set the crate compiles normally using the scalar fallback from `
 
 ## Usage
 
-```toml
-[dependencies]
-zer = { version = "1.0", features = ["cuda"] }
-# or directly:
-zer-compute = { version = "1.0", features = ["cuda"] }
-```
-
 ```rust
 use std::sync::Arc;
 use zer_compute::{GpuBackend, DeviceComparator, DeviceScorer};
@@ -34,6 +27,6 @@ let comparator = DeviceComparator::new(Arc::clone(&backend), &schema)?;
 let scorer     = DeviceScorer::new(Arc::clone(&backend));
 ```
 
-## Part of the zer ecosystem
+## License
 
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

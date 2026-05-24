@@ -33,8 +33,6 @@ logs/
 
 data/**
 .venv/
-.claude
-.claudeignore
 
 **/__pycache__/
 

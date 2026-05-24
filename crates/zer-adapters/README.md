@@ -13,11 +13,6 @@ Enable only the features you need to keep compile times low.
 
 ## Usage
 
-```toml
-[dependencies]
-zer-adapters = { version = "1.0", features = ["polars"] }
-```
-
 ```rust
 use zer_adapters::PolarsIngest;
 
@@ -27,6 +22,6 @@ let records = df.into_zer_records(&schema)?;
 
 This crate also provides `BenchResultWriter`, `AccuracyMetrics`, and timestamp utilities used by `zer-bench` (internal tooling, not part of the public API).
 
-## Part of the zer ecosystem
+## License
 
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

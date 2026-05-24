@@ -19,15 +19,6 @@ This crate is the CPU implementation of the comparison and scoring pipeline. For
 | `run_em` / `auto_calibrate_thresholds` | EM algorithm for unsupervised m/u parameter estimation |
 | `LevelThresholds` | Discretises continuous similarity scores into comparison levels |
 
-## Usage
+## License
 
-```toml
-[dependencies]
-zer = { version = "1.0" }  # includes zer-compare
-# or directly:
-zer-compare = "0.1"
-```
-
-## Part of the zer ecosystem
-
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

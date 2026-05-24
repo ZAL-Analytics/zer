@@ -24,15 +24,6 @@ Blocking drastically reduces the number of record pairs that need to be compared
 | Transliterated | ASCII transliteration of accented Dutch characters |
 | Vehicle | Licence plate normalisation for ANPR data |
 
-## Usage
+## License
 
-```toml
-[dependencies]
-zer = { version = "1.0" }  # includes zer-blocking
-# or directly:
-zer-blocking = "0.1"
-```
-
-## Part of the zer ecosystem
-
-[`zer`](https://crates.io/crates/zer) · [GitHub](https://github.com/ZAL-Analytics/zer)
+Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)
