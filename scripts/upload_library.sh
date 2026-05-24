@@ -7,14 +7,23 @@
 #   - All changes committed (cargo publish refuses dirty working trees)
 #
 # Usage:
-#   bash scripts/upload_library.sh           # full publish
-#   DRY_RUN=1 bash scripts/upload_library.sh # dry-run only (no upload)
+#   bash scripts/upload_library.sh             # full publish
+#   DRY_RUN=1 bash scripts/upload_library.sh   # dry-run only (no upload)
+#   bash scripts/upload_library.sh --wait 120  # override inter-crate wait (seconds)
 #
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRY_RUN="${DRY_RUN:-0}"
 UPLOAD_LOG="${UPLOAD_LOG:-/tmp/cargo-publish-uploaded.txt}"
+WAIT_TIME="${WAIT_TIME:-600}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -w|--wait) WAIT_TIME="$2"; shift 2 ;;
+        *) echo "Unknown argument: $1" >&2; exit 1 ;;
+    esac
+done
 
 # Create the log file if it doesn't exist yet
 touch "$UPLOAD_LOG"
@@ -98,8 +107,8 @@ publish() {
     # can resolve it. 600 s is enough in practice; increase if you see
     # "no matching version" errors on the next crate. Also prevent rate limit errors 
     # by spacing out the uploads.
-    warn "Waiting 600s for crates.io to index $crate_name ..."
-    sleep 600
+    warn "Waiting ${WAIT_TIME}s for crates.io to index $crate_name ..."
+    sleep "$WAIT_TIME"
 }
 
 # ── Sanity check: ensure the working tree is clean ────────────────────────────
