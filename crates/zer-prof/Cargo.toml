@@ -1,6 +1,6 @@
 [package]
 name        = "zer-prof"
-version     = "1.0.1"
+version     = "1.0.2"
 edition     = "2021"
 description = "Host-side NVTX profiling annotations for zer, trace! and trace_cuda! macros with zero-cost no-op fallback"
 license     = "Apache-2.0"

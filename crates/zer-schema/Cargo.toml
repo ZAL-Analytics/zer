@@ -1,6 +1,6 @@
 [package]
 name        = "zer-schema"
-version     = "1.0.1"
+version     = "1.0.2"
 edition     = "2021"
 description = "Schema inference and Fellegi-Sunter model registry for the zer entity-resolution library"
 license     = "Apache-2.0"

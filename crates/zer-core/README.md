@@ -1,8 +1,12 @@
 # zer-core
 
-Core traits and types for the [zer](https://crates.io/crates/zer) entity-resolution library.
+Core traits and types for the zer entity-resolution library.
 
-This crate defines the fundamental building blocks that every other `zer-*` crate builds on top of. If you are using zer through the top-level `zer` crate you do not need to depend on this directly.
+This crate defines the fundamental building blocks that every other `zer-*` crate builds on top of. If you are using zer through the top-level `zer-lib` crate you do not need to depend on this directly.
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## What it provides
 

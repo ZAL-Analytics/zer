@@ -1,8 +1,12 @@
 # zer-compare
 
-Fellegi-Sunter field comparison, similarity functions, and EM scoring for the [zer](https://crates.io/crates/zer) entity-resolution library.
+Fellegi-Sunter field comparison, similarity functions, and EM scoring for the zer entity-resolution library.
 
 This crate is the CPU implementation of the comparison and scoring pipeline. For GPU-accelerated equivalents see [`zer-compute`](https://crates.io/crates/zer-compute).
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## What it provides
 

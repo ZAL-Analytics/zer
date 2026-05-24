@@ -1,6 +1,10 @@
 # zer-adapters
 
-Type adapters for the [zer](https://crates.io/crates/zer) entity-resolution library, bridging Polars DataFrames and Arrow RecordBatches to `zer-core` Records without a string round-trip.
+Type adapters for the zer entity-resolution library, bridging Polars DataFrames and Arrow RecordBatches to `zer-core` Records without a string round-trip.
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## Feature flags
 

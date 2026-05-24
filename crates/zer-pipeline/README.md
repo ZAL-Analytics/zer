@@ -1,8 +1,12 @@
 # zer-pipeline
 
-End-to-end entity resolution pipeline for the [zer](https://crates.io/crates/zer) library.
+End-to-end entity resolution pipeline for the zer library.
 
 Ties together ingestion, blocking, comparison, scoring, and clustering into a single `Pipeline` type. Supports deduplication (single source), linkage (two sources), and combined link-and-dedupe modes, with optional Tokio-based async progress events.
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## What it provides
 

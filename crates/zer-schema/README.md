@@ -1,8 +1,12 @@
 # zer-schema
 
-Schema inference and Fellegi-Sunter model registry for the [zer](https://crates.io/crates/zer) entity-resolution library.
+Schema inference and Fellegi-Sunter model registry for the zer entity-resolution library.
 
 This crate handles two concerns: automatically detecting the schema of an incoming dataset, and persisting trained Fellegi-Sunter parameters so they can be reused across pipeline runs without re-running EM.
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## What it provides
 

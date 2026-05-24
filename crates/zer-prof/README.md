@@ -1,8 +1,12 @@
 # zer-prof
 
-Host-side NVTX profiling annotations for the [zer](https://crates.io/crates/zer) entity-resolution library.
+Host-side NVTX profiling annotations for the zer entity-resolution library.
 
 Provides `trace!`, `trace_cuda!`, and `trace_vulkan!` macros that wrap code blocks with RAII NVTX ranges visible in **Nsight Systems** (`nsys`). All macros are zero-cost no-ops when no feature flag is enabled.
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## Feature flags
 

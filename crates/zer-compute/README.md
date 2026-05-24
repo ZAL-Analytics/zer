@@ -1,8 +1,12 @@
 # zer-compute
 
-Hardware-accelerated backend for the [zer](https://crates.io/crates/zer) entity-resolution library.
+Hardware-accelerated backend for the zer entity-resolution library.
 
 Provides `DeviceComparator` and `DeviceScorer` as drop-in replacements for the CPU-only counterparts in `zer-compare`. Both implement the same `zer_core` traits, so the rest of the pipeline is fully backend-agnostic.
+
+- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
+- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
+- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
 
 ## Feature flags
 
