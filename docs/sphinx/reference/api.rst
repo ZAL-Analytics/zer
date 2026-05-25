@@ -15,7 +15,7 @@ Crate index
    * - Crate
      - Layer
      - What it contains
-   * - `zer_lib <../api/zer_lib/index.html>`_
+   * - `zer <../api/zer/index.html>`_
      - Facade
      - Re-exports the full public surface: ``Pipeline``, ``Schema``,
        ``Record``, ``FieldKind``, ``FieldValue``, ``LinkMode``,
@@ -64,7 +64,7 @@ Schema and records
 
 .. code-block:: rust
 
-   use zer_lib::{Schema, FieldKind, Record, FieldValue};
+   use zer::{Schema, FieldKind, Record, FieldValue};
 
    // Build a schema
    let schema = Schema::builder()
@@ -121,7 +121,7 @@ Pipeline (high-level)
 
 .. code-block:: rust
 
-   use zer_lib::{Pipeline, LinkMode, PipelineConfig};
+   use zer::{Pipeline, LinkMode, PipelineConfig};
 
    let result = Pipeline::builder()
        .schema(schema)
@@ -149,13 +149,13 @@ local server:
    python -m http.server 8000 --directory docs/sphinx/out/
 
 Then open ``http://localhost:8000`` for the Sphinx docs and
-``http://localhost:8000/api/zer_lib/index.html`` for the rustdoc reference.
+``http://localhost:8000/api/zer/index.html`` for the rustdoc reference.
 
 Versioning
 ----------
 
 The API docs are built from the workspace root. All crates share the
 same ``1.0`` version defined in their individual ``Cargo.toml`` files.
-The ``zer-lib`` facade crate re-exports the subset of the API intended for
+The ``zer`` facade crate re-exports the subset of the API intended for
 downstream consumers, if a type is not re-exported there, treat it as
 an implementation detail subject to change without notice.

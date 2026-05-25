@@ -144,7 +144,7 @@ publish "crates/zer-compute"   # zer-core, zer-compare, zer-prof
 publish "crates/zer-pipeline"  # zer-core, zer-blocking, zer-compare, zer-schema, zer-cluster
 
 # Tier 3, facade, depends on all of the above
-publish "crates/zer-lib"
+publish "crates/zer"
 
 echo ""
 info "All zer crates published!"

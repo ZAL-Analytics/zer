@@ -11,8 +11,8 @@ mod brp_hks_link;
 mod brp_kvk_hks_link_and_dedupe;
 mod brp_sis_link;
 
-use zer_lib::blocking::CustomSchemaCategory;
-use zer_lib::prelude::{BlockerFactory, CompositeBlocker, FieldComparator};
+use zer::blocking::CustomSchemaCategory;
+use zer::prelude::{BlockerFactory, CompositeBlocker, FieldComparator};
 use zer_core::schema::Schema;
 use zer_pipeline::config::PipelineConfig;
 

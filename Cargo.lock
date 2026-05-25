@@ -712,7 +712,7 @@ dependencies = [
 
 [[package]]
 name = "equivalent"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
@@ -3158,8 +3158,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdd20c5420375476fbd4394763288da7eb0cc0b8c11deed431a91562af7335d3"
 
 [[package]]
+name = "zer"
+version = "1.0.3"
+dependencies = [
+ "bincode 2.0.1",
+ "csv",
+ "serde",
+ "serde_json",
+ "tracing",
+ "zer-blocking",
+ "zer-cluster",
+ "zer-compare",
+ "zer-compute",
+ "zer-core",
+ "zer-judge",
+ "zer-pipeline",
+ "zer-schema",
+]
+
+[[package]]
 name = "zer-adapters"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "arrow-array",
  "arrow-schema",
@@ -3171,10 +3190,10 @@ dependencies = [
  "thiserror 2.0.18",
  "zer-core",
 ]
-
+zer
 [[package]]
 name = "zer-bench"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "clap",
@@ -3187,17 +3206,17 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "zer",
  "zer-adapters",
  "zer-core",
  "zer-judge",
- "zer-lib",
  "zer-pipeline",
  "zer-prof",
 ]
 
 [[package]]
 name = "zer-blocking"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "any_ascii",
  "csv",
@@ -3212,7 +3231,7 @@ dependencies = [
 
 [[package]]
 name = "zer-cluster"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "csv",
  "petgraph",
@@ -3227,7 +3246,7 @@ dependencies = [
 
 [[package]]
 name = "zer-compare"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "csv",
  "edit-distance",
@@ -3244,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "zer-compute"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "ash",
  "bytemuck",
@@ -3263,17 +3282,17 @@ dependencies = [
 
 [[package]]
 name = "zer-core"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "ahash",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
-]
+]zer
 
 [[package]]
 name = "zer-judge"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "ndarray",
  "ort",
@@ -3288,27 +3307,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "zer-lib"
-version = "1.0.2"
-dependencies = [
- "bincode 2.0.1",
- "csv",
- "serde",
- "serde_json",
- "tracing",
- "zer-blocking",
- "zer-cluster",
- "zer-compare",
- "zer-compute",
- "zer-core",
- "zer-judge",
- "zer-pipeline",
- "zer-schema",
-]
-
-[[package]]
 name = "zer-pipeline"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "rayon",
  "serde",
@@ -3326,14 +3326,14 @@ dependencies = [
 
 [[package]]
 name = "zer-prof"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "nvtx",
 ]
 
 [[package]]
 name = "zer-schema"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "bincode 1.3.3",
  "csv",
@@ -3349,7 +3349,7 @@ dependencies = [
 
 [[package]]
 name = "zer-test-utils"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "zer-core",
 ]

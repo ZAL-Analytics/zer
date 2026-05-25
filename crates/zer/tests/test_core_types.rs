@@ -1,4 +1,4 @@
-use zer_lib::prelude::*;
+use zer::prelude::*;
 
 // ── serde round-trips ────────────────────────────────────────────────────────
 

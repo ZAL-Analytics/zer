@@ -6,7 +6,7 @@
 //! These functions improve accuracy on full-name BRP/KVK records where
 //! sound-alike variants and transposed street numbers are common error patterns.
 
-use zer_lib::prelude::{
+use zer::prelude::{
     AddressTokenOverlap, FieldComparator, JaroWinklerSimilarity, PhoneticEqualitySimilarity,
     SimilarityFn, StreetNumberEditDistance, TokenOverlapSimilarity,
 };

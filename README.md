@@ -2,7 +2,7 @@
 
 **Zero-shot entity resolution for Dutch-centric data.** Given multiple datasets with records about the same people, vehicles, or organisations,but no shared unique key and noisy data,zer finds which records belong together.
 
-[![crates.io](https://img.shields.io/crates/v/zer-lib.svg)](https://crates.io/crates/zer-lib)
+[![crates.io](https://img.shields.io/crates/v/zer.svg)](https://crates.io/crates/zer)
 [![docs](https://img.shields.io/badge/docs-docs.zal--analytics.ch-blue)](https://docs.zal-analytics.ch/zer)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
@@ -29,7 +29,7 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-zer-lib = { version = "1.0", features = ["pipeline"] }
+zer = { version = "1.0", features = ["pipeline"] }
 ```
 
 ```rust

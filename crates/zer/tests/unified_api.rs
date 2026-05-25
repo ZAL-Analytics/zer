@@ -8,7 +8,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use zer_lib::prelude::*;
+use zer::prelude::*;
 
 // Initialised once per test binary; all auto_detect tests share this backend.
 static BACKEND: OnceLock<Arc<Backend>> = OnceLock::new();

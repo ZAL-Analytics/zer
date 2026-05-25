@@ -23,7 +23,7 @@ use std::time::Instant;
 use clap::Args;
 use sysinfo::{ProcessRefreshKind, RefreshKind, System};
 
-use zer_lib::prelude::*;
+use zer::prelude::*;
 use zer_adapters::time::{fmt_unix_secs, unix_secs_now};
 use zer_judge::{DebertaJudge, DebertaJudgeConfig, JudgeBackend, MiniLmSpec};
 

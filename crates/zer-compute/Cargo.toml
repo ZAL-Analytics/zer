@@ -1,6 +1,6 @@
 [package]
 name        = "zer-compute"
-version     = "1.0.2"
+version     = "1.0.3"
 edition     = "2021"
 description = "Hardware-accelerated backend for zer, pairwise comparison and EM via CUDA, Vulkan, or AVX2"
 license     = "Apache-2.0"

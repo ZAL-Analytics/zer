@@ -1,4 +1,4 @@
-//! `zer-lib`, unified entity resolution library.
+//! `zernified entity resolution library.
 //!
 //! Provides [`Comparator`], [`Scorer`], and a [`Backend`] abstraction that
 //! selects GPU acceleration automatically when compiled with the `cuda` or
@@ -8,7 +8,7 @@
 //! # Quick start
 //!
 //! ```rust,no_run
-//! use zer_lib::prelude::*;
+//! use zer::prelude::*;
 //!
 //! let schema = SchemaBuilder::new()
 //!     .field("naam",  FieldKind::Name)
@@ -80,7 +80,7 @@ enum BackendInner {
 /// same underlying GPU device.
 ///
 /// ```rust,no_run
-/// use zer_lib::prelude::*;
+/// use zer::prelude::*;
 ///
 /// let schema     = SchemaBuilder::new().field("naam", FieldKind::Name).build().unwrap();
 /// let backend    = Backend::auto_detect();

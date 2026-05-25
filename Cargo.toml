@@ -4,7 +4,7 @@ members = [
     "crates/zer-core",
     "crates/zer-blocking",
     "crates/zer-compare",
-    "crates/zer-lib",
+    "crates/zer",
     "crates/zer-schema",
     "crates/zer-compute",
     "crates/zer-prof",

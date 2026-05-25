@@ -1,6 +1,6 @@
 [package]
 name    = "zer-bench"
-version     = "1.0.2"
+version     = "1.0.3"
 edition = "2021"
 publish = false
 
@@ -10,10 +10,10 @@ path = "src/main.rs"
 
 [features]
 default = []
-cpu            = ["zer-lib/cpu"]
-cuda           = ["zer-lib/cuda"]
-avx2           = ["zer-lib/avx2"]
-vulkan         = ["zer-lib/vulkan"]
+cpu            = ["zer/cpu"]
+cuda           = ["zer/cuda"]
+avx2           = ["zer/avx2"]
+vulkan         = ["zer/vulkan"]
 judge_cuda     = ["zer-judge/judge_cuda"]
 judge_tensorrt = ["zer-judge/judge_tensorrt"]
 judge_rocm     = ["zer-judge/judge_rocm"]
@@ -30,7 +30,7 @@ perf-metrics   = []
 collect-pairs  = ["zer-pipeline/collect-pairs"]
 
 [dependencies]
-zer-lib      = { path = "../zer-lib",     features = ["pipeline"] }
+zer          = { path = "../zer",         features = ["pipeline"] }
 zer-core     = { path = "../zer-core" }
 zer-pipeline = { path = "../zer-pipeline" }
 zer-adapters = { path = "../zer-adapters" }

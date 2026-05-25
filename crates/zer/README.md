@@ -1,8 +1,8 @@
-# zer-lib
+# zer
 
 Zero-shot entity resolution pipeline for Dutch-centric administrative data, with GPU acceleration and neural NLI judging.
 
-`zer-lib` is the top-level facade crate. It re-exports all sub-crates under a single dependency and exposes feature flags to opt into GPU backends and the neural judge.
+`zer` is the top-level facade crate. It re-exports all sub-crates under a single dependency and exposes feature flags to opt into GPU backends and the neural judge.
 
 - **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
 - **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)

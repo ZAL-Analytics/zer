@@ -52,7 +52,7 @@ use std::time::Instant;
 use clap::Args;
 use tempfile::TempDir;
 
-use zer_lib::prelude::*;
+use zer::prelude::*;
 use zer_core::field_mapping::FieldMapping;
 
 use super::scenarios::{ALL_SCENARIOS, find_scenario, find_scenario_by_preset, datasets_for_scenario};
