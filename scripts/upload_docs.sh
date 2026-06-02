@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sync docs/sphinx/out/ to the vimexx server.
-# Usage: bash scripts/upload_docs.sh [--dry-run]
+# Usage: bash scripts/upload_docs.sh [--dry-run] [--sync-res]
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,10 +9,13 @@ REMOTE_HOST="vimexx"
 REMOTE_PATH="/home/u214998p479997/domains/zal-analytics.ch/public_html/docs/zer/"
 
 DRY_RUN=""
-if [[ "${1:-}" == "--dry-run" ]]; then
-    DRY_RUN="--dry-run"
-    echo "==> Dry run, no files will be transferred"
-fi
+EXCLUDE_RES="--exclude='res/'"
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run)  DRY_RUN="--dry-run"; echo "==> Dry run, no files will be transferred" ;;
+        --sync-res) EXCLUDE_RES=""; echo "==> Including res/ in sync" ;;
+    esac
+done
 
 # Verify local output exists
 if [[ ! -d "$LOCAL_OUT" ]]; then
@@ -32,7 +35,7 @@ rsync \
     --archive \
     --compress \
     --delete \
-    --exclude='res/' \
+    ${EXCLUDE_RES} \
     --human-readable \
     --progress \
     ${DRY_RUN} \
