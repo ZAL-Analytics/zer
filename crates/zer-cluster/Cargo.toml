@@ -1,6 +1,6 @@
 [package]
 name        = "zer-cluster"
-version     = "1.0.4"
+version     = "1.0.5"
 edition     = "2021"
 description = "Connected-components clustering and entity storage for the zer entity-resolution library"
 license     = "Apache-2.0"

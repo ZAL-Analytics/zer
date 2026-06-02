@@ -1,6 +1,6 @@
 [package]
 name        = "zer-compare"
-version     = "1.0.4"
+version     = "1.0.5"
 edition     = "2021"
 description = "Fellegi-Sunter field comparison, similarity functions, and EM scoring for zer"
 license     = "Apache-2.0"

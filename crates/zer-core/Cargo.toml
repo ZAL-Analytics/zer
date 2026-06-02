@@ -1,6 +1,6 @@
 [package]
 name        = "zer-core"
-version     = "1.0.4"
+version     = "1.0.5"
 edition     = "2021"
 description = "Core traits and types for the zer entity-resolution library"
 license     = "Apache-2.0"
