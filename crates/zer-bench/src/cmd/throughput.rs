@@ -27,7 +27,7 @@ use zer::prelude::*;
 use zer_adapters::time::{fmt_unix_secs, unix_secs_now};
 use zer_judge::{DebertaJudge, DebertaJudgeConfig, JudgeBackend, MiniLmSpec};
 
-use super::util::{log_trt_cache_status, resolve_out_dir, workspace_root};
+use super::util::{log_trt_cache_status, resolve_out_dir};
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -73,9 +73,8 @@ pub struct ThroughputArgs {
     pub scenario: Option<String>,
 
     /// Output directory for the summary CSV (same schema as accuracy/library).
-    /// When omitted, only stdout metrics are printed.
-    #[arg(long)]
-    pub out: Option<String>,
+    #[arg(long, default_value = "bench_results")]
+    pub out: String,
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -87,8 +86,8 @@ pub fn run(args: ThroughputArgs) -> anyhow::Result<()> {
     }
 
     let path = args.dataset.clone()
-        .unwrap_or_else(|| workspace_root()
-            .join("data/benchmarks/bench_dedup/source.csv")
+        .unwrap_or_else(|| super::util::bench_data_root()
+            .join("benchmarks/bench_dedup/source.csv")
             .to_string_lossy()
             .into_owned());
     let label = args.scenario.as_deref()
@@ -221,7 +220,7 @@ fn run_scenario(records: Vec<Record>, schema: Schema, blocker: CompositeBlocker,
         run_scale_comparison(&records, &pairs, &schema, &backend, args.em_iter);
     } else {
         let metrics = run_pipeline_timed(&backend, &records, &pairs, &schema, args.em_iter, block_ms, judge.as_ref());
-        print_metrics(label, &records, &pairs, &backend, &metrics, args.out.as_deref(), args.judge_target.as_deref());
+        print_metrics(label, &records, &pairs, &backend, &metrics, &args.out, args.judge_target.as_deref());
     }
     Ok(())
 }
@@ -241,7 +240,7 @@ fn build_judge(args: &ThroughputArgs, records: &[Record], schema: &Schema) -> an
     let judge_backend = JudgeBackend::from_target(jt);
     let models_base = args.judge_models_dir.as_deref()
         .map(PathBuf::from)
-        .unwrap_or_else(|| judge_backend.resolve_models_dir(std::path::Path::new("models/nli-base")));
+        .unwrap_or_else(|| judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base")));
     let minilm_dir = models_base.join("nli-minilm-onnx");
     let spec = MiniLmSpec::from_dir(&minilm_dir);
 
@@ -354,7 +353,7 @@ fn print_metrics(
     pairs:        &[(usize, usize)],
     backend:      &Backend,
     m:            &PipelineMetrics,
-    out:          Option<&str>,
+    out:          &str,
     judge_target: Option<&str>,
 ) {
     let n = pairs.len();
@@ -381,10 +380,8 @@ fn print_metrics(
     if let Some(mb) = m.rss_after_em_mb      { println!("rss_em_mb\t{mb:.1}"); }
     if let Some(mb) = m.rss_after_score_mb   { println!("rss_score_mb\t{mb:.1}"); }
 
-    if let Some(dir) = out {
-        if let Err(e) = write_summary(label, records.len(), pairs.len(), backend.name(), m, dir, judge_target) {
-            eprintln!("warning: failed to write summary CSV: {e}");
-        }
+    if let Err(e) = write_summary(label, records.len(), pairs.len(), backend.name(), m, out, judge_target) {
+        eprintln!("warning: failed to write summary CSV: {e}");
     }
 }
 

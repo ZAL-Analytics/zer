@@ -94,22 +94,17 @@ fn sim_schema() -> zer_core::schema::Schema {
 
 // ── CSV loaders ───────────────────────────────────────────────────────────────
 
-const BRP_Q1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q1/brp_persons.csv"
-);
+fn brp_q1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+}
+fn brp_q2_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+}
+fn sim_snap1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+}
 
-const BRP_Q2_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q2/brp_persons.csv"
-);
-
-const SIM_SNAP1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/sim/sim_subscribers.csv"
-);
-
-fn load_brp_records(path: &str) -> Vec<Record> {
+fn load_brp_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
     let mut rdr =
         csv::Reader::from_path(path).expect("BRP CSV not found, run data generator first");
     let headers = rdr.headers().unwrap().clone();
@@ -165,7 +160,7 @@ fn load_brp_records(path: &str) -> Vec<Record> {
     records
 }
 
-fn load_sim_records(path: &str) -> Vec<Record> {
+fn load_sim_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
     let mut rdr =
         csv::Reader::from_path(path).expect("SIM CSV not found, run data generator first");
     let headers = rdr.headers().unwrap().clone();
@@ -254,8 +249,8 @@ fn make_artifact(
 /// BRP Q1 artifact → look up with BRP Q2 → WarmLoad (identical schema hash).
 #[test]
 fn brp_q1_to_q2_is_warm_load() {
-    let q1_records = load_brp_records(BRP_Q1_CSV);
-    let q2_records = load_brp_records(BRP_Q2_CSV);
+    let q1_records = load_brp_records(brp_q1_csv());
+    let q2_records = load_brp_records(brp_q2_csv());
 
     assert!(!q1_records.is_empty(), "Q1 records must not be empty");
     assert!(!q2_records.is_empty(), "Q2 records must not be empty");
@@ -285,7 +280,7 @@ fn brp_q1_to_q2_is_warm_load() {
 /// BRP Q1 artifact → look up with extended schema (verblijfstitel added) → WarmStart.
 #[test]
 fn brp_extended_schema_is_warm_start() {
-    let q1_records = load_brp_records(BRP_Q1_CSV);
+    let q1_records = load_brp_records(brp_q1_csv());
 
     let base_schema = brp_schema_base();
     let extended_schema = brp_schema_extended();
@@ -317,7 +312,7 @@ fn brp_extended_schema_is_warm_start() {
 /// BRP artifact → look up with SIM subscriber schema → ColdStart.
 #[test]
 fn sim_schema_against_brp_artifact_is_cold_start() {
-    let q1_records = load_brp_records(BRP_Q1_CSV);
+    let q1_records = load_brp_records(brp_q1_csv());
 
     let brp_schema = brp_schema_base();
     let fp_brp = SchemaFingerprint::from_sample(&brp_schema, &q1_records);
@@ -341,8 +336,8 @@ fn sim_schema_against_brp_artifact_is_cold_start() {
 /// When both BRP and SIM artifacts are stored, a SIM-like query should match SIM.
 #[test]
 fn nearest_neighbour_picks_sim_over_brp_for_sim_query() {
-    let q1_records = load_brp_records(BRP_Q1_CSV);
-    let sim_records = load_sim_records(SIM_SNAP1_CSV);
+    let q1_records = load_brp_records(brp_q1_csv());
+    let sim_records = load_sim_records(sim_snap1_csv());
 
     let brp_schema = brp_schema_base();
     let sim_schema = sim_schema();
@@ -373,7 +368,7 @@ fn nearest_neighbour_picks_sim_over_brp_for_sim_query() {
 /// Artifact roundtrip: saved artifact byte-for-byte matches the loaded one.
 #[test]
 fn artifact_roundtrip_through_registry() {
-    let q1_records = load_brp_records(BRP_Q1_CSV);
+    let q1_records = load_brp_records(brp_q1_csv());
     let schema = brp_schema_base();
     let fingerprint = SchemaFingerprint::from_sample(&schema, &q1_records);
     let original = make_artifact(fingerprint.clone(), schema.len(), "roundtrip_test");
@@ -397,8 +392,8 @@ fn artifact_roundtrip_through_registry() {
 /// `list_all` returns one entry per saved artifact.
 #[test]
 fn list_all_reflects_all_saved_artifacts() {
-    let brp_records = load_brp_records(BRP_Q1_CSV);
-    let sim_records = load_sim_records(SIM_SNAP1_CSV);
+    let brp_records = load_brp_records(brp_q1_csv());
+    let sim_records = load_sim_records(sim_snap1_csv());
 
     let dir = tempfile::tempdir().unwrap();
     let registry = SchemaRegistry::open(&dir.path().join("model.zsm")).unwrap();
@@ -436,7 +431,7 @@ fn registry_persists_across_reopen() {
     let dir = tempfile::tempdir().unwrap();
     let zsm = dir.path().join("model.zsm");
     let schema = brp_schema_base();
-    let records = load_brp_records(BRP_Q1_CSV);
+    let records = load_brp_records(brp_q1_csv());
     let fp = SchemaFingerprint::from_sample(&schema, &records);
 
     {

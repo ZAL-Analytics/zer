@@ -9,19 +9,17 @@
 use zer_core::{record::{FieldValue, Record}, schema::FieldKind};
 use zer_schema::infer::SchemaInferrer;
 
-const BRP_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q1/brp_persons.csv"
-);
+fn brp_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+}
+fn sim_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+}
 
-const SIM_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/sim/sim_subscribers.csv"
-);
-
-fn load_csv_sample(path: &str, limit: usize) -> Vec<Record> {
+fn load_csv_sample(path: impl AsRef<std::path::Path>, limit: usize) -> Vec<Record> {
+    let path = path.as_ref();
     let mut rdr = csv::Reader::from_path(path)
-        .unwrap_or_else(|_| panic!("CSV not found: {path}"));
+        .unwrap_or_else(|_| panic!("CSV not found: {}", path.display()));
     let headers = rdr.headers().unwrap().clone();
     let mut records = Vec::new();
     let mut id: u64 = 1;
@@ -48,7 +46,7 @@ fn main() {
     // ── BRP population register ───────────────────────────────────────────────
 
     println!("── BRP Population Register (Q1 sample, 200 records) ──");
-    let brp_records = load_csv_sample(BRP_CSV, 200);
+    let brp_records = load_csv_sample(brp_csv(), 200);
 
     let brp_schema = SchemaInferrer::new()
         .infer(&brp_records)
@@ -89,7 +87,7 @@ fn main() {
     // ── SIM subscriber dataset ────────────────────────────────────────────────
 
     println!("── SIM Subscriber Snapshot (snap1 sample, 200 records) ──");
-    let sim_records = load_csv_sample(SIM_CSV, 200);
+    let sim_records = load_csv_sample(sim_csv(), 200);
 
     let sim_schema = SchemaInferrer::new()
         .infer(&sim_records)

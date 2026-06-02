@@ -46,3 +46,4 @@ gpu-allocator = { version = "0.27", optional = true }
 [dev-dependencies]
 csv                  = "1"
 rand                 = "0.8"
+zer-test-utils       = { path = "../zer-test-utils" }

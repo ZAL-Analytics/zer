@@ -27,14 +27,12 @@ fn shared_backend() -> Arc<DeviceBackend> {
 
 // ── Data paths ───────────────────────────────────────────────────────────────
 
-const BRP_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/brp/brp_persons.csv"
-);
-const BRP_GT_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/brp/ground_truth_pairs.csv"
-);
+fn brp_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/brp/brp_persons.csv")
+}
+fn brp_gt_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/brp/ground_truth_pairs.csv")
+}
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 
@@ -57,7 +55,7 @@ fn brp_schema() -> Schema {
 // ── Loaders ───────────────────────────────────────────────────────────────────
 
 fn load_brp_records() -> HashMap<String, Record> {
-    let mut rdr = csv::Reader::from_path(BRP_CSV)
+    let mut rdr = csv::Reader::from_path(brp_csv())
         .expect("BRP CSV not found, run data generator first");
     let headers = rdr.headers().unwrap().clone();
     let col     = |name: &str| headers.iter().position(|h| h == name).unwrap_or(usize::MAX);
@@ -108,7 +106,7 @@ fn load_brp_records() -> HashMap<String, Record> {
 }
 
 fn load_true_pairs(records: &HashMap<String, Record>) -> Vec<(RecordId, RecordId)> {
-    let mut rdr = csv::Reader::from_path(BRP_GT_CSV)
+    let mut rdr = csv::Reader::from_path(brp_gt_csv())
         .expect("BRP ground truth CSV not found");
     let mut pairs = vec![];
 

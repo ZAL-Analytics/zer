@@ -20,15 +20,12 @@ use zer_schema::{
     registry::{SchemaRegistry, StartupMode},
 };
 
-const BRP_Q1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q1/brp_persons.csv"
-);
-
-const BRP_Q2_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q2/brp_persons.csv"
-);
+fn brp_q1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+}
+fn brp_q2_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+}
 
 const REGISTRY_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -74,9 +71,10 @@ fn brp_q2_schema() -> zer_core::schema::Schema {
         .unwrap()
 }
 
-fn load_records(path: &str) -> Vec<Record> {
+fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
+    let path = path.as_ref();
     let mut rdr = csv::Reader::from_path(path)
-        .unwrap_or_else(|_| panic!("CSV not found: {path}"));
+        .unwrap_or_else(|_| panic!("CSV not found: {}", path.display()));
     let headers = rdr.headers().unwrap().clone();
     let mut records = Vec::new();
     let mut id: u64 = 1;
@@ -128,7 +126,7 @@ fn main() {
     // ── Step 2: BRP Q1 → WarmLoad (exact match) ──────────────────────────────
 
     println!("\nLoading BRP Q1 data for fingerprint…");
-    let q1_records = load_records(BRP_Q1_CSV);
+    let q1_records = load_records(brp_q1_csv());
     let q1_schema  = brp_q1_schema();
     let q1_fp      = SchemaFingerprint::from_sample(&q1_schema, &q1_records);
 
@@ -149,7 +147,7 @@ fn main() {
     // ── Step 3: BRP Q2 → WarmStart (one extra field: verblijfstitel) ─────────
 
     println!("\nLoading BRP Q2 data for fingerprint…");
-    let q2_records = load_records(BRP_Q2_CSV);
+    let q2_records = load_records(brp_q2_csv());
     let q2_schema  = brp_q2_schema();
     let q2_fp      = SchemaFingerprint::from_sample(&q2_schema, &q2_records);
 

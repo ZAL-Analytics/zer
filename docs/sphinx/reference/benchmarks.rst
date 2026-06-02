@@ -302,27 +302,156 @@ after accounting for the fixed blocking and comparison costs.
 Run the benchmarks
 -------------------
 
-.. code-block:: bash
+``zer-bench`` is the unified benchmark harness.  It can be installed as a
+standalone CLI tool or run directly from a repository clone.
 
-   # Accuracy benchmarks (all scenarios, all libraries)
-   cargo run -p zer-bench -- accuracy
-
-   # Throughput,CPU backend
-   cargo run -p zer-bench -- throughput
-
-   # Throughput,AVX2 backend
-   cargo run -p zer-bench --features avx2 -- throughput
-
-   # Throughput,CUDA backend
-   cargo run -p zer-bench --features cuda -- throughput
-
-   # Throughput,Vulkan backend
-   cargo run -p zer-bench --features vulkan -- throughput
-
-The Python Splink comparison benchmarks are in ``benchmarks/splink/``:
+Install
+~~~~~~~
 
 .. code-block:: bash
 
-   cd benchmarks/splink
-   pip install -r ../../docs/sphinx/requirements.txt
-   python strategies/brp_link.py
+   # Install from crates.io (CPU backend, no extra toolchain required)
+   cargo install zer-bench
+
+   # With a specific compute backend
+   cargo install zer-bench --features avx2
+   cargo install zer-bench --features cuda     # requires CUDA Toolkit 13.1+
+   cargo install zer-bench --features vulkan   # requires Vulkan 1.3 driver
+
+   # With a neural judge execution provider
+   cargo install zer-bench --features judge_cuda      # NVIDIA CUDA ORT provider
+   cargo install zer-bench --features judge_tensorrt  # TensorRT FP16 (requires TensorRT 8.0+)
+   cargo install zer-bench --features judge_rocm      # AMD ROCm ORT provider
+   cargo install zer-bench --features judge_directml  # Windows DirectML ORT provider
+   cargo install zer-bench --features judge_openvino  # Intel OpenVINO ORT provider
+
+   # Combine compute backend and judge provider
+   cargo install zer-bench --features "cuda,judge_tensorrt"
+
+Neural judge targets
+~~~~~~~~~~~~~~~~~~~~
+
+Pass ``--judge-target`` to enable the neural judge and select its ONNX Runtime
+execution provider.  The chosen target must match a ``judge_*`` feature compiled
+into the binary.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 25 55
+
+   * - ``--judge-target``
+     - Required feature
+     - Notes
+   * - ``cpu``
+     - *(none)*
+     - Default when ``--judge-target`` is omitted; always available
+   * - ``cuda``
+     - ``judge_cuda``
+     - NVIDIA GPU via CUDA ORT provider
+   * - ``tensorrt``
+     - ``judge_tensorrt``
+     - NVIDIA TensorRT FP16; caches engine on first run; requires TensorRT 8.0+
+   * - ``rocm``
+     - ``judge_rocm``
+     - AMD GPU via ROCm ORT provider
+   * - ``directml``
+     - ``judge_directml``
+     - Windows DirectML (any DirectX 12 GPU)
+   * - ``openvino``
+     - ``judge_openvino``
+     - Intel hardware via OpenVINO ORT provider
+
+Datasets
+~~~~~~~~
+
+Download the benchmark datasets from HuggingFace and set the
+``ZER_DATASET_DIR`` environment variable so ``zer-bench`` can find them:
+
+.. code-block:: bash
+
+   hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
+       --repo-type dataset --local-dir ~/datasets/zer
+   export ZER_DATASET_DIR=~/datasets/zer
+
+For runs that use the neural judge (``--judge``), also download model files:
+
+.. code-block:: bash
+
+   hf download arsalan-anwari/zjudge --local-dir ~/.cache/zer/models
+   # ZER_MODEL_DIR defaults to ~/.cache/zer/models
+
+Environment variables
+~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 30 45
+
+   * - Variable
+     - Default
+     - Description
+   * - ``ZER_DATASET_DIR``
+     - ``<workspace>/data``
+     - Root directory of benchmark datasets downloaded from HuggingFace.
+       Dataset paths are resolved as ``$ZER_DATASET_DIR/benchmarks/<scenario>/...``.
+       When unset, falls back to ``<workspace>/data`` (repository clone layout).
+   * - ``ZER_MODEL_DIR``
+     - ``~/.cache/zer/models``
+     - Directory containing neural judge ONNX model files.
+       Mirrors the layout from ``arsalan-anwari/zjudge`` on HuggingFace.
+   * - ``ZER_EXTERNAL_BENCHMARKS_DIR``
+     - ``<workspace>/benchmarks``
+     - Root directory containing external library benchmark scripts.
+       Scripts are resolved as ``$ZER_EXTERNAL_BENCHMARKS_DIR/<library>/<mode>/run.py``
+       (or ``run.R``).  Set this when running ``zer-bench library`` outside of a
+       zer repository clone.  Can also be passed as ``--external-benchmarks-dir``.
+
+Subcommands
+~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Subcommand
+     - Description
+   * - ``throughput``
+     - Raw compare/EM/score throughput on a single dataset
+   * - ``accuracy``
+     - Precision, recall, F1, and PR-AUC against labelled ground truth
+   * - ``library``
+     - Run a competitor library script and capture its summary CSV
+   * - ``library-all``
+     - Run all configured competitor libraries for a given mode and dataset
+   * - ``compare``
+     - Read multiple CSV summaries and print a side-by-side comparison table
+
+Quick examples
+~~~~~~~~~~~~~~
+
+Direct ``zer-bench`` invocations (use after ``cargo install zer-bench``):
+
+.. code-block:: bash
+
+   # List available scenarios
+   zer-bench accuracy --list-scenarios
+
+   # Accuracy on a scenario
+   zer-bench accuracy --scenario brp/dedupe --out bench_results/
+
+   # Accuracy with neural judge (replace cuda with tensorrt / rocm / directml / openvino)
+   zer-bench accuracy --scenario brp/dedupe --judge-target cuda --out bench_results/
+
+   # Throughput (note: only dedupe scenarios are supported for throughput)
+   zer-bench throughput --scenario brp/dedupe --out bench_results/
+   zer-bench throughput --scenario brp/dedupe --target cuda --out bench_results/
+
+   # zer vs Splink: run both to the same --out dir, then compare
+   zer-bench accuracy --scenario brp/dedupe --out bench_results/
+   zer-bench library  --library splink --scenario brp/dedupe --out bench_results/
+   zer-bench compare  --results bench_results/
+
+   # Library scripts outside a zer repo clone
+   zer-bench library --library splink --scenario brp/dedupe \
+       --external-benchmarks-dir /path/to/my/benchmarks --out bench_results/
+

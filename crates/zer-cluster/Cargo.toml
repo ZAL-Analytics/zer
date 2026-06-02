@@ -19,5 +19,6 @@ thiserror  = { workspace = true }
 tracing    = { workspace = true }
 
 [dev-dependencies]
-csv      = "1"
-tempfile = "3"
+csv             = "1"
+tempfile        = "3"
+zer-test-utils  = { path = "../zer-test-utils" }

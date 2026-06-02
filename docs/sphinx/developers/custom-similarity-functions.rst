@@ -190,8 +190,8 @@ ground truth before and after adding the function:
    println!("baseline entities: {}", report_baseline.entities_created);
    println!("custom   entities: {}", report_custom.entities_created);
 
-If the custom function is not improving results — precision or recall does not
-improve on your labelled sample — the function likely returns similar values
+If the custom function is not improving results, precision or recall does not
+improve on your labelled sample, the function likely returns similar values
 for both matches and non-matches. Consider a more selective metric or check
 whether the field has low coverage in your data.
 

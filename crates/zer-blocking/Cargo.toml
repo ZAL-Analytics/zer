@@ -19,5 +19,6 @@ serde                = { workspace = true }
 thiserror            = { workspace = true }
 
 [dev-dependencies]
-csv        = "1"
-serde_json = "1"
+csv             = "1"
+serde_json      = "1"
+zer-test-utils  = { path = "../zer-test-utils" }

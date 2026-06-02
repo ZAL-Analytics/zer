@@ -3227,6 +3227,7 @@ dependencies = [
  "thiserror 2.0.18",
  "unicode-normalization",
  "zer-core",
+ "zer-test-utils",
 ]
 
 [[package]]
@@ -3242,6 +3243,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "zer-core",
+ "zer-test-utils",
 ]
 
 [[package]]
@@ -3259,6 +3261,7 @@ dependencies = [
  "tracing",
  "unicode-normalization",
  "zer-core",
+ "zer-test-utils",
 ]
 
 [[package]]
@@ -3278,6 +3281,7 @@ dependencies = [
  "zer-compare",
  "zer-core",
  "zer-prof",
+ "zer-test-utils",
 ]
 
 [[package]]
@@ -3345,6 +3349,7 @@ dependencies = [
  "toml",
  "tracing",
  "zer-core",
+ "zer-test-utils",
 ]
 
 [[package]]

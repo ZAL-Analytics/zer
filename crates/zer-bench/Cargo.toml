@@ -1,8 +1,13 @@
 [package]
-name    = "zer-bench"
+name        = "zer-bench"
 version     = "1.0.4"
-edition = "2021"
-publish = false
+edition     = "2021"
+description = "Benchmark harness for zer: throughput, accuracy, and competitor-library comparison"
+license     = "Apache-2.0"
+repository  = "https://github.com/ZAL-Analytics/zer"
+keywords    = ["entity-resolution", "benchmark", "record-linkage", "deduplication"]
+categories  = ["command-line-utilities", "algorithms"]
+readme      = "README.md"
 
 [[bin]]
 name = "zer-bench"
@@ -30,15 +35,15 @@ perf-metrics   = []
 collect-pairs  = ["zer-pipeline/collect-pairs"]
 
 [dependencies]
-zer          = { path = "../zer",         features = ["pipeline"] }
-zer-core     = { path = "../zer-core" }
-zer-pipeline = { path = "../zer-pipeline" }
-zer-adapters = { path = "../zer-adapters" }
-zer-prof     = { path = "../zer-prof" }
-zer-judge    = { path = "../zer-judge" }
+zer          = { path = "../zer",          version = "1.0", features = ["pipeline"] }
+zer-core     = { path = "../zer-core",     version = "1.0" }
+zer-pipeline = { path = "../zer-pipeline", version = "1.0" }
+zer-adapters = { path = "../zer-adapters", version = "1.0" }
+zer-prof     = { path = "../zer-prof",     version = "1.0" }
+zer-judge    = { path = "../zer-judge",    version = "1.0" }
 
 anyhow              = "1"
-clap                = { version = "4", features = ["derive"] }
+clap                = { version = "4", features = ["derive", "env"] }
 serde               = { version = "1", features = ["derive"] }
 serde_json          = "1"
 toml                = { workspace = true }

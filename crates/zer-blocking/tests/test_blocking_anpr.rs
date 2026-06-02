@@ -22,14 +22,12 @@ use zer_core::{
     traits::Blocker,
 };
 
-const ANPR_PASSAGES: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/anpr/anpr_passages.csv"
-);
-const ANPR_GROUND_TRUTH: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/anpr/ground_truth_vehicle_pairs.csv"
-);
+fn anpr_passages() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/anpr/anpr_passages.csv")
+}
+fn anpr_ground_truth() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/anpr/ground_truth_vehicle_pairs.csv")
+}
 
 fn anpr_schema() -> Schema {
     SchemaBuilder::new()
@@ -54,7 +52,7 @@ fn load_passages() -> (
     HashMap<String, RecordId>,
     HashMap<String, Vec<RecordId>>,
 ) {
-    let mut rdr       = Reader::from_path(ANPR_PASSAGES).expect("ANPR passages CSV not found");
+    let mut rdr       = Reader::from_path(anpr_passages()).expect("ANPR passages CSV not found");
     let mut records   = vec![];
     let mut pid_map:   HashMap<String, RecordId>     = HashMap::new();
     let mut plate_map: HashMap<String, Vec<RecordId>> = HashMap::new();
@@ -108,7 +106,7 @@ fn blocking_recall_anpr_ocr_confusion() {
         blocker.index_record(record, &schema, &mut idx);
     }
 
-    let mut rdr   = Reader::from_path(ANPR_GROUND_TRUTH).expect("ANPR ground truth CSV not found");
+    let mut rdr   = Reader::from_path(anpr_ground_truth()).expect("ANPR ground truth CSV not found");
     let mut total = 0usize;
     let mut found = 0usize;
 

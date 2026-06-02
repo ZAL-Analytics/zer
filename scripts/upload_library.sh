@@ -146,6 +146,9 @@ publish "crates/zer-pipeline"  # zer-core, zer-blocking, zer-compare, zer-schema
 # Tier 3, facade, depends on all of the above
 publish "crates/zer"
 
+# Tier 4, depends on tier-3 (zer facade)
+publish "crates/zer-bench"
+
 echo ""
 info "All zer crates published!"
 info "View on crates.io: https://crates.io/search?q=zer-"

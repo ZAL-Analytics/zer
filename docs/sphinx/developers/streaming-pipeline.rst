@@ -115,8 +115,8 @@ early life of a streaming pipeline the parameters are imprecise because the
 model has seen few records; they stabilise automatically as more batches
 arrive. No manual intervention is needed.
 
-To discard accumulated parameters and force a fresh estimation — for example
-after a large schema change — delete the ``.zsm`` file before the next
+To discard accumulated parameters and force a fresh estimation, for example
+after a large schema change, delete the ``.zsm`` file before the next
 ``run_batch`` call. The model will re-initialise from the new batch and
 converge again from scratch.
 

@@ -23,14 +23,12 @@ use zer_core::{
     traits::Blocker,
 };
 
-const SIS_PERSONS: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/sis/sis_persons.csv"
-);
-const SIS_GROUND_TRUTH: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/sis/ground_truth_alias_pairs.csv"
-);
+fn sis_persons() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/sis/sis_persons.csv")
+}
+fn sis_ground_truth() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/sis/ground_truth_alias_pairs.csv")
+}
 
 fn sis_schema() -> Schema {
     SchemaBuilder::new()
@@ -44,7 +42,7 @@ fn sis_schema() -> Schema {
 }
 
 fn load_persons() -> (Vec<Record>, HashMap<String, RecordId>) {
-    let mut rdr      = Reader::from_path(SIS_PERSONS).expect("SIS persons CSV not found");
+    let mut rdr      = Reader::from_path(sis_persons()).expect("SIS persons CSV not found");
     let mut records  = vec![];
     let mut id_map: HashMap<String, RecordId> = HashMap::new();
     let mut next_id: u64 = 1;
@@ -76,7 +74,7 @@ fn load_persons() -> (Vec<Record>, HashMap<String, RecordId>) {
 }
 
 fn load_true_pairs(id_map: &HashMap<String, RecordId>) -> Vec<(RecordId, RecordId)> {
-    let mut rdr  = Reader::from_path(SIS_GROUND_TRUTH).expect("SIS ground truth CSV not found");
+    let mut rdr  = Reader::from_path(sis_ground_truth()).expect("SIS ground truth CSV not found");
     let mut pairs = vec![];
 
     for result in rdr.records() {

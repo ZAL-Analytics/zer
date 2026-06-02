@@ -266,6 +266,8 @@ Environment variables
    * - ``ZER_MODEL_DIR``
      - Override the directory searched for ONNX model files and tokenizer
        configs. See `Downloading models`_ above.
+   * - ``ZER_DATASET_DIR``
+     - Override the directory searched for benchmark datasets. See `Downloading datasets`_ above.
    * - ``ZER_NAME_HEURISTICS``
      - Path to a TOML file overriding the embedded name-field heuristics used
        by ``SchemaInferrer``. Falls back to the built-in

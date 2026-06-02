@@ -12,24 +12,20 @@ use zer_schema::{
     similarity::{fingerprint_distance, WARM_START_THRESHOLD},
 };
 
-const BRP_Q1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q1/brp_persons.csv"
-);
+fn brp_q1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+}
+fn brp_q2_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+}
+fn sim_snap1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+}
 
-const BRP_Q2_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q2/brp_persons.csv"
-);
-
-const SIM_SNAP1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/sim/sim_subscribers.csv"
-);
-
-fn load_records(path: &str) -> Vec<Record> {
+fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
+    let path = path.as_ref();
     let mut rdr = csv::Reader::from_path(path)
-        .unwrap_or_else(|_| panic!("CSV not found at {path}"));
+        .unwrap_or_else(|_| panic!("CSV not found at {}", path.display()));
     let headers = rdr.headers().unwrap().clone();
     let mut records = Vec::new();
     let mut id: u64 = 1;
@@ -96,8 +92,8 @@ fn sim_schema() -> zer_core::schema::Schema {
 
 #[test]
 fn brp_q1_q2_same_schema_hash() {
-    let q1 = load_records(BRP_Q1_CSV);
-    let q2 = load_records(BRP_Q2_CSV);
+    let q1 = load_records(brp_q1_csv());
+    let q2 = load_records(brp_q2_csv());
     let schema = brp_schema();
 
     let fp1 = SchemaFingerprint::from_sample(&schema, &q1);
@@ -112,8 +108,8 @@ fn brp_q1_q2_same_schema_hash() {
 
 #[test]
 fn brp_vs_sim_distance_exceeds_warm_start_threshold() {
-    let brp_records = load_records(BRP_Q1_CSV);
-    let sim_records = load_records(SIM_SNAP1_CSV);
+    let brp_records = load_records(brp_q1_csv());
+    let sim_records = load_records(sim_snap1_csv());
 
     let fp_brp = SchemaFingerprint::from_sample(&brp_schema(), &brp_records);
     let fp_sim = SchemaFingerprint::from_sample(&sim_schema(), &sim_records);
@@ -127,7 +123,7 @@ fn brp_vs_sim_distance_exceeds_warm_start_threshold() {
 
 #[test]
 fn from_sample_populates_stats_for_brp() {
-    let records = load_records(BRP_Q1_CSV);
+    let records = load_records(brp_q1_csv());
     let schema = brp_schema();
     let fp = SchemaFingerprint::from_sample(&schema, &records);
 
@@ -151,7 +147,7 @@ fn from_sample_populates_stats_for_brp() {
 
 #[test]
 fn from_sample_top_k_is_ordered_by_frequency() {
-    let records = load_records(BRP_Q1_CSV);
+    let records = load_records(brp_q1_csv());
     let schema = brp_schema();
     let fp = SchemaFingerprint::from_sample(&schema, &records);
 
@@ -166,7 +162,7 @@ fn from_sample_top_k_is_ordered_by_frequency() {
 
 #[test]
 fn brp_extended_schema_warm_start_distance() {
-    let records = load_records(BRP_Q1_CSV);
+    let records = load_records(brp_q1_csv());
     let base = brp_schema();
 
     let extended = SchemaBuilder::new()

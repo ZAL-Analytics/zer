@@ -13,14 +13,12 @@ use zer_core::{
     traits::Blocker,
 };
 
-const KVK_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/kvk/kvk_director_flat.csv"
-);
-const GT_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/kvk/ground_truth_pairs.csv"
-);
+fn kvk_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/kvk/kvk_director_flat.csv")
+}
+fn gt_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/kvk/ground_truth_pairs.csv")
+}
 
 fn kvk_schema() -> Schema {
     SchemaBuilder::new()
@@ -37,7 +35,7 @@ fn kvk_schema() -> Schema {
 }
 
 fn load_kvk_records() -> HashMap<u64, Record> {
-    let mut rdr     = csv::Reader::from_path(KVK_CSV).expect("KvK CSV not found, run data generator first");
+    let mut rdr     = csv::Reader::from_path(kvk_csv()).expect("KvK CSV not found, run data generator first");
     let headers_row = rdr.headers().unwrap().clone();
     let col         = |name: &str| headers_row.iter().position(|h| h == name);
 
@@ -76,7 +74,7 @@ fn load_kvk_records() -> HashMap<u64, Record> {
 }
 
 fn load_true_pairs() -> Vec<(u64, u64)> {
-    let mut rdr = csv::Reader::from_path(GT_CSV).expect("Ground truth CSV not found");
+    let mut rdr = csv::Reader::from_path(gt_csv()).expect("Ground truth CSV not found");
     let mut pairs = vec![];
     for result in rdr.records() {
         let row = result.unwrap();

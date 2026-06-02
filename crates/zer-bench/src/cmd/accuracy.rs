@@ -161,7 +161,7 @@ impl RunParams {
                     names.join(", ")
                 )
             })?;
-            let root = super::util::workspace_root();
+            let root = super::util::bench_data_root();
             let (datasets, sources, gt) = datasets_for_scenario(spec, &root);
             Ok(Self {
                 datasets,
@@ -177,7 +177,7 @@ impl RunParams {
                     "no scenario found for tag {tag:?}; use --list-scenarios to see options"
                 )
             })?;
-            let root = super::util::workspace_root();
+            let root = super::util::bench_data_root();
             let (datasets, sources, gt) = datasets_for_scenario(spec, &root);
             Ok(Self {
                 datasets,
@@ -346,7 +346,7 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
         let judge_backend = JudgeBackend::from_target(judge_target);
         let models_base  = args.judge_models_dir.as_deref()
             .map(PathBuf::from)
-            .unwrap_or_else(|| judge_backend.resolve_models_dir(std::path::Path::new("models/nli-base")));
+            .unwrap_or_else(|| judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base")));
         let minilm_dir   = models_base.join("nli-minilm-onnx");
         let spec         = MiniLmSpec::from_dir(&minilm_dir);
         println!("loading judge  target={judge_target}  path={}", minilm_dir.display());

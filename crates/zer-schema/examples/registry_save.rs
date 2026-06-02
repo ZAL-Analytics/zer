@@ -23,10 +23,9 @@ use zer_schema::{
     registry::SchemaRegistry,
 };
 
-const BRP_Q1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q1/brp_persons.csv"
-);
+fn brp_q1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+}
 
 const REGISTRY_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -52,9 +51,10 @@ fn brp_schema() -> zer_core::schema::Schema {
         .unwrap()
 }
 
-fn load_records(path: &str) -> Vec<Record> {
+fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
+    let path = path.as_ref();
     let mut rdr = csv::Reader::from_path(path)
-        .unwrap_or_else(|_| panic!("CSV not found: {path}"));
+        .unwrap_or_else(|_| panic!("CSV not found: {}", path.display()));
     let headers = rdr.headers().unwrap().clone();
     let mut records = Vec::new();
     let mut id: u64 = 1;
@@ -92,8 +92,9 @@ fn main() {
     println!("Output: {}", registry_path.display());
 
     // Load BRP Q1 data to compute a realistic fingerprint with data statistics.
-    println!("\nLoading BRP Q1 data from: {BRP_Q1_CSV}");
-    let records = load_records(BRP_Q1_CSV);
+    let csv_path = brp_q1_csv();
+    println!("\nLoading BRP Q1 data from: {}", csv_path.display());
+    let records = load_records(&csv_path);
     println!("  Loaded {} records.", records.len());
 
     let schema = brp_schema();

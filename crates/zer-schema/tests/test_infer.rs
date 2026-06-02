@@ -8,21 +8,19 @@ use zer_core::{
 };
 use zer_schema::infer::SchemaInferrer;
 
-const BRP_Q1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/brp_q1/brp_persons.csv"
-);
-
-const SIM_SNAP1_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/sim/sim_subscribers.csv"
-);
+fn brp_q1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+}
+fn sim_snap1_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+}
 
 // ── CSV loader helpers ────────────────────────────────────────────────────────
 
-fn load_csv_as_records(path: &str) -> Vec<Record> {
+fn load_csv_as_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
+    let path = path.as_ref();
     let mut rdr = csv::Reader::from_path(path)
-        .unwrap_or_else(|_| panic!("CSV not found at {path}, run data generator first"));
+        .unwrap_or_else(|_| panic!("CSV not found at {}, run data generator first", path.display()));
     let headers = rdr.headers().unwrap().clone();
 
     let mut records = Vec::new();
@@ -52,7 +50,7 @@ fn load_csv_as_records(path: &str) -> Vec<Record> {
 
 #[test]
 fn infer_brp_name_fields() {
-    let records = load_csv_as_records(BRP_Q1_CSV);
+    let records = load_csv_as_records(brp_q1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
 
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
@@ -63,7 +61,7 @@ fn infer_brp_name_fields() {
 
 #[test]
 fn infer_brp_date_field() {
-    let records = load_csv_as_records(BRP_Q1_CSV);
+    let records = load_csv_as_records(brp_q1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
     assert_eq!(
@@ -75,7 +73,7 @@ fn infer_brp_date_field() {
 
 #[test]
 fn infer_brp_id_field() {
-    let records = load_csv_as_records(BRP_Q1_CSV);
+    let records = load_csv_as_records(brp_q1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
     assert_eq!(kind_of("bsn"), Some(FieldKind::Id), "bsn should be Id");
@@ -83,7 +81,7 @@ fn infer_brp_id_field() {
 
 #[test]
 fn infer_brp_address_fields() {
-    let records = load_csv_as_records(BRP_Q1_CSV);
+    let records = load_csv_as_records(brp_q1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
 
@@ -111,7 +109,7 @@ fn infer_brp_address_fields() {
 
 #[test]
 fn infer_brp_produces_all_columns() {
-    let records = load_csv_as_records(BRP_Q1_CSV);
+    let records = load_csv_as_records(brp_q1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
 
     // BRP Q1 has 14 columns.
@@ -127,7 +125,7 @@ fn infer_brp_produces_all_columns() {
 
 #[test]
 fn infer_sim_phone_field() {
-    let records = load_csv_as_records(SIM_SNAP1_CSV);
+    let records = load_csv_as_records(sim_snap1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
 
@@ -136,7 +134,7 @@ fn infer_sim_phone_field() {
 
 #[test]
 fn infer_sim_id_fields() {
-    let records = load_csv_as_records(SIM_SNAP1_CSV);
+    let records = load_csv_as_records(sim_snap1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
 
@@ -151,7 +149,7 @@ fn infer_sim_id_fields() {
 
 #[test]
 fn infer_sim_date_field() {
-    let records = load_csv_as_records(SIM_SNAP1_CSV);
+    let records = load_csv_as_records(sim_snap1_csv());
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
 
@@ -171,8 +169,7 @@ fn infer_sim_date_field() {
 
 #[test]
 fn override_beats_inference_on_real_data() {
-    let records = load_csv_as_records(BRP_Q1_CSV);
-
+    let records = load_csv_as_records(brp_q1_csv());
     // Force "geboortedatum" to Id even though heuristics would say Date.
     let schema = SchemaInferrer::new()
         .override_field("geboortedatum", FieldKind::Id)

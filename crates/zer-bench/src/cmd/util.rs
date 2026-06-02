@@ -39,6 +39,21 @@ pub fn workspace_root() -> PathBuf {
     }
 }
 
+/// Returns the root directory used to resolve benchmark dataset paths.
+///
+/// Resolution order:
+/// 1. `ZER_DATASET_DIR` environment variable, set this to the local directory
+///    where the HuggingFace benchmark dataset was downloaded (the repo root maps
+///    directly to `benchmarks/...`).
+/// 2. `<workspace_root>/data`, used automatically when running from inside the repo.
+/// 3. `./data` (current directory fallback).
+pub fn bench_data_root() -> PathBuf {
+    if let Ok(dir) = std::env::var("ZER_DATASET_DIR") {
+        return PathBuf::from(dir);
+    }
+    workspace_root().join("data")
+}
+
 /// Resolve an `--out` / `--results` path relative to the workspace root when
 /// the supplied path is relative.  Absolute paths are returned unchanged.
 pub fn resolve_out_dir(path: &str) -> PathBuf {

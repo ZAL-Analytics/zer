@@ -3,6 +3,27 @@
 /// Provides canonical schema builders, record constructors, and field-value
 /// helpers so integration tests don't duplicate 20-line boilerplate.
 
+// ── Dataset path resolution ───────────────────────────────────────────────────
+
+/// Returns the path to a dataset file, honouring `ZER_DATASET_DIR` at runtime.
+///
+/// `manifest_dir` should be `env!("CARGO_MANIFEST_DIR")` from the calling crate.
+/// `relative` is the path within the data directory, without the `data/` prefix
+/// (e.g. `"tests/brp/brp_persons.csv"`).
+///
+/// Resolution order:
+/// 1. `ZER_DATASET_DIR` env var  →  `$ZER_DATASET_DIR/<relative>`
+/// 2. Workspace fallback         →  `<manifest_dir>/../../data/<relative>`
+pub fn dataset_path(manifest_dir: &str, relative: &str) -> std::path::PathBuf {
+    if let Ok(dir) = std::env::var("ZER_DATASET_DIR") {
+        return std::path::PathBuf::from(dir).join(relative);
+    }
+    std::path::PathBuf::from(manifest_dir)
+        .join("../..")
+        .join("data")
+        .join(relative)
+}
+
 use zer_core::{
     record::{FieldValue, Record},
     schema::{FieldKind, Schema, SchemaBuilder},

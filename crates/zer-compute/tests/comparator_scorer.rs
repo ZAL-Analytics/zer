@@ -31,18 +31,15 @@ fn shared_backend() -> Arc<DeviceBackend> {
 
 // ── Paths ────────────────────────────────────────────────────────────────────
 
-const BRP_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/brp/brp_persons.csv"
-);
-const BRP_GT_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/brp/ground_truth_pairs.csv"
-);
-const ANPR_GT_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/anpr/ground_truth_compare_pairs.csv"
-);
+fn brp_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/brp/brp_persons.csv")
+}
+fn brp_gt_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/brp/ground_truth_pairs.csv")
+}
+fn anpr_gt_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/anpr/ground_truth_compare_pairs.csv")
+}
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -71,7 +68,7 @@ fn anpr_schema() -> Schema {
 
 // ── BRP helpers ───────────────────────────────────────────────────────────────
 
-fn load_brp(path: &str) -> HashMap<String, Record> {
+fn load_brp(path: impl AsRef<std::path::Path>) -> HashMap<String, Record> {
     let mut rdr = csv::Reader::from_path(path).expect("BRP CSV missing");
     let headers = rdr.headers().unwrap().clone();
     let col     = |n: &str| headers.iter().position(|h| h == n).unwrap_or(usize::MAX);
@@ -111,7 +108,7 @@ fn load_brp(path: &str) -> HashMap<String, Record> {
 
 fn load_gt_pairs(
     records: &HashMap<String, Record>,
-    gt_path: &str,
+    gt_path: impl AsRef<std::path::Path>,
     col_a:   usize,
     col_b:   usize,
     col_match: usize,
@@ -158,7 +155,7 @@ fn pairs_to_records(
 /// Each row has (passage_id, true_kenteken, ocr_kenteken), create a record
 /// for each and pair them so DeviceComparator can compare the plates.
 fn load_anpr_pairs(_schema: &Schema) -> Vec<(Record, Record)> {
-    let mut rdr = csv::Reader::from_path(ANPR_GT_CSV).expect("ANPR GT CSV missing");
+    let mut rdr = csv::Reader::from_path(anpr_gt_csv()).expect("ANPR GT CSV missing");
     let headers = rdr.headers().unwrap().clone();
     let col     = |n: &str| headers.iter().position(|h| h == n).unwrap_or(usize::MAX);
 
@@ -192,11 +189,11 @@ fn load_anpr_pairs(_schema: &Schema) -> Vec<(Record, Record)> {
 #[test]
 fn brp_full_pipeline_precision_recall() {
     let schema  = brp_schema();
-    let records = load_brp(BRP_CSV);
+    let records = load_brp(brp_csv());
     let id_map: HashMap<RecordId, &Record> =
         records.values().map(|r| (r.id, r)).collect();
 
-    let true_ids   = load_gt_pairs(&records, BRP_GT_CSV, 0, 1, 2);
+    let true_ids   = load_gt_pairs(&records, brp_gt_csv(), 0, 1, 2);
     let nonmatch_ids = nonmatches(&records, true_ids.len());
 
     let match_count = true_ids.len();
@@ -245,11 +242,11 @@ fn brp_full_pipeline_precision_recall() {
 #[test]
 fn batch_chunking_is_result_stable() {
     let schema  = brp_schema();
-    let records = load_brp(BRP_CSV);
+    let records = load_brp(brp_csv());
     let id_map: HashMap<RecordId, &Record> =
         records.values().map(|r| (r.id, r)).collect();
 
-    let true_ids = load_gt_pairs(&records, BRP_GT_CSV, 0, 1, 2);
+    let true_ids = load_gt_pairs(&records, brp_gt_csv(), 0, 1, 2);
 
     let sample: Vec<(Record, Record)> = pairs_to_records(
         &true_ids[..true_ids.len().min(200)],

@@ -138,6 +138,46 @@ Set `ZER_MODEL_DIR` to override the default search path. Full model setup and la
 
 ---
 
+## Benchmarks
+
+`zer-bench` is the standalone benchmark harness. Install it from crates.io:
+
+```bash
+cargo install zer-bench                   # CPU backend
+cargo install zer-bench --features avx2   # x86-64 AVX2 SIMD
+cargo install zer-bench --features cuda   # NVIDIA CUDA (requires CUDA Toolkit 13.1+)
+cargo install zer-bench --features vulkan # Vulkan 1.3 compute
+```
+
+Download the benchmark datasets from HuggingFace and set `ZER_DATASET_DIR`:
+
+```bash
+hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
+    --repo-type dataset --local-dir ~/datasets/zer
+export ZER_DATASET_DIR=~/datasets/zer
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `ZER_DATASET_DIR` | `<workspace>/data` | Root directory for benchmark datasets downloaded from HuggingFace |
+| `ZER_MODEL_DIR` | `~/.cache/zer/models` | Directory containing neural judge ONNX model files |
+| `ZER_EXTERNAL_BENCHMARKS_DIR` | `<workspace>/benchmarks` | Root directory for external library benchmark scripts (`library` subcommand) |
+
+Pass `--judge-target` to enable the neural judge and select its ONNX Runtime execution provider. Each target requires the matching feature flag at install time:
+
+| `--judge-target` | Feature flag | Notes |
+|---|---|---|
+| `cpu` | *(none)* | Default |
+| `cuda` | `judge_cuda` | NVIDIA CUDA |
+| `tensorrt` | `judge_tensorrt` | TensorRT FP16, engine cached after first run |
+| `rocm` | `judge_rocm` | AMD ROCm |
+| `directml` | `judge_directml` | Windows DirectML |
+| `openvino` | `judge_openvino` | Intel OpenVINO |
+
+See the [benchmarks reference](https://docs.zal-analytics.ch/zer/reference/benchmarks.html) for throughput figures, accuracy tables, and full CLI documentation.
+
+---
+
 ## Demos
 
 The demos live in the repository and are not published to crates.io. Clone the repo to run them:

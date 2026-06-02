@@ -1,6 +1,6 @@
 //! `zer-bench library`, run a competitor library benchmark script.
 //!
-//! Discovers the script at `benchmarks/<library>/<mode>/run.<ext>`,
+//! Discovers the script at `<external-benchmarks-dir>/<library>/<mode>/run.<ext>`,
 //! optionally runs `setup.sh` once (using a sentinel file `.setup_done`), then
 //! executes the script with the standardised `--dataset`, `--ground-truth`,
 //! `--out` arguments via `std::process::Command`.
@@ -17,7 +17,7 @@ use std::process::Command;
 use clap::Args;
 
 use super::scenarios::{ALL_SCENARIOS, find_scenario, datasets_for_scenario};
-use super::util::{resolve_out_dir, workspace_root};
+use super::util::{bench_data_root, resolve_out_dir, workspace_root};
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -57,14 +57,22 @@ pub struct LibraryArgs {
     #[arg(long, default_value = "bench_results")]
     pub out: String,
 
-    /// Root of the `benchmarks/` folder.  Defaults to the workspace
-    /// `benchmarks/` directory.
-    #[arg(long)]
-    pub benchmarks_root: Option<String>,
+    /// Root directory that contains external library benchmark scripts.
+    /// Scripts are resolved as `<dir>/<library>/<mode>/run.py` (or `run.R`).
+    /// Can also be set via the `ZER_EXTERNAL_BENCHMARKS_DIR` environment
+    /// variable.  Defaults to `benchmarks/` inside the workspace root when
+    /// running from a repository clone.
+    #[arg(long, env = "ZER_EXTERNAL_BENCHMARKS_DIR")]
+    pub external_benchmarks_dir: Option<String>,
 
     /// Maximum number of records to process (throughput mode only).
     #[arg(long)]
     pub max_records: Option<usize>,
+
+    /// Re-run setup.sh even if the `.setup_done` sentinel already exists.
+    /// Use this when Python dependencies are missing after switching environments.
+    #[arg(long)]
+    pub force_setup: bool,
 }
 
 // ── All configured libraries ──────────────────────────────────────────────────
@@ -81,7 +89,7 @@ pub fn run(args: LibraryArgs) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let root = resolve_benchmarks_root(args.benchmarks_root.as_deref());
+    let root = resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
     let (dataset_strs, auto_gt, effective_mode) =
         resolve_datasets_and_mode(&args.datasets, args.scenario.as_deref(), &args.mode)?;
     let datasets: Vec<&str> = dataset_strs.iter().map(String::as_str).collect();
@@ -89,7 +97,7 @@ pub fn run(args: LibraryArgs) -> anyhow::Result<()> {
 
     match args.library.as_deref() {
         Some(library) => {
-            run_library(&root, library, &effective_mode, args.scenario.as_deref(), &datasets, ground_truth, &args.out, args.max_records)
+            run_library(&root, library, &effective_mode, args.scenario.as_deref(), &datasets, ground_truth, &args.out, args.max_records, args.force_setup)
         }
         None => {
             let mut errors: Vec<String> = Vec::new();
@@ -98,7 +106,7 @@ pub fn run(args: LibraryArgs) -> anyhow::Result<()> {
                     println!("running library  library={library}  mode={}", effective_mode.as_str());
                     if let Err(e) = run_library(
                         &root, library, &effective_mode, args.scenario.as_deref(),
-                        &datasets, ground_truth, &args.out, args.max_records,
+                        &datasets, ground_truth, &args.out, args.max_records, args.force_setup,
                     ) {
                         eprintln!("warning: library failed  library={library}  error={e}");
                         errors.push(format!("{library}: {e}"));
@@ -126,14 +134,16 @@ fn run_library(
     ground_truth: Option<&str>,
     out:          &str,
     max_records:  Option<usize>,
+    force_setup:  bool,
 ) -> anyhow::Result<()> {
     let lib_dir  = root.join(library);
     let mode_dir = lib_dir.join(mode_dir_name(mode));
 
-    // Ensure setup has been run (idempotent via sentinel file)
+    // Ensure setup has been run (idempotent via sentinel file).
+    // --force-setup ignores the sentinel; useful after switching Python environments.
     let setup_sentinel = lib_dir.join(".setup_done");
     let setup_sh       = lib_dir.join("setup.sh");
-    if !setup_sentinel.exists() && setup_sh.exists() {
+    if (!setup_sentinel.exists() || force_setup) && setup_sh.exists() {
         println!("running setup  library={library}");
         let status = Command::new("bash")
             .arg(&setup_sh)
@@ -176,7 +186,10 @@ fn run_library(
         .map_err(|e| anyhow::anyhow!("failed to execute {library} script: {e}"))?;
 
     if !status.success() {
-        anyhow::bail!("{library}/{mode} script exited with {status}");
+        anyhow::bail!(
+            "{library}/{mode} script exited with {status}\n\
+             If Python dependencies are missing, re-run with --force-setup to reinstall them.",
+        );
     }
 
     // Print the resulting summary file path
@@ -212,7 +225,7 @@ fn resolve_datasets_and_mode(
         return Ok((explicit.to_vec(), None, mode.to_owned()));
     }
 
-    let root = workspace_root();
+    let root = bench_data_root();
 
     if let Some(slug) = scenario {
         let spec = find_scenario(slug).ok_or_else(|| {
@@ -277,13 +290,16 @@ fn resolve_script(dir: &PathBuf) -> anyhow::Result<(&'static str, PathBuf)> {
     }
     anyhow::bail!(
         "no run.py or run.R found in {dir}\n\
-         Ensure the library benchmark scripts are present under benchmarks/<library>/",
+         Ensure the library benchmark scripts are present under \
+         <external-benchmarks-dir>/<library>/<mode>/.\n\
+         Set --external-benchmarks-dir or ZER_EXTERNAL_BENCHMARKS_DIR to point \
+         to your scripts directory.",
         dir = dir.display()
     )
 }
 
-fn resolve_benchmarks_root(override_path: Option<&str>) -> PathBuf {
-    if let Some(p) = override_path {
+fn resolve_benchmarks_root(external_benchmarks_dir: Option<&str>) -> PathBuf {
+    if let Some(p) = external_benchmarks_dir {
         return PathBuf::from(p);
     }
     workspace_root().join("benchmarks")

@@ -22,14 +22,12 @@ use zer_core::{
     traits::{Comparator, Scorer},
 };
 
-const HKS_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/hks/hks_records.csv"
-);
-const HKS_GT_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/hks/ground_truth_pairs.csv"
-);
+fn hks_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/hks/hks_records.csv")
+}
+fn hks_gt_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/hks/ground_truth_pairs.csv")
+}
 
 fn hks_schema() -> Schema {
     SchemaBuilder::new()
@@ -50,7 +48,7 @@ fn hks_schema() -> Schema {
 }
 
 fn load_hks_records() -> HashMap<String, Record> {
-    let mut rdr = csv::Reader::from_path(HKS_CSV)
+    let mut rdr = csv::Reader::from_path(hks_csv())
         .expect("HKS CSV not found, run data generator first");
     let headers = rdr.headers().unwrap().clone();
     let col     = |name: &str| headers.iter().position(|h| h == name).unwrap_or(usize::MAX);
@@ -105,7 +103,7 @@ fn load_hks_records() -> HashMap<String, Record> {
 }
 
 fn load_true_pairs(records: &HashMap<String, Record>) -> Vec<(RecordId, RecordId)> {
-    let mut rdr = csv::Reader::from_path(HKS_GT_CSV)
+    let mut rdr = csv::Reader::from_path(hks_gt_csv())
         .expect("HKS ground truth CSV not found");
     let mut pairs = vec![];
 

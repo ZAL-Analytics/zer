@@ -18,15 +18,13 @@ use zer_core::{
     traits::Clusterer,
 };
 
-const CDR_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/cdr/ground_truth_clusters.csv"
-);
+fn cdr_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/cdr/ground_truth_clusters.csv")
+}
 
-const FIU_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/fiu/ground_truth_clusters.csv"
-);
+fn fiu_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/fiu/ground_truth_clusters.csv")
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -54,12 +52,13 @@ fn scored_pair(a: RecordId, b: RecordId, prob: f32, band: MatchBand) -> ScoredPa
 /// Load a two-column key for clustering.  Returns `(groups, id_map)` where
 /// `groups` maps cluster_id to a sorted list of RecordIds.
 fn load_clusters(
-    csv_path: &str,
+    csv_path: impl AsRef<std::path::Path>,
     key_col: &str,
     cluster_col: &str,
 ) -> (HashMap<String, Vec<RecordId>>, HashMap<String, RecordId>) {
+    let csv_path = csv_path.as_ref();
     let mut rdr = csv::Reader::from_path(csv_path)
-        .unwrap_or_else(|_| panic!("CSV not found: {csv_path}"));
+        .unwrap_or_else(|_| panic!("CSV not found: {}", csv_path.display()));
     let headers = rdr.headers().unwrap().clone();
 
     let key_idx = headers.iter().position(|h| h == key_col)
@@ -142,7 +141,7 @@ fn compute_recall(
 
 #[test]
 fn cdr_ground_truth_recall_at_least_90_percent() {
-    let (groups, _) = load_clusters(CDR_CSV, "msisdn", "cluster_id");
+    let (groups, _) = load_clusters(cdr_csv(), "msisdn", "cluster_id");
 
     let pairs = intra_cluster_pairs(&groups);
     let clusterer = ConnectedComponentsClusterer::default();
@@ -159,7 +158,7 @@ fn cdr_ground_truth_recall_at_least_90_percent() {
 
 #[test]
 fn fiu_ground_truth_recall_at_least_90_percent() {
-    let (groups, _) = load_clusters(FIU_CSV, "iban", "cluster_id");
+    let (groups, _) = load_clusters(fiu_csv(), "iban", "cluster_id");
 
     let pairs = intra_cluster_pairs(&groups);
     let clusterer = ConnectedComponentsClusterer::default();

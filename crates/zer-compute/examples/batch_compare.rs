@@ -34,14 +34,12 @@ use zer_compute::{GpuBackend, DeviceComparator, DeviceScorer};
 
 // ── Data paths ───────────────────────────────────────────────────────────────
 
-const BRP_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/brp/brp_persons.csv"
-);
-const BRP_GT_CSV: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/tests/brp/ground_truth_pairs.csv"
-);
+fn brp_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/brp/brp_persons.csv")
+}
+fn brp_gt_csv() -> std::path::PathBuf {
+    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/brp/ground_truth_pairs.csv")
+}
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 
@@ -64,7 +62,7 @@ fn brp_schema() -> zer_core::schema::Schema {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 fn load_records() -> HashMap<String, Record> {
-    let mut rdr = csv::Reader::from_path(BRP_CSV)
+    let mut rdr = csv::Reader::from_path(brp_csv())
         .expect("tests/brp/brp_persons.csv not found, run the data generator first");
     let headers = rdr.headers().unwrap().clone();
     let col     = |n: &str| headers.iter().position(|h| h == n).unwrap_or(usize::MAX);
@@ -103,7 +101,7 @@ fn load_records() -> HashMap<String, Record> {
 }
 
 fn load_true_pairs(records: &HashMap<String, Record>) -> Vec<(RecordId, RecordId)> {
-    let mut rdr = csv::Reader::from_path(BRP_GT_CSV)
+    let mut rdr = csv::Reader::from_path(brp_gt_csv())
         .expect("brp_small/ground_truth_pairs.csv not found");
     let mut out = vec![];
     for row in rdr.records().flatten() {
