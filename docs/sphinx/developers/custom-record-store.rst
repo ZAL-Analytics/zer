@@ -1,19 +1,18 @@
 Custom Record Store
 ====================
 
-The neural judge retrieves the raw ``Record`` values for each candidate pair
-it evaluates. By default those records live in ``VecRecordStore``, an in-memory
-``Vec`` wrapped in ``Arc``. That is fine for datasets that fit in RAM, but
-becomes a problem when:
+The pipeline stores every ingested ``Record`` in a ``RecordStore`` before
+processing. By default it uses ``VecRecordStore``, an in-memory ``Vec`` wrapped
+in ``Arc``. That is fine for datasets that fit in RAM, but becomes a problem when:
 
 * The total record count exceeds available memory.
 * Records are produced by a streaming source and you cannot hold them all in
   memory before the pipeline starts.
-* You want to share a record store across multiple pipeline workers without
-  duplicating data.
+* You want to share a record store across multiple pipeline workers or between
+  the pipeline and the neural judge without duplicating data.
 
-This guide shows how to implement the ``RecordStore`` trait and use it with the
-neural judge.
+This guide shows how to implement the ``RecordStore`` trait and wire it into the
+pipeline, with or without a neural judge.
 
 The ``RecordStore`` trait
 --------------------------
@@ -22,35 +21,48 @@ The trait lives in ``zer_core``:
 
 .. code-block:: rust
 
+   use std::borrow::Cow;
    use zer_core::{RecordStore, Record, RecordId};
 
-   pub trait RecordStore: Send + Sync + 'static {
-       type Error: std::error::Error + Send + Sync + 'static;
-
+   pub trait RecordStore: Send + Sync {
        /// Store a record. Called during ingestion, before run_batch.
-       fn insert(&self, id: RecordId, record: Record) -> Result<(), Self::Error>;
+       fn insert(&self, record: Record);
 
-       /// Retrieve a record by ID. Called by the judge for each candidate pair.
-       fn get(&self, id: RecordId) -> Result<Option<Record>, Self::Error>;
+       /// Retrieve a record by ID. Returns None if not found.
+       fn get(&self, id: RecordId) -> Option<Cow<'_, Record>>;
+
+       /// Retrieve multiple records at once. Default implementation calls get() per ID.
+       fn get_many(&self, ids: &[RecordId]) -> Vec<Option<Cow<'_, Record>>> {
+           ids.iter().map(|&id| self.get(id)).collect()
+       }
+
+       /// Total number of records in the store.
+       fn len(&self) -> usize;
+
+       fn is_empty(&self) -> bool { self.len() == 0 }
    }
 
-``insert`` is called once per record as you build up the input set.
-``get`` is called by ``DebertaJudge`` for every pair it evaluates, so its
-latency directly affects judge throughput.
+``insert`` is called once per record as the pipeline ingests each batch.
+``get`` is called when building the internal ``RecordPool`` for comparison, and
+by ``DebertaJudge`` for every pair it evaluates (so its latency directly affects
+judge throughput when a judge is configured).
+
+The trait does not propagate errors through return values. Implementations should
+panic (via ``expect`` or ``unwrap``) on I/O failures, or handle them internally.
 
 RocksDB example
 ----------------
 
 RocksDB stores records serialized as MessagePack bytes. This keeps the hot path
-for ``get`` at roughly one disk read per call, which is fast enough for judge
-throughput even on rotating storage.
+for ``get`` at roughly one disk read per call, which is fast enough even on
+rotating storage.
 
 Add the dependencies:
 
 .. code-block:: toml
 
    [dependencies]
-   zer          = { version = "1.0", features = ["pipeline", "judge_cpu"] }
+   zer          = { version = "1.0", features = ["pipeline"] }
    rocksdb      = { version = "0.22" }
    rmp-serde    = { version = "1" }
 
@@ -58,6 +70,7 @@ Implement the store:
 
 .. code-block:: rust
 
+   use std::borrow::Cow;
    use std::sync::Arc;
    use rocksdb::{DB, Options};
    use zer_core::{RecordStore, Record, RecordId};
@@ -75,24 +88,56 @@ Implement the store:
    }
 
    impl RecordStore for RocksRecordStore {
-       type Error = anyhow::Error;
-
-       fn insert(&self, id: RecordId, record: Record) -> Result<(), Self::Error> {
-           let key   = id.to_le_bytes();
-           let value = rmp_serde::to_vec(&record)?;
-           self.db.put(key, value)?;
-           Ok(())
+       fn insert(&self, record: Record) {
+           let key   = record.id.to_le_bytes();
+           let value = rmp_serde::to_vec(&record).expect("serialise record");
+           self.db.put(key, value).expect("RocksDB write");
        }
 
-       fn get(&self, id: RecordId) -> Result<Option<Record>, Self::Error> {
-           match self.db.get(id.to_le_bytes())? {
-               None        => Ok(None),
-               Some(bytes) => Ok(Some(rmp_serde::from_slice(&bytes)?)),
-           }
+       fn get(&self, id: RecordId) -> Option<Cow<'_, Record>> {
+           let bytes = self.db.get(id.to_le_bytes()).ok()??;
+           let record: Record = rmp_serde::from_slice(&bytes).ok()?;
+           Some(Cow::Owned(record))
+       }
+
+       fn len(&self) -> usize {
+           self.db.iterator(rocksdb::IteratorMode::Start).count()
        }
    }
 
-Wire it into the judge and pipeline:
+Using a custom store with the pipeline (no judge)
+--------------------------------------------------
+
+Wire the store into the pipeline via ``PipelineBuilder::record_store_arc``:
+
+.. code-block:: rust
+
+   use std::sync::Arc;
+   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_cluster::ZalEntityStore;
+
+   let record_store = Arc::new(RocksRecordStore::open("/tmp/zer_records")?);
+
+   let pipeline = Pipeline::builder()
+       .schema(schema)
+       .store(ZalEntityStore::open_in_memory()?)
+       .record_store_arc(Arc::clone(&record_store) as Arc<dyn zer_core::RecordStore>)
+       .config(PipelineConfig { registry_path: "model.zsm".into(), ..Default::default() })
+       .build()?;
+
+   let report = pipeline.run_batch(records).await?;
+
+The pipeline calls ``record_store.insert`` for each record it ingests and uses
+``record_store.get`` when building the internal comparison pool. The same store
+is available between ``run_batch`` calls, so records from earlier batches can
+still be retrieved.
+
+Sharing a store with the judge
+-------------------------------
+
+When both the pipeline and the neural judge need access to the same records,
+pass the same ``Arc`` to both. Using ``record_store_arc`` ensures insertions from
+the pipeline are immediately visible to judge lookups:
 
 .. code-block:: rust
 
@@ -106,11 +151,8 @@ Wire it into the judge and pipeline:
    use zer_cluster::ZalEntityStore;
 
    let record_store = Arc::new(RocksRecordStore::open("/tmp/zer_records")?);
-
-   // Populate the store before running the pipeline
-   for (id, record) in records.iter().enumerate() {
-       record_store.insert(id as u64 + 1, record.clone())?;
-   }
+   let store_ref: Arc<dyn zer_core::RecordStore> =
+       Arc::clone(&record_store) as Arc<dyn zer_core::RecordStore>;
 
    let backend = JudgeBackend::auto_detect();
    let spec    = MiniLmSpec::from_dir("models/nli-minilm");
@@ -118,7 +160,7 @@ Wire it into the judge and pipeline:
    let judge = DebertaJudge::new(
        &spec,
        &backend,
-       Arc::clone(&record_store) as Arc<dyn zer_core::RecordStore<Error = _>>,
+       Arc::clone(&store_ref),
        schema.clone(),
        DebertaJudgeConfig::default(),
    )?;
@@ -126,6 +168,7 @@ Wire it into the judge and pipeline:
    let pipeline = Pipeline::builder()
        .schema(schema)
        .store(ZalEntityStore::open_in_memory()?)
+       .record_store_arc(store_ref)
        .judge(judge)
        .build()?;
 
@@ -151,41 +194,8 @@ explicitly to keep frequently accessed records in memory:
 
    let db = DB::open(&opts, "/tmp/zer_records")?;
 
-A 512 MB LRU cache is usually sufficient for judge workloads: the judge only
-reads each record a small number of times, so cache hit rates are high after
-the first pass.
-
-Streaming inserts alongside run_batch
----------------------------------------
-
-Because ``RecordStore::insert`` and ``run_batch`` are independent, you can
-populate the store in a background task while the pipeline is running earlier
-chunks. This is most useful when records arrive over a network stream:
-
-.. code-block:: rust
-
-   use tokio::sync::mpsc;
-   use std::sync::Arc;
-
-   let store = Arc::new(RocksRecordStore::open("/tmp/zer_records")?);
-   let (tx, mut rx) = mpsc::channel::<(RecordId, Record)>(1_024);
-
-   // Background task: insert records as they arrive
-   let store_ref = Arc::clone(&store);
-   tokio::spawn(async move {
-       while let Some((id, rec)) = rx.recv().await {
-           store_ref.insert(id, rec).expect("insert failed");
-       }
-   });
-
-   // Main task: send records and run pipeline in overlapping chunks
-   for (id, record) in source.stream() {
-       tx.send((id, record.clone())).await?;
-       batch.push(record);
-       if batch.len() >= CHUNK_SIZE {
-           pipeline.run_batch(std::mem::take(&mut batch)).await?;
-       }
-   }
+A 512 MB LRU cache is usually sufficient: records are read a small number of
+times per batch, so cache hit rates are high after the first pass.
 
 What to explore next
 ---------------------

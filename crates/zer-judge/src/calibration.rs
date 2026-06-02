@@ -5,7 +5,7 @@
 ///
 /// The update rule in odds space:
 /// ```text
-/// posterior_odds = prior_odds × lr
+/// posterior_odds = prior_odds  times  lr
 /// ```
 /// where `prior_odds = p / (1 - p)` and `p = match_probability`.
 

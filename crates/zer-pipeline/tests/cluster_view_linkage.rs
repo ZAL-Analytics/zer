@@ -153,7 +153,7 @@ async fn linked_pairs_record_ids_match_input() {
 
 #[tokio::test]
 async fn linked_pairs_multiple_cross_source_entities() {
-    // Two separate persons, each appearing 5× in both sources → EM convergence → cross-source pairs.
+    // Two separate persons, each appearing 5 times  in both sources → EM convergence → cross-source pairs.
     let dir = TempDir::new().unwrap();
     let pipeline = make_pipeline(&dir, LinkMode::LinkAndDedupe);
 

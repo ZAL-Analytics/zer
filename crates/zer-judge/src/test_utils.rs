@@ -57,14 +57,14 @@ use zer_core::{
 /// Output records are assigned IDs starting at `id_offset` to avoid collision
 /// with the original data.
 pub struct NearDuplicateGenerator {
-    /// Number of near-duplicate pairs to generate (`generate()` returns 2 × this many records).
+    /// Number of near-duplicate pairs to generate (`generate()` returns 2  times  this many records).
     pub pair_count: usize,
     /// Starting ID for synthetic records.  Should be well above any real record IDs.
     pub id_offset:  u64,
 }
 
 impl NearDuplicateGenerator {
-    /// Generate `2 × pair_count` synthetic records from `source`.
+    /// Generate `2  times  pair_count` synthetic records from `source`.
     ///
     /// For each pair index `i`:
     /// - Record at `id_offset + 2*i` , verbatim copy of the source record.
@@ -292,7 +292,7 @@ mod tests {
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")]; // only 1 source
         let gen    = NearDuplicateGenerator { pair_count: 3, id_offset: 9_000 };
         let result = gen.generate(&source, &schema);
-        assert_eq!(result.len(), 6, "should still generate 2×pair_count records when cycling");
+        assert_eq!(result.len(), 6, "should still generate 2 times pair_count records when cycling");
     }
 
     #[test]

@@ -180,27 +180,27 @@ BRP deduplication (22 200 records, ~2.68 M candidate pairs)
      - ~432 k
      - 6 200
      - 3 112
-     - 1×
+     - 1 times 
    * - zer CPU
      - ~735 k
      - 3 653
      - 163
-     - **1.7×**
+     - **1.7 times**
    * - zer AVX2
      - ~768 k
      - 3 494
      - 147
-     - **1.8×**
+     - **1.8 times**
    * - zer CUDA
      - ~4.1 M
      - 661
      - 246
-     - **9.4×**
+     - **9.4 times**
    * - zer Vulkan
      - ~3.9 M
      - 680
      - 280
-     - **9.1×**
+     - **9.1 times**
 
 KvK deduplication (22 200 records, ~2.64 M candidate pairs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,27 +218,27 @@ KvK deduplication (22 200 records, ~2.64 M candidate pairs)
      - ~688 k
      - 3 830
      - 2 737
-     - 1×
+     - 1 times 
    * - zer CPU
      - ~748 k
      - 3 523
      - 407
-     - **1.1×**
+     - **1.1 times**
    * - zer AVX2
      - ~787 k
      - 3 348
      - 407
-     - **1.1×**
+     - **1.1 times**
    * - zer CUDA
      - ~4.6 M
      - 573
      - 516
-     - **6.7×**
+     - **6.7 times**
    * - zer Vulkan
      - ~4.5 M
      - 584
      - 533
-     - **6.6×**
+     - **6.6 times**
 
 .. raw:: html
 
@@ -294,7 +294,7 @@ For reference, the zer pipeline cost breakdown on BRP dedupe (AVX2):
      - \
 
 The EM stage dominates on CPU.  CUDA reduces it from ~2.9 s to ~34 ms
-(85× speedup on that stage alone), yielding a ~5× end-to-end speedup
+(85 times  speedup on that stage alone), yielding a ~5 times  end-to-end speedup
 after accounting for the fixed blocking and comparison costs.
 
 ----

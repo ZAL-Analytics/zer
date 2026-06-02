@@ -147,7 +147,7 @@ Link modes
 
    * - Mode
      - Behaviour
-   * - ``LinkMode::Dedupe``
+   * - ``LinkMode::Deduplicate``
      - Within-source deduplication only. Cross-source pairs are skipped.
    * - ``LinkMode::LinkOnly``
      - Cross-source pairs only. Within-source pairs are skipped.

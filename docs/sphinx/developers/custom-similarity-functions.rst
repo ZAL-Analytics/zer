@@ -3,7 +3,7 @@ Custom Similarity Functions
 
 The comparator evaluates each candidate pair by computing a similarity score
 for every field in the schema. zer ships with a catalog of built-in functions
-(Jaro-Winkler, exact match, date proximity, and others,see
+(Jaro-Winkler, exact match, date proximity, and others; see
 :doc:`/reference/similarity-functions`). When none of those fit your domain
 you can register your own.
 
@@ -15,27 +15,29 @@ accuracy across the whole dataset.
 The ``SimilarityFn`` trait
 ---------------------------
 
-The trait lives in ``zer_compare``:
+The trait lives in ``zer_compare::similarity``:
 
 .. code-block:: rust
 
-   use zer_compare::SimilarityFn;
-   use zer_core::FieldValue;
+   use zer_compare::similarity::SimilarityFn;
+   use zer_core::{record::FieldValue, schema::FieldKind};
 
-   pub trait SimilarityFn: Send + Sync + 'static {
-       /// Display name used in audit logs and the EM weight table.
-       fn name(&self) -> &str;
-
+   pub trait SimilarityFn: Send + Sync {
        /// Return a score in [0.0, 1.0].
        /// 1.0 = definite match, 0.0 = definite non-match.
-       /// Return None if either value is Null/missing,the EM model
-       /// treats missing pairs separately from scored pairs.
-       fn score(&self, a: &FieldValue, b: &FieldValue) -> Option<f64>;
+       /// Return 0.0 when either value is ``FieldValue::Null`` or an unexpected
+       /// variant; the EM model interprets low scores on missing fields correctly.
+       fn similarity(&self, a: &FieldValue, b: &FieldValue) -> f32;
+
+       /// The ``FieldKind`` this function is designed for.
+       /// Used by ``FieldComparator`` to route fields to the right functions.
+       fn field_kind(&self) -> FieldKind;
    }
 
-The ``None`` return path is important: if either field is missing, returning
-``None`` tells the EM model to use its missing-value prior rather than
-treating the pair as a non-match. Never return ``0.0`` for a missing field.
+The ``field_kind`` method declares which kind of field the function is intended
+for. When you register the function via ``FieldComparator::with_fns``, this
+value is informational; the field index you pass to ``with_fns`` determines
+which schema field actually uses your function.
 
 Double Metaphone for non-Dutch names
 --------------------------------------
@@ -55,18 +57,18 @@ Add the dependency:
 .. code-block:: rust
 
    use double_metaphone::double_metaphone;
-   use zer_compare::SimilarityFn;
-   use zer_core::FieldValue;
+   use zer_compare::similarity::SimilarityFn;
+   use zer_core::{record::FieldValue, schema::FieldKind};
 
    pub struct DoubleMetaphoneSimilarity;
 
    impl SimilarityFn for DoubleMetaphoneSimilarity {
-       fn name(&self) -> &str { "double_metaphone" }
+       fn field_kind(&self) -> FieldKind { FieldKind::Name }
 
-       fn score(&self, a: &FieldValue, b: &FieldValue) -> Option<f64> {
+       fn similarity(&self, a: &FieldValue, b: &FieldValue) -> f32 {
            let (ta, tb) = match (a, b) {
                (FieldValue::Text(a), FieldValue::Text(b)) => (a.as_str(), b.as_str()),
-               _ => return None,
+               _ => return 0.0,
            };
 
            let (primary_a, alt_a) = double_metaphone(ta);
@@ -78,7 +80,7 @@ Add the dependency:
                || alt_a == primary_b
                || alt_a == alt_b;
 
-           if exact { Some(1.0) } else { Some(0.0) }
+           if exact { 1.0 } else { 0.0 }
        }
    }
 
@@ -94,29 +96,29 @@ typos are common), implement a normalised edit distance:
 
 .. code-block:: rust
 
-   use zer_compare::SimilarityFn;
-   use zer_core::FieldValue;
+   use zer_compare::similarity::SimilarityFn;
+   use zer_core::{record::FieldValue, schema::FieldKind};
 
    pub struct NormalisedLevenshtein;
 
    impl SimilarityFn for NormalisedLevenshtein {
-       fn name(&self) -> &str { "norm_levenshtein" }
+       fn field_kind(&self) -> FieldKind { FieldKind::Id }
 
-       fn score(&self, a: &FieldValue, b: &FieldValue) -> Option<f64> {
+       fn similarity(&self, a: &FieldValue, b: &FieldValue) -> f32 {
            let (ta, tb) = match (a, b) {
                (FieldValue::Text(a), FieldValue::Text(b)) => (a.as_str(), b.as_str()),
-               _ => return None,
+               _ => return 0.0,
            };
-           if ta.is_empty() && tb.is_empty() { return Some(1.0); }
+           if ta.is_empty() && tb.is_empty() { return 1.0; }
 
            let dist = levenshtein(ta, tb);           // any edit-distance crate
-           let max  = ta.len().max(tb.len()) as f64;
-           Some(1.0 - dist as f64 / max)
+           let max  = ta.len().max(tb.len()) as f32;
+           1.0 - dist as f32 / max
        }
    }
 
    fn levenshtein(a: &str, b: &str) -> usize {
-       // Wagner-Fischer DP,replace with a crate like `edit-distance` in practice
+       // Wagner-Fischer DP; replace with a crate like `edit-distance` in practice
        let (a, b): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
        let (m, n) = (a.len(), b.len());
        let mut dp = vec![vec![0usize; n + 1]; m + 1];
@@ -137,51 +139,61 @@ typos are common), implement a normalised edit distance:
 Registering a custom similarity function
 ------------------------------------------
 
-Attach a custom function to a field in the schema builder:
+Use ``FieldComparator::from_schema`` to build the default comparator, then
+override individual fields with ``with_fns``. The index passed to ``with_fns``
+is the zero-based field position as declared in the schema.
 
 .. code-block:: rust
 
-   use zer_schema::SchemaBuilder;
-   use zer_core::FieldKind;
+   use zer_core::schema::{FieldKind, SchemaBuilder};
+   use zer_compare::FieldComparator;
+   use zer_pipeline::pipeline::Pipeline;
 
    let schema = SchemaBuilder::new()
-       .field("voornamen",    FieldKind::PersonName)
-       .field("achternaam",   FieldKind::PersonName)
-       // Override the similarity function for a specific field
-       .field_with_similarity(
-           "naam_niet_latinized",
-           FieldKind::PersonName,
-           DoubleMetaphoneSimilarity,
-       )
-       .field("geboortedatum", FieldKind::Date)
+       .field("voornamen",           FieldKind::Name)     // index 0
+       .field("achternaam",          FieldKind::Name)     // index 1
+       .field("naam_niet_latinized", FieldKind::Name)     // index 2
+       .field("geboortedatum",       FieldKind::Date)     // index 3
        .build()?;
 
-Only fields registered via ``field_with_similarity`` use your custom metric.
-All other fields continue to use the built-in function selected for their
-``FieldKind``.
+   // Override index 2 ("naam_niet_latinized") with the custom phonetic function.
+   // All other fields keep their default functions derived from FieldKind.
+   let comparator = FieldComparator::from_schema(&schema)
+       .with_fns(2, vec![Box::new(DoubleMetaphoneSimilarity)]);
+
+   let pipeline = Pipeline::builder()
+       .schema(schema)
+       .comparator(comparator)
+       .store(store)
+       .build()?;
+
+Only the field at index 2 uses ``DoubleMetaphoneSimilarity``. Fields 0, 1,
+and 3 keep the built-in functions selected for ``FieldKind::Name`` and
+``FieldKind::Date`` respectively.
 
 Calibrating a new similarity function
 ---------------------------------------
 
 The EM model estimates match and non-match distributions from unlabelled data.
-A new similarity function starts without calibration data; the first
-``run_batch`` call seeds the EM model. To verify the function is contributing
-correctly, inspect the learned weight for the field after a run:
+A new function takes effect immediately on the next ``run_batch``. To verify it
+is contributing correctly, compare precision and recall against a labelled
+ground truth before and after adding the function:
 
 .. code-block:: rust
 
-   let view   = pipeline.cluster_view();
-   let weights = view.em_weights();
+   // Without custom function: baseline run
+   let report_baseline = pipeline_baseline.run_batch(records.clone()).await?;
 
-   for (field, w) in &weights {
-       println!("{field}: log_ratio = {:.3}", w.log_ratio);
-   }
+   // With custom function at field index 2
+   let report_custom = pipeline_custom.run_batch(records).await?;
 
-A ``log_ratio`` close to zero means the function is not discriminating,the
-field looks the same whether the pair is a match or not. This usually means the
-similarity function returns similar values for both matches and non-matches.
-Consider a more selective metric or check whether the field itself has low
-coverage in your data.
+   println!("baseline entities: {}", report_baseline.entities_created);
+   println!("custom   entities: {}", report_custom.entities_created);
+
+If the custom function is not improving results — precision or recall does not
+improve on your labelled sample — the function likely returns similar values
+for both matches and non-matches. Consider a more selective metric or check
+whether the field has low coverage in your data.
 
 What to explore next
 ---------------------

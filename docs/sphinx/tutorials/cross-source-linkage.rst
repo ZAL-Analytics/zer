@@ -21,19 +21,9 @@ A pipeline that:
 Prepare the data
 -----------------
 
-The demo reads from ``data/demos/linkage/``. Use whichever option applies:
-
-**Option A, use the downloaded dataset** (no Python needed):
-
-.. code-block:: bash
-
-   $ hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
-       --repo-type dataset --local-dir data/
-   # Provides: data/demos/linkage/source_a.csv
-   #           data/demos/linkage/source_b.csv
-   #           data/demos/linkage/ground_truth.csv
-
-**Option B, regenerate locally** (requires Python 3.10+):
+The demo reads from ``data/demos/linkage/``. Download the full dataset bundle
+(all tutorials share the same download) as described in
+:doc:`/introduction/installation`, or regenerate locally:
 
 .. code-block:: bash
 
@@ -61,27 +51,27 @@ Source labels tell zer which records belong to which dataset.
    let id_offset: u64 = source_a_rows.len() as u64 + 1;
 
    let records_a: Vec<Record> = source_a_rows
-       .iter()
+       .into_iter()
        .map(|row| {
            Record::new(row.record_id)
                .with_source("A")
-               .insert("voornamen",     &row.voornamen)
-               .insert("achternaam",    &row.achternaam)
-               .insert("geboortedatum", &row.geboortedatum)
-               .insert("postcode",      &row.postcode)
+               .insert("voornamen",     row.voornamen)
+               .insert("achternaam",    row.achternaam)
+               .insert("geboortedatum", row.geboortedatum)
+               .insert("postcode",      row.postcode)
                // ... other fields
        })
        .collect();
 
    let records_b: Vec<Record> = source_b_rows
-       .iter()
+       .into_iter()
        .map(|row| {
            Record::new(row.record_id + id_offset)
                .with_source("B")
-               .insert("voornamen",     &row.voornamen)
-               .insert("achternaam",    &row.achternaam)
-               .insert("geboortedatum", &row.geboortedatum)
-               .insert("postcode",      &row.postcode)
+               .insert("voornamen",     row.voornamen)
+               .insert("achternaam",    row.achternaam)
+               .insert("geboortedatum", row.geboortedatum)
+               .insert("postcode",      row.postcode)
        })
        .collect();
 

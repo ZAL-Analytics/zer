@@ -1,7 +1,7 @@
 project   = "zer"
 copyright = "2026, ZAL Analytics"
 author    = "ZAL Analytics"
-release   = "1.0.3"
+release   = "1.0.4"
 
 extensions = [
     "sphinx_design",
@@ -21,7 +21,7 @@ html_theme_options = {
     "show_scrolltop": True,
 }
 
-html_title = "zer an Entity Resolution library for Dutch Administrative Data"
+html_title = "zer"
 
 # --------------------------------------------------------------------------- #
 # Pygments                                                                      #

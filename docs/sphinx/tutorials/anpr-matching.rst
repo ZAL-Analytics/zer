@@ -167,7 +167,7 @@ Run inside the full pipeline
 -----------------------------
 
 To run ANPR matching as a full pipeline rather than just blocking exploration,
-pass the same schema and use ``LinkMode::Dedupe`` (all passages are from the
+pass the same schema and use ``LinkMode::Deduplicate`` (all passages are from the
 same source) or ``LinkMode::LinkAndDedupe`` if you are cross-linking multiple
 camera feeds:
 

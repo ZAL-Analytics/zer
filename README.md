@@ -1,6 +1,6 @@
 # zer
 
-**Zero-shot entity resolution for Dutch-centric data.** Given multiple datasets with records about the same people, vehicles, or organisations,but no shared unique key and noisy data,zer finds which records belong together.
+**Zero-shot probabilistic entity resolution.** Given multiple datasets with records about the same people, vehicles, or organisations, but no shared unique key and noisy data, zer finds which records belong together.
 
 [![crates.io](https://img.shields.io/crates/v/zer.svg)](https://crates.io/crates/zer)
 [![docs](https://img.shields.io/badge/docs-docs.zal--analytics.ch-blue)](https://docs.zal-analytics.ch/zer)
@@ -10,16 +10,14 @@
 
 ## What is zer?
 
-Entity resolution (also called record linkage or deduplication) is the problem of deciding that two records refer to the same real-world entity even when there is no shared identifier. The same person might appear in a BRP register, a KvK extract, and a benefits system under slightly different names, with different address formats, and with OCR errors throughout.
+Entity resolution (also called record linkage or deduplication) is the problem of deciding that two records refer to the same real-world entity even when there is no shared identifier. The same person might appear in multiple registries under slightly different names, with different address formats, and with OCR errors throughout.
 
 zer solves this with a six-stage pipeline:
 - **Schema → Blocker → Comparator → Scorer → Clusterer → Entity Store**
 
-It uses Dutch-specific blocking keys (phonetic name encoding, tussenvoegsel normalisation, licence-plate variants), Fellegi-Sunter probabilistic scoring, and an optional neural cross-encoder judge for borderline pairs.
+Every stage is pluggable: swap in a custom blocker, similarity function, comparator, or storage backend. zer ships with built-in support for Dutch administrative data (BRP, KvK, SIS II, ANPR), phonetic name encoding, tussenvoegsel normalisation, and licence-plate variants, but works with any domain.
 
-No labelled training data is required. The EM parameters are estimated from the data itself and cached in a `.zsm` model file for incremental updates.
-
-Work with sync and async pipelines.
+Fellegi-Sunter probabilistic scoring drives match decisions, with an optional neural cross-encoder judge for borderline pairs. No labelled training data is required; EM parameter estimation runs unsupervised from your data and is cached in a `.zsm` model file for incremental updates.
 
 ---
 
@@ -105,7 +103,7 @@ The `LinkMode` controls what pairs are considered:
 | `pipeline` | Full pipeline (`zer-pipeline`, `zer-cluster`, all core crates). Start here. |
 | `cuda` | CUDA GPU acceleration for scoring. Requires CUDA Toolkit 13.1+ and an Ampere GPU (SM 8.6+). Falls back to CPU at runtime when no device is found. |
 | `vulkan` | Vulkan compute backend. Requires Vulkan 1.3 driver and `slangc` on `PATH` at build time. |
-| `avx2` | AVX2 SIMD backend for x86-64 CPU servers. ~4× throughput vs the generic CPU backend. No GPU required. |
+| `avx2` | AVX2 SIMD backend for x86-64 CPU servers. ~4 times  throughput vs the generic CPU backend. No GPU required. |
 
 ### Neural judge
 
@@ -122,72 +120,21 @@ CPU-only builds (`pipeline` only) have no external dependencies beyond Rust itse
 
 ## System requirements
 
-| Requirement | Version | When needed |
-|---|---|---|
-| Rust (stable) | ≥ 1.75 | always |
-| CUDA Toolkit | ≥ 13.1 | `cuda`, `judge_cuda`, `judge_tensorrt` |
-| Vulkan SDK + `slangc` | ≥ 1.3 | `vulkan` |
-| TensorRT | ≥ 8.0 | `judge_tensorrt` |
-| Python | ≥ 3.10 | demo data generators only |
+Rust ≥ 1.75 is always required. GPU and neural judge features need CUDA Toolkit ≥ 13.1, Vulkan SDK ≥ 1.3, and/or TensorRT ≥ 8.0 depending on the flags selected. CPU-only builds (`pipeline` only) have no external dependencies.
 
-### Linux system packages
-
-> Windows and macOS instructions will be added in a future update. Feel free to raise an issue with steps you took. 
-
-**Ubuntu / Debian**
-```bash
-sudo apt-get install \
-    build-essential pkg-config \
-    libssl-dev libonig-dev \
-    libvulkan-dev vulkan-tools
-```
-
-**Fedora / RHEL**
-```bash
-sudo dnf install \
-    gcc gcc-c++ make pkgconfig \
-    openssl-devel oniguruma-devel \
-    vulkan-devel
-```
-
-For a complete post-install setup on RHEL 10 (Rust toolchain, CUDA, Vulkan, developer tools) see [ZAL-Analytics/rhel10-post-install](https://github.com/ZAL-Analytics/rhel10-post-install).
-
-See the [full installation guide](https://docs.zal-analytics.ch/zer/introduction/installation.html) for GPU driver versions, ORT configuration, and per-flag build instructions.
+See the [full installation guide](https://docs.zal-analytics.ch/zer/introduction/installation.html) for per-flag dependency tables, Linux package install commands, and GPU driver requirements.
 
 ---
 
 ## Neural judge models
 
-The `judge_*` features require ONNX model files that are not bundled with the crate. Download them from Hugging Face:
+The `judge_*` features require ONNX model files not bundled with the crate. Download from Hugging Face:
 
 ```bash
-# Using the huggingface_hub CLI (pip install huggingface_hub[cli])
 hf download arsalan-anwari/zjudge --local-dir ~/.cache/zer/models
-
-# Or with git-lfs
-git lfs install
-git clone https://huggingface.co/arsalan-anwari/zjudge ~/.cache/zer/models
 ```
 
-Expected layout after download:
-
-```
-~/.cache/zer/models/
-  zjudge/
-    nli-base/
-      base/        # FP32,CPU / CUDA
-        model.onnx
-        tokenizer.json
-      fp16/        # FP16,GPU / TensorRT
-        model.onnx
-        tokenizer.json
-```
-
-Override the default path with `ZER_MODEL_DIR`:
-
-```bash
-export ZER_MODEL_DIR=/data/zer/models
-```
+Set `ZER_MODEL_DIR` to override the default search path. Full model setup and layout details are in the [installation guide](https://docs.zal-analytics.ch/zer/introduction/installation.html).
 
 ---
 

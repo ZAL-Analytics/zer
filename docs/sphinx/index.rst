@@ -1,12 +1,13 @@
-zer an Entity Resolution library for Dutch Administrative Data
-==============================================================
+zer, Probabilistic Entity Resolution
+======================================
 
 **zer** is a Rust library for probabilistic entity resolution: finding which records
-across different datasets refer to the same real-world person, vehicle, or entity, 
+across different datasets refer to the same real-world person, vehicle, or entity,
 without a shared unique key.
 
-It is designed for Dutch administrative data (BRP, KvK, SIS II, ANPR) but is
-fully configurable for any domain.
+All components, blocking keys, similarity functions, comparators, and stores, are
+pluggable. zer ships with built-in optimizations for Dutch administrative data (BRP,
+KvK, SIS II, ANPR), and is straightforward to configure for any domain.
 
 .. code-block:: rust
 

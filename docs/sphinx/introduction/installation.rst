@@ -123,7 +123,7 @@ With AVX2 SIMD (CPU servers)
    [dependencies]
    zer = { version = "1.0", features = ["pipeline", "avx2"] }
 
-Good for production x86-64 servers without a GPU. Provides roughly 4× the
+Good for production x86-64 servers without a GPU. Provides roughly 4 times  the
 throughput of the generic CPU backend.
 
 With the neural judge (ONNX Runtime, CPU)

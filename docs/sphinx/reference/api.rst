@@ -17,21 +17,26 @@ Crate index
      - What it contains
    * - `zer <../api/zer/index.html>`_
      - Facade
-     - Re-exports the full public surface: ``Pipeline``, ``Schema``,
-       ``Record``, ``FieldKind``, ``FieldValue``, ``LinkMode``,
-       ``ZalEntityStore``. Start here.
-   * - `zer_schema <../api/zer_schema/index.html>`_
+     - GPU/CPU-aware ``Backend``, ``Comparator``, and ``Scorer`` with
+       automatic hardware detection. ``zer::prelude::*`` re-exports all
+       commonly-used types. Start here.
+   * - `zer_core <../api/zer_core/index.html>`_
      - Core types
      - ``Schema``, ``SchemaBuilder``, ``FieldKind``, ``FieldValue``,
-       ``Record``, ``RecordId``.
+       ``Record``, ``RecordId``, ``ComparisonVector``, ``ComparisonLevel``,
+       ``ModelParams``, ``RecordStore`` trait, ``Blocker`` trait.
+   * - `zer_schema <../api/zer_schema/index.html>`_
+     - Schema registry
+     - ``SchemaRegistry``, ``SchemaInferrer``, ``ModelArtifact``,
+       ``SchemaFingerprint``; schema versioning and warm-start utilities.
    * - `zer_blocking <../api/zer_blocking/index.html>`_
      - Blocking
      - ``BlockerFactory``, ``CustomSchemaCategory``, ``SchemaCategory``,
        ``CompositeBlocker``, ``InvertedIndex``, all blocking key structs.
    * - `zer_compare <../api/zer_compare/index.html>`_
      - Comparison
-     - ``Comparator``, ``ComparisonVector``, ``ComparisonLevel``,
-       ``FieldComparator``, all similarity function structs.
+     - ``FieldComparator``, ``FellegiSunterScorer``, ``LevelThresholds``,
+       all similarity function structs.
    * - `zer_compute <../api/zer_compute/index.html>`_
      - GPU / SIMD
      - ``GpuBackend``, ``DeviceComparator``, ``DeviceScorer``,
@@ -64,15 +69,15 @@ Schema and records
 
 .. code-block:: rust
 
-   use zer::{Schema, FieldKind, Record, FieldValue};
+   use zer::prelude::*;
 
    // Build a schema
-   let schema = Schema::builder()
+   let schema = SchemaBuilder::new()
        .field("achternaam",    FieldKind::Name)
        .field("voornamen",     FieldKind::Name)
        .field("geboortedatum", FieldKind::Date)
        .field("postcode",      FieldKind::Id)
-       .build();
+       .build()?;
 
    // Build a record
    let record = Record::new(1)
@@ -86,15 +91,22 @@ Blocking
 
 .. code-block:: rust
 
-   use zer_blocking::BlockerFactory;
+   use zer::prelude::*;  // BlockerFactory, InvertedIndex, Blocker trait
 
-   // Auto-select keys from schema FieldKinds
+   // Auto-select blocking keys from schema FieldKinds
    let blocker = BlockerFactory::from_schema(&schema);
 
-   // Block and iterate candidate pairs
-   let index = blocker.build_index(&records);
-   for (id_a, id_b) in index.candidate_pairs() {
-       // compare ...
+   // Index all records
+   let mut index = InvertedIndex::new();
+   for r in &records {
+       blocker.index_record(r, &schema, &mut index);
+   }
+
+   // Iterate candidate pairs
+   for r in &records {
+       for candidate_id in blocker.candidates(r, &schema, &index) {
+           // compare r with the record whose id is candidate_id ...
+       }
    }
 
 Comparison and scoring
@@ -102,36 +114,42 @@ Comparison and scoring
 
 .. code-block:: rust
 
-   use zer_compare::{Comparator, FellegiSunterScorer};
+   use zer::prelude::*;  // Backend, Comparator, Scorer, Scorer trait
 
-   let comparator = Comparator::from_schema(&schema);
-   let mut scorer  = FellegiSunterScorer::new(&schema);
+   let backend    = Backend::auto_detect();
+   let comparator = Comparator::new(&schema, &backend);
+   let scorer     = Scorer::new(&backend);
 
-   // Estimate EM parameters from candidate vectors
-   let vectors: Vec<_> = candidate_pairs
-       .map(|(a, b)| comparator.compare(a, b))
-       .collect();
-   scorer.fit(&vectors);
+   // Build a comparison batch from candidate pair indices into a record slice
+   let batch = comparator.compare_batch_indexed(&records, &pair_indices, &schema);
 
-   // Score a pair
-   let score = scorer.score(&comparator.compare(&rec_a, &rec_b));
+   // Estimate EM parameters without any labelled data
+   let params = scorer.estimate_params(&batch, None, 200)?;
+
+   // Score a single pair
+   let vector = comparator.compare(&rec_a, &rec_b, &schema);
+   let scored = scorer.score(&vector, &params);
 
 Pipeline (high-level)
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: rust
 
-   use zer::{Pipeline, LinkMode, PipelineConfig};
+   use zer::prelude::*;          // Pipeline, PipelineConfig, ZalEntityStore
+   use zer_pipeline::LinkMode;   // not re-exported in prelude
 
-   let result = Pipeline::builder()
+   let pipeline = Pipeline::builder()
        .schema(schema)
-       .records(records)
-       .link_mode(LinkMode::Dedupe)
-       .config(PipelineConfig::default())
-       .run()?;
+       .store(ZalEntityStore::open_in_memory()?)
+       .config(PipelineConfig {
+           link_mode: LinkMode::Deduplicate,
+           ..PipelineConfig::default()
+       })
+       .build()?;
 
-   println!("Entities: {}", result.entity_count());
-   println!("Matches:  {}", result.match_count());
+   let report = pipeline.run_batch(records).await?;
+   println!("Entities: {}", report.entities_created);
+   println!("Matches:  {}", report.auto_matched);
 
 Generating the API docs locally
 ---------------------------------

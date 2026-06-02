@@ -19,19 +19,9 @@ The full runnable demo lives in ``demos/multi_source_linkage/``.
 Prepare the data
 -----------------
 
-The demo reads from ``data/demos/multi_source/``. Use whichever option applies:
-
-**Option A, use the downloaded dataset** (no Python needed):
-
-.. code-block:: bash
-
-   $ hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
-       --repo-type dataset --local-dir data/
-   # Provides: data/demos/multi_source/source_brp.csv
-   #           data/demos/multi_source/source_kvk.csv
-   #           data/demos/multi_source/ground_truth.csv
-
-**Option B, regenerate locally** (requires Python 3.10+):
+The demo reads from ``data/demos/multi_source/``. Download the full dataset
+bundle (all tutorials share the same download) as described in
+:doc:`/introduction/installation`, or regenerate locally:
 
 .. code-block:: bash
 
@@ -52,23 +42,23 @@ BRP IDs.
 
    const KVK_ID_OFFSET: u64 = 10_000_000;
 
-   let brp_records: Vec<Record> = brp_rows.iter().map(|row| {
+   let brp_records: Vec<Record> = brp_rows.into_iter().map(|row| {
        Record::new(row.record_id)
-           .insert("voornamen",     &row.voornamen)
-           .insert("tussenvoegsel", &row.tussenvoegsel)
-           .insert("achternaam",    &row.achternaam)
-           .insert("geboortedatum", &row.geboortedatum)
-           .insert("geslacht",      &row.geslacht)
-           .insert("postcode",      &row.postcode)
+           .insert("voornamen",     row.voornamen)
+           .insert("tussenvoegsel", row.tussenvoegsel)
+           .insert("achternaam",    row.achternaam)
+           .insert("geboortedatum", row.geboortedatum)
+           .insert("geslacht",      row.geslacht)
+           .insert("postcode",      row.postcode)
    }).collect();
 
-   let kvk_records: Vec<Record> = kvk_rows.iter().map(|row| {
+   let kvk_records: Vec<Record> = kvk_rows.into_iter().map(|row| {
        Record::new(row.record_id + KVK_ID_OFFSET)
-           .insert("voornamen",     &row.voornamen)
-           .insert("tussenvoegsel", &row.tussenvoegsel)
-           .insert("achternaam",    &row.achternaam)
-           .insert("geboortedatum", &row.geboortedatum)
-           .insert("postcode",      &row.postcode)
+           .insert("voornamen",     row.voornamen)
+           .insert("tussenvoegsel", row.tussenvoegsel)
+           .insert("achternaam",    row.achternaam)
+           .insert("geboortedatum", row.geboortedatum)
+           .insert("postcode",      row.postcode)
    }).collect();
 
    // Apply source labels, then merge into one batch

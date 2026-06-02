@@ -1,8 +1,8 @@
 # zer-pipeline
 
-End-to-end entity resolution pipeline for the zer library.
+End-to-end entity resolution pipeline orchestration for the zer library.
 
-Ties together ingestion, blocking, comparison, scoring, and clustering into a single `Pipeline` type. Supports deduplication (single source), linkage (two sources), and combined link-and-dedupe modes, with optional Tokio-based async progress events.
+Ties together ingestion, blocking, comparison, scoring, and clustering into a single `Pipeline` type. Supports deduplication (single source), linkage (two or more sources), and combined link-and-dedupe modes, with optional Tokio-based async progress events.
 
 - **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
 - **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)

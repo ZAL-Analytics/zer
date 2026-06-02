@@ -213,7 +213,7 @@ impl VulkanDevice {
             .map_err(|e| vk_err("vkCreateCommandPool", e))?;
 
         // ── Descriptor pool ───────────────────────────────────────────────────
-        // 3 kernels × 3 descriptor sets each, plus some headroom.
+        // 3 kernels  times  3 descriptor sets each, plus some headroom.
         let pool_sizes = [
             vk::DescriptorPoolSize {
                 ty: vk::DescriptorType::STORAGE_BUFFER,

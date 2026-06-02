@@ -178,7 +178,7 @@ dataset is small or a field is mostly null, EM may converge poorly. Two options:
 
    let pipeline = Pipeline::builder()
        .schema(schema)
-       .store(ZalEntityStore::open("entities.zes")?)
+       .store(ZalEntityStore::open(std::path::Path::new("entities.zes"))?)
        .config(PipelineConfig {
            // Reuse parameters from a previous run on similar data
            registry_path: "/data/models/brp_prod.zsm".into(),

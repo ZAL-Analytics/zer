@@ -1,8 +1,8 @@
 # zer
 
-Zero-shot entity resolution pipeline for Dutch-centric administrative data, with GPU acceleration and neural NLI judging.
+Zero-shot probabilistic entity resolution, with GPU acceleration and neural NLI judging.
 
-`zer` is the top-level facade crate. It re-exports all sub-crates under a single dependency and exposes feature flags to opt into GPU backends and the neural judge.
+`zer` is the top-level facade crate. It re-exports all sub-crates under a single dependency and exposes feature flags to opt into GPU backends and the neural judge. Built-in optimizations for Dutch administrative data (BRP, KvK, SIS II, ANPR) are included; all components are pluggable for other domains.
 
 - **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
 - **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)

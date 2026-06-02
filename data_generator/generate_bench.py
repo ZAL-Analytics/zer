@@ -501,7 +501,7 @@ def _cross_gt(id_a: str, id_b: str, match_type: str) -> dict:
             "is_match": True, "match_type": match_type}
 
 
-# ── BRP × KvK link ───────────────────────────────────────────────────────────
+# ── BRP  times  KvK link ───────────────────────────────────────────────────────────
 
 def generate_brp_kvk_link(
     n_anchors:       int,
@@ -546,7 +546,7 @@ def generate_brp_kvk_link(
     print(f"[brp_kvk/link] brp={len(brp_records)} kvk={len(kvk_records)} GT={len(gt)} → {output_dir}/")
 
 
-# ── BRP × SIS link ───────────────────────────────────────────────────────────
+# ── BRP  times  SIS link ───────────────────────────────────────────────────────────
 
 def generate_brp_sis_link(
     n_anchors:       int,
@@ -591,7 +591,7 @@ def generate_brp_sis_link(
     print(f"[brp_sis/link] brp={len(brp_records)} sis={len(sis_records)} GT={len(gt)} → {output_dir}/")
 
 
-# ── BRP × HKS link ───────────────────────────────────────────────────────────
+# ── BRP  times  HKS link ───────────────────────────────────────────────────────────
 
 def generate_brp_hks_link(
     n_anchors:       int,
@@ -636,7 +636,7 @@ def generate_brp_hks_link(
     print(f"[brp_hks/link] brp={len(brp_records)} hks={len(hks_records)} GT={len(gt)} → {output_dir}/")
 
 
-# ── BRP × KvK × HKS link+dedupe ───────────────────────────────────────────────
+# ── BRP  times  KvK  times  HKS link+dedupe ───────────────────────────────────────────────
 
 def generate_brp_kvk_hks_link_and_dedup(
     n_anchors:       int,
@@ -765,15 +765,15 @@ SCENARIOS = {
     "brp/dedupe":                  "BRP single-source dedupe",
     "brp/link":                    "BRP cross-source linkage",
     "brp/link_and_dedupe":         "BRP linkage + intra-source dedupe",
-    "brp_kvk/link":                "BRP × KvK cross-schema linkage",
-    "brp_sis/link":                "BRP × SIS cross-schema linkage",
-    "brp_hks/link":                "BRP × HKS cross-schema linkage",
-    "brp_kvk_hks/link_and_dedupe": "BRP × KvK × HKS three-source link+dedupe",
+    "brp_kvk/link":                "BRP  times  KvK cross-schema linkage",
+    "brp_sis/link":                "BRP  times  SIS cross-schema linkage",
+    "brp_hks/link":                "BRP  times  HKS cross-schema linkage",
+    "brp_kvk_hks/link_and_dedupe": "BRP  times  KvK  times  HKS three-source link+dedupe",
     "kvk/dedupe":                  "KvK single-source dedupe",
     "micro/brp/dedupe":            "BRP dedupe micro (CI smoke test)",
     "micro/brp/link":              "BRP link micro (CI smoke test)",
     "micro/brp/link_and_dedupe":   "BRP link+dedupe micro (CI smoke test)",
-    "micro/brp_sis/link":          "BRP × SIS link micro (CI smoke test)",
+    "micro/brp_sis/link":          "BRP  times  SIS link micro (CI smoke test)",
 }
 
 

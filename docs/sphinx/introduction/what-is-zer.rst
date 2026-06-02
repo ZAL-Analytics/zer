@@ -9,6 +9,12 @@ spelling variations, OCR errors, and missing fields.
 This is called **entity resolution** (also known as record linkage or
 deduplication depending on the task).
 
+zer is domain-agnostic at its core. Every component, blocking keys, similarity
+functions, comparators, and storage backends, is pluggable. It ships with
+built-in support for Dutch administrative data (BRP, KvK, SIS II, ANPR), but the
+same pipeline structure applies to any domain: healthcare records, corporate
+registries, logistics data, or anything else with noisy identifiers.
+
 The problem in concrete terms
 ------------------------------
 
@@ -82,22 +88,22 @@ What zer does not do
 * **It is not a rules engine.** zer uses probabilistic scoring (Fellegi-Sunter
   with EM parameter estimation) rather than hand-written business rules.
 
-* **It does not require labelled training data.** The EM algorithm estimates
-  model parameters directly from the comparison vectors, no ground-truth pairs
-  needed to start.
 
 When to use zer
 ---------------
 
 zer is a good fit when you need to:
 
-* Deduplicate a person registry (e.g. BRP, KvK director extract).
+* Deduplicate a registry with no reliable unique identifier (e.g. a person
+  directory, a product catalogue, a patient index).
 * Link two or more datasets that represent the same population without a shared
-  key (e.g. BRP ↔ KvK ↔ HKS).
-* Match vehicle passages from ANPR cameras despite OCR noise.
-* Identify wanted persons across Schengen-state registrations that use
-  different name conventions or non-Latin scripts.
-* Build an entity graph that persists incrementally as new records arrive.
+  key (e.g. BRP ↔ KvK ↔ HKS, or any cross-system identity matching task).
+* Match records despite OCR noise or transcription errors (e.g. ANPR licence
+  plate reads, scanned document fields).
+* Resolve identities across registries that use different name conventions or
+  character sets.
+* Build an entity graph that persists and updates incrementally as new records
+  arrive over time.
 
 zer is built in Rust, exposes a ``Pipeline`` API that works with plain
 ``Vec<Record>`` batches, and integrates with Polars DataFrames and Apache Arrow

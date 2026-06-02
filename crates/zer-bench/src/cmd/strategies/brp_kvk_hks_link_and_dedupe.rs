@@ -1,6 +1,6 @@
 //! Accuracy strategy for `brp_kvk_hks/link_and_dedupe`.
 //!
-//! Three-source scenario: BRP (full names) × KvK (company-contact) × HKS
+//! Three-source scenario: BRP (full names)  times  KvK (company-contact)  times  HKS
 //! (criminal-history).  HKS records contain ~11 % initials in `voornamen`,
 //! which causes the default `DateFragmentKey(YearMonth)` to generate excessive
 //! false candidate pairs and miscalibrate EM, same root cause as `brp_hks/link`.

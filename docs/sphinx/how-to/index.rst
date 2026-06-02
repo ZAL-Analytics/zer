@@ -10,6 +10,7 @@ Task-oriented recipes. Each guide answers one specific "how do I…" question.
    blocking-strategy
    tune-scorer
    neural-judge
+   record-pool
    polars-arrow
    gpu-backend
    async-ingestion

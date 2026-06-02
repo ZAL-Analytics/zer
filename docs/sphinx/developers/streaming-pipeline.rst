@@ -19,11 +19,12 @@ across all calls.
 
 .. code-block:: rust
 
+   use std::path::Path;
    use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
    use zer_cluster::ZalEntityStore;
 
    // Open a persistent entity store so clusters survive restarts
-   let store = ZalEntityStore::open("/data/entities.zes")?;
+   let store = ZalEntityStore::open(Path::new("/data/entities.zes"))?;
 
    let pipeline = Pipeline::builder()
        .schema(schema)
@@ -59,7 +60,7 @@ Add the dependencies:
    use rdkafka::consumer::{Consumer, StreamConsumer};
    use rdkafka::message::Message;
    use rdkafka::ClientConfig;
-   use zer_core::Record;
+   use zer_core::record::Record;
 
    const BATCH_SIZE: usize = 1_000;
 
@@ -105,34 +106,19 @@ Add the dependencies:
        consumer.commit_consumer_state(rdkafka::consumer::CommitMode::Sync)?;
    }
 
-Triggering EM re-estimation
-------------------------------
+EM re-estimation in streaming mode
+-------------------------------------
 
-The EM parameters are estimated from the data seen so far. In the early life
-of a streaming pipeline the parameters are imprecise because the model has
-seen few records. As more batches arrive the estimates stabilise.
+The EM parameters are estimated from the data seen so far and written to the
+``.zsm`` registry file at the end of every successful ``run_batch``. In the
+early life of a streaming pipeline the parameters are imprecise because the
+model has seen few records; they stabilise automatically as more batches
+arrive. No manual intervention is needed.
 
-You can trigger a full re-estimation at any time by calling
-``pipeline.reset_em_model()`` and then running a larger consolidation batch.
-A good strategy is to do this after the first few thousand records, and then
-again at regular intervals (e.g. daily) to adapt to schema drift:
-
-.. code-block:: rust
-
-   use std::time::{Duration, Instant};
-
-   let mut last_reestimate = Instant::now();
-   let reestimate_interval = Duration::from_secs(24 * 3600);
-
-   loop {
-       // ... consume and run_batch as above ...
-
-       if last_reestimate.elapsed() > reestimate_interval {
-           pipeline.reset_em_model();
-           last_reestimate = Instant::now();
-           println!("EM model reset; parameters will re-converge over next batches");
-       }
-   }
+To discard accumulated parameters and force a fresh estimation — for example
+after a large schema change — delete the ``.zsm`` file before the next
+``run_batch`` call. The model will re-initialise from the new batch and
+converge again from scratch.
 
 Combining a custom entity store with streaming
 ------------------------------------------------
@@ -163,25 +149,40 @@ see the current entity graph without polling a file:
 Graceful shutdown
 ------------------
 
-Flush the entity store and persist the EM model before exiting so the next
-process start resumes cleanly:
+The EM parameters are written to the ``.zsm`` file and the entity store is
+committed at the end of every successful ``run_batch``. Exiting after a
+complete batch is always safe; no extra flush step is required.
+
+To handle ``ctrl-c`` cleanly, let the current batch finish before exiting:
 
 .. code-block:: rust
 
    use tokio::signal;
 
    let pipeline = std::sync::Arc::new(pipeline);
-   let pipeline_ref = std::sync::Arc::clone(&pipeline);
+
+   // Spawn a task that sets a shutdown flag on ctrl-c.
+   // The main loop checks the flag before starting the next batch.
+   let shutdown = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+   let shutdown_flag = std::sync::Arc::clone(&shutdown);
 
    tokio::spawn(async move {
        signal::ctrl_c().await.expect("signal handler");
-       println!("shutting down,flushing pipeline state");
-       pipeline_ref.flush().await.expect("flush failed");
-       std::process::exit(0);
+       println!("shutting down after current batch");
+       shutdown_flag.store(true, std::sync::atomic::Ordering::Relaxed);
    });
 
-``Pipeline::flush`` writes the current EM parameters to the ``.zsm`` file and
-calls ``EntityStore::flush`` on the backing store.
+   loop {
+       // ... consume Kafka messages into batch ...
+
+       let report = pipeline.run_batch(std::mem::take(&mut batch)).await?;
+       println!("batch done: +{} entities", report.entities_created);
+
+       if shutdown.load(std::sync::atomic::Ordering::Relaxed) {
+           println!("clean shutdown; EM state and entities persisted");
+           break;
+       }
+   }
 
 Backpressure and memory management
 ------------------------------------

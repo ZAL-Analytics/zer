@@ -105,12 +105,14 @@ exports of the same register, λ ≈ 0.9.
 
 EM estimates λ jointly with m and u. If EM converges to an unrealistic λ
 (e.g. λ = 0.5 on a deduplication task), the thresholds will be wrong and
-precision will suffer. In that case, provide a prior λ:
+precision will suffer.
 
-.. code-block:: rust
-
-   let params = scorer.estimate_params(&batch, Some(0.001), 100)?;
-   //                                          ^^^^^ prior λ
+The pipeline automatically warm-starts EM from the previous ``.zsm`` registry
+file on each run, guiding λ toward realistic values as the model accumulates
+evidence. On the very first batch, EM starts from equal priors (λ = 0.5) and
+typically converges within 50–200 iterations given enough variation in the
+comparison vectors. If EM stays stuck at an unrealistic λ, delete the ``.zsm``
+file so the model re-estimates from scratch on the next batch.
 
 The warm-start advantage
 -------------------------

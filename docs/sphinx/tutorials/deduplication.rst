@@ -14,25 +14,16 @@ A pipeline that:
 
 1. Defines a ``Schema`` for BRP person fields.
 2. Reads a CSV of ~500 synthetic Dutch person records.
-3. Runs ``LinkMode::Dedupe`` to find within-source duplicate pairs.
+3. Runs ``LinkMode::Deduplicate`` to find within-source duplicate pairs.
 4. Evaluates precision, recall, and F1 against a ground-truth file.
 5. Prints a cluster tree showing which records were grouped together.
 
 Prepare the data
 -----------------
 
-The demo reads from ``data/demos/persons/``. Use whichever option applies:
-
-**Option A, use the downloaded dataset** (no Python needed):
-
-.. code-block:: bash
-
-   $ hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
-       --repo-type dataset --local-dir data/
-   # Provides: data/demos/persons/records.csv
-   #           data/demos/persons/ground_truth.csv
-
-**Option B, regenerate locally** (requires Python 3.10+):
+The demo reads from ``data/demos/persons/``. Download the full dataset bundle
+(all tutorials share the same download) as described in
+:doc:`/introduction/installation`, or regenerate locally:
 
 .. code-block:: bash
 

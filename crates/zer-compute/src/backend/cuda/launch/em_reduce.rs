@@ -97,7 +97,7 @@ impl CudaDevice {
 
     /// Run one EM iteration (E-step + M-step) entirely on GPU.
     ///
-    /// `weights` is `ln(m[f][l] / u[f][l])` for each field × level (160 bytes
+    /// `weights` is `ln(m[f][l] / u[f][l])` for each field  times  level (160 bytes
     /// for 10 fields).  Only this tiny table crosses PCIe per iteration.
     /// Returns the raw M-step counts used to update `ModelParams` on the host.
     pub(crate) fn em_run_iteration(
@@ -235,7 +235,7 @@ impl KernelDispatch<EmReduce> for CudaDevice {
         let d_levels = upload(&self.stream, comparison_levels)?;
 
         // ── Allocate pass-1 output buffers (cell-major layout) ────────────────
-        // m_partials[cell * num_blocks + block]: n_cells rows × num_blocks cols.
+        // m_partials[cell * num_blocks + block]: n_cells rows  times  num_blocks cols.
         // Allocate MAX_FIELDS * NUM_LEVELS rows so the kernel can use the
         // compile-time SHARED_SZ constant without bounds checking.
         let partial_elems = (MAX_FIELDS * NUM_LEVELS) * num_blocks as usize;

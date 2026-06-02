@@ -1,7 +1,7 @@
 Custom Entity Store
 ====================
 
-By default zer persists resolved entity clusters in ``ZalEntityStore``, a
+By default zer persists resolved entities in ``ZalEntityStore``, a
 SQLite-backed store that writes a ``.zes`` file to disk. That is a good fit for
 batch pipelines, but some use cases need something different:
 
@@ -9,7 +9,7 @@ batch pipelines, but some use cases need something different:
   entity membership in real time.
 * A **shared cache** (Redis) so multiple pipeline workers can coordinate.
 * A **no-op store** for testing, where you only care about the returned
-  ``ClusterResult`` and never persist it.
+  ``PipelineReport`` and never persist entities.
 
 This guide shows how to implement the ``EntityStore`` trait and wire it into
 the pipeline.
@@ -17,43 +17,57 @@ the pipeline.
 The ``EntityStore`` trait
 --------------------------
 
-The trait lives in ``zer_cluster``. You need to implement three methods:
+The trait lives in ``zer_core::traits``. You need to implement four methods:
 
 .. code-block:: rust
 
-   use zer_cluster::{EntityStore, ClusterResult};
+   use zer_core::traits::EntityStore;
+   use zer_core::entity::{Entity, EntityId};
+   use zer_core::record::RecordId;
+   // Result<T> is std::result::Result<T, zer_core::error::ZerError>
+   use zer_core::traits::Result;
 
-   pub trait EntityStore: Send + Sync + 'static {
-       type Error: std::error::Error + Send + Sync + 'static;
+   pub trait EntityStore: Send + Sync {
+       /// Create or replace the stored entity. Returns the entity's ID.
+       fn upsert_entity(&self, entity: &Entity) -> Result<EntityId>;
 
-       /// Called once per resolved cluster. ``result`` contains the cluster
-       /// ID, the set of member RecordIds, and the representative RecordId.
-       fn upsert_cluster(&self, result: &ClusterResult) -> Result<(), Self::Error>;
+       /// Fetch a single entity by its ID.
+       fn get_entity(&self, id: EntityId) -> Result<Entity>;
 
-       /// Called when two previously separate clusters are found to be the
-       /// same entity and must be merged. ``survivor`` is the ID that lives on.
-       fn merge_clusters(
-           &self,
-           absorbed: ClusterResult,
-           survivor: ClusterResult,
-       ) -> Result<(), Self::Error>;
+       /// Find which entity contains a given record, or None if not yet resolved.
+       fn record_to_entity(&self, record_id: RecordId) -> Result<Option<EntityId>>;
 
-       /// Called after a run_batch completes. Flush any buffered writes.
-       fn flush(&self) -> Result<(), Self::Error>;
+       /// Return every entity in the store (used by cluster_view).
+       fn all_entities(&self) -> Result<Vec<Entity>>;
    }
 
-``upsert_cluster`` is called for every new or updated cluster after each
-``run_batch``. ``merge_clusters`` is called when the clusterer discovers two
-clusters that were previously separate now belong to the same entity
-(possible when a new batch introduces bridging records).
+``Entity`` and its members are defined in ``zer_core::entity``:
+
+.. code-block:: rust
+
+   pub struct Entity {
+       pub id:      EntityId,          // u64
+       pub members: Vec<EntityMember>,
+   }
+
+   pub struct EntityMember {
+       pub record_id: RecordId,        // u64
+       pub score:     f32,
+       pub method:    ResolutionMethod,
+       pub source:    Option<String>,
+   }
+
+Wrap external errors as ``ZerError::Store(message.to_string())`` and return
+them as ``Err``. The pipeline surfaces them as the ``Err`` variant of
+``run_batch``.
 
 SurrealDB example
 ------------------
 
-This example streams entity clusters into a SurrealDB instance so other
+This example streams resolved entities into a SurrealDB instance so other
 services can query entity membership via the SurrealDB REST or WebSocket API.
 
-Add the dependency:
+Add the dependencies:
 
 .. code-block:: toml
 
@@ -68,8 +82,10 @@ Implement the store:
 
    use std::sync::Arc;
    use surrealdb::{Surreal, engine::remote::ws::Client};
-   use surrealdb::sql::Thing;
-   use zer_cluster::{EntityStore, ClusterResult};
+   use zer_core::entity::{Entity, EntityId};
+   use zer_core::error::ZerError;
+   use zer_core::record::RecordId;
+   use zer_core::traits::{EntityStore, Result};
 
    pub struct SurrealEntityStore {
        db: Arc<Surreal<Client>>,
@@ -84,55 +100,47 @@ Implement the store:
    }
 
    impl EntityStore for SurrealEntityStore {
-       type Error = surrealdb::Error;
+       fn upsert_entity(&self, entity: &Entity) -> Result<EntityId> {
+           let db         = Arc::clone(&self.db);
+           let id         = entity.id;
+           // Use the Entity helper to collect member IDs
+           let member_ids: Vec<u64> = entity.member_ids().collect();
+           let scores: Vec<f32>     = entity.members.iter().map(|m| m.score).collect();
 
-       fn upsert_cluster(&self, result: &ClusterResult) -> Result<(), Self::Error> {
-           let db = Arc::clone(&self.db);
-           let id = result.cluster_id.to_string();
-           let members: Vec<u64> = result.member_ids.iter().copied().collect();
-           let repr = result.representative_id;
-
-           // Block on the async SurrealDB call. In a fully async store you
-           // would return a Future instead; see the streaming guide for that.
+           // EntityStore is synchronous; bridge to the async SurrealDB client
+           // with block_in_place so we do not block the async executor thread.
            tokio::task::block_in_place(|| {
                tokio::runtime::Handle::current().block_on(async {
                    let _: Option<serde_json::Value> = db
-                       .upsert(("entity", id.as_str()))
+                       .upsert(("entity", id.to_string().as_str()))
                        .content(serde_json::json!({
-                           "members":         members,
-                           "representative":  repr,
-                           "updated_at":      chrono::Utc::now().to_rfc3339(),
+                           "member_ids": member_ids,
+                           "scores":     scores,
                        }))
-                       .await?;
-                   Ok::<_, surrealdb::Error>(())
+                       .await
+                       .map_err(|e| ZerError::Store(e.to_string()))?;
+                   Ok::<_, ZerError>(())
                })
            })?;
-           Ok(())
+           Ok(id)
        }
 
-       fn merge_clusters(
-           &self,
-           absorbed: ClusterResult,
-           survivor: ClusterResult,
-       ) -> Result<(), Self::Error> {
-           // Delete the absorbed cluster record; the survivor will be upserted
-           // via a follow-up upsert_cluster call from the clusterer.
-           let db = Arc::clone(&self.db);
-           let absorbed_id = absorbed.cluster_id.to_string();
-           tokio::task::block_in_place(|| {
-               tokio::runtime::Handle::current().block_on(async {
-                   let _: Option<serde_json::Value> = db
-                       .delete(("entity", absorbed_id.as_str()))
-                       .await?;
-                   Ok::<_, surrealdb::Error>(())
-               })
-           })?;
-           self.upsert_cluster(&survivor)
+       fn get_entity(&self, id: EntityId) -> Result<Entity> {
+           // A full implementation queries SurrealDB and reconstructs the
+           // Entity + Vec<EntityMember> from the stored document.
+           Err(ZerError::Store(format!("get_entity({id}) not implemented")))
        }
 
-       fn flush(&self) -> Result<(), Self::Error> {
-           // SurrealDB writes are immediate; nothing to flush.
-           Ok(())
+       fn record_to_entity(&self, _record_id: RecordId) -> Result<Option<EntityId>> {
+           // Implement by querying for the entity whose member_ids contains
+           // record_id.  Return Ok(None) when no entity is found.
+           Ok(None)
+       }
+
+       fn all_entities(&self) -> Result<Vec<Entity>> {
+           // Used by pipeline.cluster_view().  Implement with a SELECT * FROM entity
+           // query if you need the ClusterView over a SurrealDB-backed store.
+           Ok(vec![])
        }
    }
 
@@ -160,11 +168,11 @@ After the run you can query entity membership in SurrealDB:
 
 .. code-block:: sql
 
-   -- all records belonging to entity "42"
-   SELECT members FROM entity:42;
+   -- all record IDs belonging to entity 42
+   SELECT member_ids FROM entity:42;
 
-   -- which entity does record 1337 belong to?
-   SELECT id FROM entity WHERE members CONTAINS 1337;
+   -- which entity contains record 1337?
+   SELECT id FROM entity WHERE member_ids CONTAINS 1337;
 
 No-op store for testing
 ------------------------
@@ -174,15 +182,20 @@ When you only care about the ``PipelineReport`` and the in-memory
 
 .. code-block:: rust
 
-   use zer_cluster::{EntityStore, ClusterResult};
+   use zer_core::entity::{Entity, EntityId};
+   use zer_core::error::ZerError;
+   use zer_core::record::RecordId;
+   use zer_core::traits::{EntityStore, Result};
 
    pub struct NoOpStore;
 
    impl EntityStore for NoOpStore {
-       type Error = std::convert::Infallible;
-       fn upsert_cluster(&self, _: &ClusterResult) -> Result<(), Self::Error> { Ok(()) }
-       fn merge_clusters(&self, _: ClusterResult, _: ClusterResult) -> Result<(), Self::Error> { Ok(()) }
-       fn flush(&self) -> Result<(), Self::Error> { Ok(()) }
+       fn upsert_entity(&self, entity: &Entity) -> Result<EntityId> { Ok(entity.id) }
+       fn get_entity(&self, id: EntityId) -> Result<Entity> {
+           Err(ZerError::Store(format!("no-op: get_entity({id})")))
+       }
+       fn record_to_entity(&self, _: RecordId) -> Result<Option<EntityId>> { Ok(None) }
+       fn all_entities(&self) -> Result<Vec<Entity>> { Ok(vec![]) }
    }
 
    let pipeline = Pipeline::builder()
@@ -193,9 +206,8 @@ When you only care about the ``PipelineReport`` and the in-memory
 Error handling
 ---------------
 
-The associated ``Error`` type must implement ``std::error::Error + Send + Sync``.
-The pipeline wraps it in ``ZerError::Store`` and surfaces it as the ``Err``
-variant of ``run_batch``. Handle it like any other pipeline error:
+Store errors are wrapped in ``ZerError::Store`` and surfaced as the ``Err``
+variant of ``run_batch``. Handle them like any other pipeline error:
 
 .. code-block:: rust
 
@@ -208,5 +220,5 @@ What to explore next
 ---------------------
 
 * :doc:`custom-record-store`, replace the in-memory record store used by the neural judge.
-* :doc:`streaming-pipeline`, keep the pipeline running and continuously write new clusters to your store.
-* :doc:`/how-to/neural-judge`, the neural judge also reads from ``VecRecordStore``,swap it here if you need persistence.
+* :doc:`streaming-pipeline`, keep the pipeline running and continuously write new entities to your store.
+* :doc:`/how-to/neural-judge`, the neural judge also reads from ``VecRecordStore``; swap it here if you need persistence.

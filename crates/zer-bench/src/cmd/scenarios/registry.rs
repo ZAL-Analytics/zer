@@ -150,10 +150,10 @@ pub static ALL_SCENARIOS: &[ScenarioSpec] = &[
         dataset_name:   "brp_link_and_dedupe",
         tags:           &["link-and-dedupe"],
     },
-    // ── BRP × KvK cross-schema link ──────────────────────────────────────────
+    // ── BRP  times  KvK cross-schema link ──────────────────────────────────────────
     ScenarioSpec {
         name:           "brp_kvk/link",
-        description:    "BRP × KvK cross-schema linkage, natural-person ↔ company-contact records",
+        description:    "BRP  times  KvK cross-schema linkage, natural-person ↔ company-contact records",
         sources:        &[
             SourceSpec { path: "data/benchmarks/brp_kvk/link/source_brp.csv", source: "brp" },
             SourceSpec { path: "data/benchmarks/brp_kvk/link/source_kvk.csv", source: "kvk" },
@@ -164,10 +164,10 @@ pub static ALL_SCENARIOS: &[ScenarioSpec] = &[
         dataset_name:   "brp_kvk_link",
         tags:           &["cross-schema", "kvk"],
     },
-    // ── BRP × SIS cross-schema link ──────────────────────────────────────────
+    // ── BRP  times  SIS cross-schema link ──────────────────────────────────────────
     ScenarioSpec {
         name:           "brp_sis/link",
-        description:    "BRP × SIS cross-schema linkage, civil registry ↔ law-enforcement records",
+        description:    "BRP  times  SIS cross-schema linkage, civil registry ↔ law-enforcement records",
         sources:        &[
             SourceSpec { path: "data/benchmarks/brp_sis/link/source_brp.csv", source: "brp" },
             SourceSpec { path: "data/benchmarks/brp_sis/link/source_sis.csv", source: "sis" },
@@ -178,10 +178,10 @@ pub static ALL_SCENARIOS: &[ScenarioSpec] = &[
         dataset_name:   "brp_sis_link",
         tags:           &["cross-schema", "sis"],
     },
-    // ── BRP × HKS cross-schema link ──────────────────────────────────────────
+    // ── BRP  times  HKS cross-schema link ──────────────────────────────────────────
     ScenarioSpec {
         name:           "brp_hks/link",
-        description:    "BRP × HKS cross-schema linkage, civil registry ↔ criminal-history records",
+        description:    "BRP  times  HKS cross-schema linkage, civil registry ↔ criminal-history records",
         sources:        &[
             SourceSpec { path: "data/benchmarks/brp_hks/link/source_brp.csv", source: "brp" },
             SourceSpec { path: "data/benchmarks/brp_hks/link/source_hks.csv", source: "hks" },
@@ -192,10 +192,10 @@ pub static ALL_SCENARIOS: &[ScenarioSpec] = &[
         dataset_name:   "brp_hks_link",
         tags:           &["cross-schema", "hks"],
     },
-    // ── BRP × KvK × HKS three-source link+dedupe ─────────────────────────────
+    // ── BRP  times  KvK  times  HKS three-source link+dedupe ─────────────────────────────
     ScenarioSpec {
         name:           "brp_kvk_hks/link_and_dedupe",
-        description:    "BRP × KvK × HKS three-source link+dedupe, cross-domain with intra-source dups",
+        description:    "BRP  times  KvK  times  HKS three-source link+dedupe, cross-domain with intra-source dups",
         sources:        &[
             SourceSpec { path: "data/benchmarks/brp_kvk_hks/link_and_dedupe/source_brp.csv", source: "brp" },
             SourceSpec { path: "data/benchmarks/brp_kvk_hks/link_and_dedupe/source_kvk.csv", source: "kvk" },
@@ -258,7 +258,7 @@ pub static ALL_SCENARIOS: &[ScenarioSpec] = &[
     },
     ScenarioSpec {
         name:           "micro/brp_sis/link",
-        description:    "BRP × SIS link micro (CI smoke test)",
+        description:    "BRP  times  SIS link micro (CI smoke test)",
         sources:        &[
             SourceSpec { path: "data/benchmarks/micro/brp_sis/link/source_brp.csv", source: "brp" },
             SourceSpec { path: "data/benchmarks/micro/brp_sis/link/source_sis.csv", source: "sis" },

@@ -7,7 +7,7 @@ use super::{BlockingKey, phonetic::PhoneticAlgo};
 /// Composite blocking key: `"{phonetic(surname)}:{initial(firstname)}:{year}"`.
 ///
 /// Compared to `PhoneticNameDobKey`, splitting by first-name initial reduces
-/// bucket size ~20× for high-frequency surnames (e.g. Dutch "De Jong", "Jansen"),
+/// bucket size ~20 times  for high-frequency surnames (e.g. Dutch "De Jong", "Jansen"),
 /// dramatically cutting false candidate pairs while preserving recall for true
 /// matches that share surname phonetic code, first-name initial, and birth year.
 pub struct PhoneticNameDobInitialKey {

@@ -159,7 +159,7 @@ LevenshteinSimilarity (custom use)
 
 ``LevenshteinSimilarity`` is available for fields where edit distance is more
 meaningful than Jaro-Winkler's positional weighting. It is not used by default
-for any ``FieldKind`` but can be injected via ``FieldComparator::with_fn()``:
+for any ``FieldKind`` but can be injected via ``FieldComparator::with_fns()``:
 
 .. code-block:: rust
 

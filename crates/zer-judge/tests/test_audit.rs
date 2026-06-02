@@ -88,7 +88,7 @@ fn appends_accumulate_across_sessions() {
         log.append(&make_entry(session, session + 10, "decrease"));
     }
     let content = std::fs::read_to_string(&path).unwrap();
-    assert_eq!(content.lines().count(), 3, "3 sessions × 1 entry each = 3 lines");
+    assert_eq!(content.lines().count(), 3, "3 sessions  times  1 entry each = 3 lines");
 }
 
 // ── Thread safety ─────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ fn concurrent_writes_all_appear_in_file() {
 
     let content = std::fs::read_to_string(&path).unwrap();
     let line_count = content.lines().count();
-    assert_eq!(line_count, 80, "8 threads × 10 entries each = 80 lines");
+    assert_eq!(line_count, 80, "8 threads  times  10 entries each = 80 lines");
 
     // Every line must be valid JSON
     for line in content.lines() {

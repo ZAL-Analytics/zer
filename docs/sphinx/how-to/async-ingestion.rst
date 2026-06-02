@@ -46,13 +46,14 @@ Tokio task that owns the blocking index and per-record state. The returned
 
 .. code-block:: rust
 
+   use std::path::Path;
    use std::sync::Arc;
    use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let pipeline = Pipeline::builder()
        .schema(schema)
-       .store(ZalEntityStore::open("/data/entities.zes")?)
+       .store(ZalEntityStore::open(Path::new("/data/entities.zes"))?)
        .config(PipelineConfig {
            // The ingester loads initial EM parameters from this file.
            // Run run_batch at least once beforehand to populate it.
@@ -171,6 +172,7 @@ Full streaming example
 
 .. code-block:: rust
 
+   use std::path::Path;
    use std::sync::Arc;
    use zer_core::{record::{FieldValue, Record}, scoring::MatchBand};
    use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
@@ -180,7 +182,7 @@ Full streaming example
    async fn main() -> anyhow::Result<()> {
        let pipeline = Pipeline::builder()
            .schema(schema)
-           .store(ZalEntityStore::open("/data/entities.zes")?)
+           .store(ZalEntityStore::open(Path::new("/data/entities.zes"))?)
            .config(PipelineConfig {
                registry_path: "/data/pipeline.zsm".into(),
                ..PipelineConfig::default()

@@ -2,7 +2,7 @@
 
 Blocking strategies and inverted index for candidate pair generation in the zer entity-resolution library.
 
-Blocking drastically reduces the number of record pairs that need to be compared by grouping records into blocks, only pairs within the same block are compared. This crate provides a composable set of blocking keys tailored to Dutch administrative data.
+Blocking drastically reduces the number of record pairs that need to be compared by grouping records into blocks; only pairs within the same block are compared. This crate provides a composable, pluggable set of blocking keys, with built-in keys optimized for Dutch administrative data.
 
 - **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
 - **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)

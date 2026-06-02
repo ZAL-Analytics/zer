@@ -34,7 +34,7 @@ fn main() {
 
     println!("source records  : {}", source.len());
     println!("pair_count      : {}", gen.pair_count);
-    println!("synthetic records generated: {} (2 × pair_count)", synthetics.len());
+    println!("synthetic records generated: {} (2  times  pair_count)", synthetics.len());
     println!();
 
     println!(

@@ -20,13 +20,13 @@ pub const GPU_BATCH_MIN: usize = 1_000;
 ///
 /// | Buffer | Bytes per pair |
 /// |---|---|
-/// | `d_data_a` + `d_data_b` (u8, STRING_STRIDE each) | `2 × n_fields × 64` |
-/// | `d_lens_a` + `d_lens_b` (u16) | `2 × n_fields × 2` |
-/// | `d_ids_a`  + `d_ids_b`  (u64) | `2 × 8` |
-/// | `d_weights` + `d_probs` (f32) | `2 × 4` |
-/// | `d_levels`              (u32) | `n_fields × 4` |
+/// | `d_data_a` + `d_data_b` (u8, STRING_STRIDE each) | `2  times  n_fields  times  64` |
+/// | `d_lens_a` + `d_lens_b` (u16) | `2  times  n_fields  times  2` |
+/// | `d_ids_a`  + `d_ids_b`  (u64) | `2  times  8` |
+/// | `d_weights` + `d_probs` (f32) | `2  times  4` |
+/// | `d_levels`              (u32) | `n_fields  times  4` |
 ///
-/// Total: `n_fields × 136 + 24` bytes per pair (exact, no estimation).
+/// Total: `n_fields  times  136 + 24` bytes per pair (exact, no estimation).
 ///
 /// # Example
 ///
@@ -119,7 +119,7 @@ mod tests {
     fn three_gb_vram_fits_millions() {
         let sizer     = BatchSizer::new();
         // 3 GB is a realistic headroom figure after OS + model overhead
-        // 10 fields × 136 + 24 = 1,384 bytes/pair → >2M pairs in 3 GB at 75%
+        // 10 fields  times  136 + 24 = 1,384 bytes/pair → >2M pairs in 3 GB at 75%
         let available = 3u64 * 1024 * 1024 * 1024;
         let max       = sizer.max_batch_size(available, 10);
         assert!(max > 1_000_000, "expected >1M pairs, got {max}");
@@ -141,11 +141,11 @@ mod tests {
     fn formula_matches_compare_pool_layout() {
         // Verify the formula matches the GPU compare kernel buffer layout.
         // For n=1 field, 1 pair the device allocates:
-        //   d_data_a/b: 2 × 1 × 64 = 128 bytes
-        //   d_lens_a/b: 2 × 1 × 2  =   4 bytes
-        //   d_ids_a/b:  2 × 8       =  16 bytes
-        //   d_weights/probs: 2 × 4  =   8 bytes
-        //   d_levels:   1 × 4       =   4 bytes
+        //   d_data_a/b: 2  times  1  times  64 = 128 bytes
+        //   d_lens_a/b: 2  times  1  times  2  =   4 bytes
+        //   d_ids_a/b:  2  times  8       =  16 bytes
+        //   d_weights/probs: 2  times  4  =   8 bytes
+        //   d_levels:   1  times  4       =   4 bytes
         //   total = 160 bytes/pair
         let bytes_per_pair_1field = 2 * 1 * STRING_STRIDE + 2 * 1 * 2 + 16 + 8 + 1 * 4;
         assert_eq!(bytes_per_pair_1field, 160);

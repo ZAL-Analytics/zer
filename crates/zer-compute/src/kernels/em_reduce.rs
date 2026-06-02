@@ -25,10 +25,10 @@ pub struct EmReduceInput<'a> {
 /// u[f][l] = (u_counts[f*4 + l] + smoothing) / (total_nonmatch + 4*smoothing)
 /// ```
 pub struct EmReduceOutput {
-    /// Unnormalized m-counts: `m_counts[f*4 + l] = Σ_pairs P(match) × 1[level==l]`.
+    /// Unnormalized m-counts: `m_counts[f*4 + l] = Σ_pairs P(match)  times  1[level==l]`.
     /// Length is `n_fields * 4`.
     pub m_counts: Vec<f32>,
-    /// Unnormalized u-counts: `u_counts[f*4 + l] = Σ_pairs P(nonmatch) × 1[level==l]`.
+    /// Unnormalized u-counts: `u_counts[f*4 + l] = Σ_pairs P(nonmatch)  times  1[level==l]`.
     /// Length is `n_fields * 4`.
     pub u_counts: Vec<f32>,
     /// Σ P(match) across all pairs.

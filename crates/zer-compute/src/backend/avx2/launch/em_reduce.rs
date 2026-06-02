@@ -11,7 +11,7 @@
 //! # M-step (AVX2 mask-accumulate + Rayon)
 //!
 //! Rayon `par_chunks` splits pairs across threads; each thread maintains
-//! thread-local `m_counts`/`u_counts` arrays (n_fields × 4 floats each).
+//! thread-local `m_counts`/`u_counts` arrays (n_fields  times  4 floats each).
 //! Within each chunk, `_mm256_cmpeq_epi32` / `_mm256_and_ps` accumulates
 //! per-level bins without branching.  Thread-local results are merged via
 //! tree reduction, input arrays are never copied.

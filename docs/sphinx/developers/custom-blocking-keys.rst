@@ -13,25 +13,27 @@ you need your own.
 The ``BlockingKey`` trait
 --------------------------
 
-The trait lives in ``zer_blocking``:
+The trait lives in ``zer_blocking::keys``:
 
 .. code-block:: rust
 
-   use zer_blocking::BlockingKey;
-   use zer_core::Record;
+   use zer_blocking::keys::BlockingKey;
+   use zer_core::{record::Record, schema::Schema};
 
    pub trait BlockingKey: Send + Sync + 'static {
        /// Name shown in debug output and audit logs.
        fn name(&self) -> &str;
 
-       /// Extract zero or more tokens from a record. Returning multiple tokens
-       /// increases recall at the cost of more candidate pairs.
-       fn extract(&self, record: &Record) -> Vec<String>;
+       /// Extract zero or more tokens from a record. The ``schema`` parameter
+       /// gives access to field metadata (index, kind) when needed.
+       /// Returning multiple tokens increases recall at the cost of more
+       /// candidate pairs.
+       fn extract(&self, record: &Record, schema: &Schema) -> Vec<String>;
    }
 
 Returning an empty ``Vec`` from ``extract`` means the record participates in
 no blocking group for this key, which is correct for genuinely missing fields.
-Returning many tokens per record can cause a candidate explosion,aim for
+Returning many tokens per record can cause a candidate explosion; aim for
 tokens that are selective enough that a group has at most a few hundred
 members.
 
@@ -45,8 +47,8 @@ dramatically shrinking the comparison space.
 
 .. code-block:: rust
 
-   use zer_blocking::BlockingKey;
-   use zer_core::Record;
+   use zer_blocking::keys::BlockingKey;
+   use zer_core::{record::Record, schema::Schema};
 
    pub struct IbanPrefixKey {
        field: String,
@@ -61,8 +63,8 @@ dramatically shrinking the comparison space.
    impl BlockingKey for IbanPrefixKey {
        fn name(&self) -> &str { "iban_prefix" }
 
-       fn extract(&self, record: &Record) -> Vec<String> {
-           let Some(value) = record.get_text(&self.field) else { return vec![] };
+       fn extract(&self, record: &Record, _schema: &Schema) -> Vec<String> {
+           let Some(value) = record.text(&self.field) else { return vec![] };
            // Normalise: strip spaces, uppercase
            let iban: String = value.chars()
                .filter(|c| !c.is_whitespace())
@@ -90,12 +92,12 @@ Add the dependency:
 .. code-block:: rust
 
    use h3o::{CellIndex, LatLng, Resolution};
-   use zer_blocking::BlockingKey;
-   use zer_core::Record;
+   use zer_blocking::keys::BlockingKey;
+   use zer_core::{record::Record, schema::Schema};
 
    pub struct H3BlockingKey {
-       lat_field: String,
-       lng_field: String,
+       lat_field:  String,
+       lng_field:  String,
        resolution: Resolution,
    }
 
@@ -113,67 +115,95 @@ Add the dependency:
    impl BlockingKey for H3BlockingKey {
        fn name(&self) -> &str { "h3_cell" }
 
-       fn extract(&self, record: &Record) -> Vec<String> {
-           let lat = record.get_float(&self.lat_field)?;
-           let lng = record.get_float(&self.lng_field)?;
-           let coord = LatLng::new(lat, lng).ok()?;
-           let cell  = coord.to_cell(self.resolution);
+       fn extract(&self, record: &Record, _schema: &Schema) -> Vec<String> {
+           let lat = match record.field_as::<f64>(&self.lat_field) {
+               Some(v) => v,
+               None    => return vec![],
+           };
+           let lng = match record.field_as::<f64>(&self.lng_field) {
+               Some(v) => v,
+               None    => return vec![],
+           };
+           let coord = match LatLng::new(lat, lng) {
+               Ok(c)  => c,
+               Err(_) => return vec![],
+           };
+           let cell = coord.to_cell(self.resolution);
 
            // Also emit the 6 immediate neighbours for edge-crossing pairs
            let mut tokens = vec![cell.to_string()];
            tokens.extend(cell.grid_disk::<Vec<_>>(1).into_iter().map(|c| c.to_string()));
-           Some(tokens)
+           tokens
        }
    }
 
 .. note::
 
    Emitting neighbour cells increases recall for pairs that sit near a cell
-   boundary. The trade-off is roughly a 7× increase in candidate pairs for
+   boundary. The trade-off is roughly a 7 times increase in candidate pairs for
    this key. Combine with a second, more selective key (e.g. postal code) to
    keep the total candidate count manageable.
 
-Registering a custom key with the schema
+Registering custom keys with the pipeline
 ------------------------------------------
 
-Pass custom blocking keys to the schema builder alongside or instead of the
-built-in presets:
+Pass custom blocking keys to a ``CompositeBlocker`` and supply it to the
+pipeline builder. The schema and blocker are separate: the schema describes
+field types; the blocker decides which records become candidate pairs.
 
 .. code-block:: rust
 
-   use zer_schema::SchemaBuilder;
-   use zer_blocking::BlockingKeySet;
+   use zer_core::schema::{FieldKind, SchemaBuilder};
+   use zer_blocking::CompositeBlocker;
+   use zer_pipeline::pipeline::Pipeline;
 
-   let keys = BlockingKeySet::new()
+   let schema = SchemaBuilder::new()
+       .field("iban", FieldKind::Id)
+       .field("lat",  FieldKind::Numeric)
+       .field("lng",  FieldKind::Numeric)
+       .field("name", FieldKind::Name)
+       .build()?;
+
+   let blocker = CompositeBlocker::new()
        .add(IbanPrefixKey::new("iban"))
        .add(H3BlockingKey::new("lat", "lng", 7));
 
-   let schema = SchemaBuilder::new()
-       .field("iban",    FieldKind::Text)
-       .field("lat",     FieldKind::Float)
-       .field("lng",     FieldKind::Float)
-       .field("name",    FieldKind::PersonName)
-       .blocking_keys(keys)
+   let pipeline = Pipeline::builder()
+       .schema(schema)
+       .blocker(blocker)
+       .store(store)
        .build()?;
+
+Fields not used by any blocking key are still compared once a pair is
+generated by another key — blocking only controls which pairs are formed,
+not which fields are scored.
 
 Measuring blocking recall
 --------------------------
 
-A blocking key that is too aggressive misses true matches,pairs that should
+A blocking key that is too aggressive misses true matches — pairs that should
 have been compared but were not. Measure recall on a labelled sample before
-deploying to production:
+deploying to production by checking how many ground-truth pairs share at
+least one blocking token:
 
 .. code-block:: rust
 
-   use zer_blocking::RecallAudit;
+   let mut found = 0usize;
+   let total = ground_truth_pairs.len();
 
-   let audit = RecallAudit::run(&schema, &ground_truth_pairs, &records)?;
-   println!(
-       "blocking recall: {:.1}%  ({} / {} true pairs found)",
-       audit.recall * 100.0,
-       audit.found,
-       audit.total,
-   );
+   for (id_a, id_b) in &ground_truth_pairs {
+       let record_a = &records[*id_a];
+       let record_b = &records[*id_b];
+       let tokens_a: std::collections::HashSet<String> =
+           my_key.extract(record_a, &schema).into_iter().collect();
+       let tokens_b: std::collections::HashSet<String> =
+           my_key.extract(record_b, &schema).into_iter().collect();
+       if !tokens_a.is_disjoint(&tokens_b) {
+           found += 1;
+       }
+   }
+   println!("blocking recall: {:.1}%  ({found} / {total} true pairs found)",
+            found as f64 / total as f64 * 100.0);
 
 A recall below 95 % usually means a blocking key is too narrow or a field has
 too many missing values. See :doc:`/explanation/blocking-recall` for the

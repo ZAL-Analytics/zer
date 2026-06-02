@@ -515,7 +515,7 @@ fn run_scale_comparison(
 
     let speedup = |dev_ms: u128, cpu_ms: u128| -> String {
         if dev_ms == 0 { return "∞".into(); }
-        format!("{:.2}×", cpu_ms as f64 / dev_ms as f64)
+        format!("{:.2} times ", cpu_ms as f64 / dev_ms as f64)
     };
 
     let d_total = d.compare_ms + d.em_ms + d.score_ms;
