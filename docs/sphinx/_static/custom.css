@@ -262,6 +262,10 @@ div.admonition > .admonition-title {
 table.docutils {
   border-collapse: collapse;
   width: 100%;
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin: 1.5rem 0;
   font-size: 0.9rem;
 }
@@ -273,12 +277,22 @@ table.docutils th {
   padding: 0.5rem 0.75rem !important;
   border: 1px solid var(--border);
   text-align: left;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 table.docutils td {
   padding: 0.5rem 0.75rem !important;
   border: 1px solid var(--border);
   color: var(--fg-sec);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+table.docutils td code,
+table.docutils th code {
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 table.docutils tr:nth-child(even) td {

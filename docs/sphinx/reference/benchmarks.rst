@@ -21,103 +21,205 @@ single CPU thread (Python 3.12, Splink 4.x).
 Accuracy
 ---------
 
-The table below covers all eight benchmark scenarios.  All runs use
-default thresholds; no per-dataset tuning was applied.
+All eight benchmark scenarios are shown below — select a tab to compare
+zer against Splink side by side.  The higher value in each metric column is
+shown in **bold**.  All runs use default thresholds; no per-dataset tuning
+was applied.  Splink PR-AUC is computed from each scenario's
+``*_scored_pairs.csv`` in ``bench_results/data/accuracy_all/``.
 
-.. list-table::
-   :header-rows: 2
-   :widths: 30 10 10 10 10 10 10 10 10
+.. tab-set::
 
-   * - Scenario
-     - \
-     - zer
-     - \
-     - \
-     - \
-     - Splink
-     - \
-     - \
-   * - \
-     - Records
-     - Precision
-     - Recall
-     - F1
-     - PR-AUC
-     - Precision
-     - Recall
-     - F1
-   * - BRP deduplication
-     - 22 200
-     - 0.984
-     - 0.982
-     - **0.983**
-     - 0.991
-     - 0.996
-     - 0.922
-     - 0.958
-   * - KvK deduplication
-     - 22 200
-     - 0.910
-     - 1.000
-     - **0.953**
-     - 0.916
-     - 0.998
-     - 0.925
-     - 0.960
-   * - BRP link (LinkOnly)
-     - 28 400
-     - 0.976
-     - 0.991
-     - **0.983**
-     - 0.997
-     - 0.964
-     - 0.714
-     - 0.820
-   * - BRP + KvK link (LinkOnly)
-     - 25 200
-     - 0.788
-     - 0.975
-     - 0.872
-     - 0.938
-     - 0.912
-     - 0.877
-     - **0.895**
-   * - BRP + SIS II link (LinkOnly)
-     - 21 200
-     - 1.000
-     - 0.984
-     - **0.992**
-     - 0.984
-     - 0.926
-     - 0.823
-     - 0.871
-   * - BRP + HKS link (LinkOnly)
-     - 23 200
-     - 1.000
-     - 0.992
-     - **0.996**
-     - 0.993
-     - 0.924
-     - 0.819
-     - 0.868
-   * - BRP + KvK link + dedupe (LinkAndDedupe)
-     - 31 200
-     - 0.843
-     - 0.976
-     - **0.905**
-     - 0.923
-     - 0.904
-     - 0.771
-     - 0.832
-   * - BRP + KvK + HKS link + dedupe (LinkAndDedupe)
-     - 30 200
-     - 0.850
-     - 0.985
-     - **0.913**
-     - 0.916
-     - 0.702
-     - 0.889
-     - 0.784
+   .. tab-item:: BRP dedupe
+
+      22 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - 0.984
+           - **0.982**
+           - **0.983**
+           - **0.990**
+         * - Splink
+           - **0.996**
+           - 0.922
+           - 0.958
+           - 0.951
+
+   .. tab-item:: KvK dedupe
+
+      22 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - 0.910
+           - **1.000**
+           - 0.953
+           - 0.915
+         * - Splink
+           - **0.998**
+           - 0.925
+           - **0.960**
+           - **0.974**
+
+   .. tab-item:: BRP link
+
+      28 400 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - **0.976**
+           - **0.991**
+           - **0.983**
+           - **0.997**
+         * - Splink
+           - 0.964
+           - 0.714
+           - 0.820
+           - 0.858
+
+   .. tab-item:: BRP + KvK link
+
+      25 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - 0.788
+           - **0.975**
+           - 0.872
+           - 0.938
+         * - Splink
+           - **0.912**
+           - 0.877
+           - **0.895**
+           - **0.951**
+
+   .. tab-item:: BRP + SIS link
+
+      21 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - **1.000**
+           - **0.984**
+           - **0.992**
+           - **0.999**
+         * - Splink
+           - 0.926
+           - 0.823
+           - 0.871
+           - 0.942
+
+   .. tab-item:: BRP + HKS link
+
+      23 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - **1.000**
+           - **0.992**
+           - **0.996**
+           - **0.999**
+         * - Splink
+           - 0.924
+           - 0.819
+           - 0.868
+           - 0.942
+
+   .. tab-item:: BRP + KvK L+D
+
+      31 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - 0.843
+           - **0.976**
+           - **0.905**
+           - **0.923**
+         * - Splink
+           - **0.904**
+           - 0.771
+           - 0.832
+           - 0.874
+
+   .. tab-item:: BRP + KvK + HKS L+D
+
+      30 200 records
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 20 20 20 20 20
+
+         * - Library
+           - Precision
+           - Recall
+           - F1
+           - PR-AUC
+         * - zer
+           - **0.850**
+           - **0.985**
+           - **0.913**
+           - **0.920**
+         * - Splink
+           - 0.702
+           - 0.889
+           - 0.784
+           - 0.831
 
 .. raw:: html
 
