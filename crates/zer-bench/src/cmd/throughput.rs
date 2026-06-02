@@ -3,17 +3,6 @@
 //! Measures compare/EM/score throughput against the canonical BRP benchmark
 //! dataset (`data/benchmarks/bench_dedup/source.csv`).  Supply `--dataset`
 //! to use a custom CSV instead.
-//!
-//! ## Profiling
-//!
-//! Pass `--profile` to print the nsys/ncu command line instead of running the
-//! benchmark:
-//!
-//! ```bash
-//! cargo run --release -p zer-bench --features=cuda -- \
-//!     throughput --dataset data/benchmarks/bench_dedup/source.csv \
-//!                --target cuda --profile
-//! ```
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -28,6 +17,7 @@ use zer_adapters::time::{fmt_unix_secs, unix_secs_now};
 use zer_judge::{DebertaJudge, DebertaJudgeConfig, JudgeBackend, MiniLmSpec};
 
 use super::util::{log_trt_cache_status, resolve_out_dir};
+use super::scenarios::{find_scenario, full_size_throughput_scenarios, throughput_scenarios};
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -58,46 +48,189 @@ pub struct ThroughputArgs {
     #[arg(long)]
     pub judge_models_dir: Option<String>,
 
-    /// Run device-vs-CPU scaling comparison (like old device_scale).
-    #[arg(long)]
-    pub scale: bool,
-
-    /// Print the profiler command instead of running the benchmark.
-    #[arg(long)]
-    pub profile: bool,
-
     /// Scenario slug (e.g. `brp/dedupe`).  When provided, the slugified name
     /// (e.g. `brp_dedupe`) is used as the dataset label in output files so it
     /// matches the label written by competitor library scripts.
+    /// Use `all` to run all full-size dedupe scenarios back-to-back.
     #[arg(long)]
     pub scenario: Option<String>,
 
     /// Output directory for the summary CSV (same schema as accuracy/library).
     #[arg(long, default_value = "bench_results")]
     pub out: String,
+
+    /// List all throughput-eligible scenarios and exit.
+    #[arg(long)]
+    pub list_scenarios: bool,
+
+    /// Comma-separated list of external libraries to benchmark alongside zer.
+    /// Each library's throughput script is run after zer, then an inline
+    /// comparison table is printed.  Example: `--compare-libs splink,foo`.
+    #[arg(long, value_delimiter = ',')]
+    pub compare_libs: Vec<String>,
+
+    /// Root directory containing external library benchmark scripts.
+    /// Scripts are resolved as `<dir>/<library>/throughput/run.py`.
+    /// Falls back to the `ZER_EXTERNAL_BENCHMARKS_DIR` env var, then
+    /// `benchmarks/` inside the workspace root.
+    #[arg(long, env = "ZER_EXTERNAL_BENCHMARKS_DIR")]
+    pub external_benchmarks_dir: Option<String>,
+
+    /// Re-run setup.sh for each library even if the `.setup_done` sentinel exists.
+    #[arg(long)]
+    pub force_setup: bool,
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 pub fn run(args: ThroughputArgs) -> anyhow::Result<()> {
-    if args.profile {
-        print_profile_cmd(&args);
+    if args.list_scenarios {
+        print_throughput_scenarios();
         return Ok(());
     }
 
-    let path = args.dataset.clone()
-        .unwrap_or_else(|| super::util::bench_data_root()
-            .join("benchmarks/bench_dedup/source.csv")
-            .to_string_lossy()
-            .into_owned());
-    let label = args.scenario.as_deref()
+    super::util::validate_compute_target(&args.target)?;
+    if let Some(jt) = &args.judge_target {
+        super::util::validate_judge_target(jt)?;
+    }
+
+    // Throughput only supports dedupe scenarios.
+    if let Some(scenario) = args.scenario.as_deref() {
+        if scenario != "all" {
+            let mode_part = scenario.rsplit('/').next().unwrap_or(scenario);
+            if mode_part != "dedupe" {
+                anyhow::bail!(
+                    "--type=throughput only supports 'dedupe' scenarios.\n  \
+                     Scenario '{}' has mode '{}'.\n  \
+                     Link and link_and_dedupe scenarios are not supported for throughput benchmarks.",
+                    scenario, mode_part
+                );
+            }
+        }
+    }
+
+    let run_start    = std::time::SystemTime::now();
+    let judge_target = args.judge_target.clone();
+    let has_judge    = judge_target.is_some();
+    let has_libs     = !args.compare_libs.is_empty();
+    let n_zer        = if has_judge { 2 } else { 1 };
+    let total        = n_zer + args.compare_libs.len();
+    let idx          = |i: usize| if total > 1 { Some((i, total)) } else { None };
+
+    if args.scenario.as_deref() == Some("all") {
+        let base_out = args.out.clone();
+        for spec in full_size_throughput_scenarios() {
+            let s_out = format!("{}/{}", base_out, spec.name.replace('/', "_"));
+            std::fs::create_dir_all(&s_out)?;
+            let path = resolve_dataset_path(&args, Some(spec.name));
+            run_pass(&args, Some(spec.name), &path, &s_out, None, idx(1))?;
+            if has_judge {
+                run_pass(&args, Some(spec.name), &path, &s_out, judge_target.as_deref(), idx(2))?;
+            }
+            if has_libs {
+                run_compare_libs(&args, Some(spec.name), &path, &s_out, &args.compare_libs, n_zer + 1, total)?;
+            }
+            if has_judge || has_libs {
+                super::compare::print_comparison_for_dir(&s_out, run_start)?;
+            }
+        }
+        println!("\nDone. All scenario results in: {base_out}/");
+        return Ok(());
+    }
+
+    std::fs::create_dir_all(&args.out)?;
+    let path = resolve_dataset_path(&args, args.scenario.as_deref());
+    run_pass(&args, args.scenario.as_deref(), &path, &args.out, None, idx(1))?;
+    if has_judge {
+        run_pass(&args, args.scenario.as_deref(), &path, &args.out, judge_target.as_deref(), idx(2))?;
+    }
+    if has_libs {
+        run_compare_libs(&args, args.scenario.as_deref(), &path, &args.out, &args.compare_libs, n_zer + 1, total)?;
+    }
+    if has_judge || has_libs {
+        super::compare::print_comparison_for_dir(&args.out, run_start)?;
+    }
+    Ok(())
+}
+
+fn resolve_dataset_path(args: &ThroughputArgs, scenario: Option<&str>) -> String {
+    let data_root = super::util::bench_data_root();
+    args.dataset.clone().unwrap_or_else(|| {
+        scenario
+            .and_then(|slug| find_scenario(slug))
+            .and_then(|spec| spec.sources.first())
+            .map(|src| data_root.join(src.path).to_string_lossy().into_owned())
+            .unwrap_or_else(|| {
+                data_root
+                    .join("benchmarks/bench_dedup/source.csv")
+                    .to_string_lossy()
+                    .into_owned()
+            })
+    })
+}
+
+fn run_pass(
+    args:         &ThroughputArgs,
+    scenario:     Option<&str>,
+    path:         &str,
+    out:          &str,
+    judge_target: Option<&str>,
+    run_index:    Option<(usize, usize)>,
+) -> anyhow::Result<()> {
+    let label = scenario
         .map(|s| s.replace('/', "_"))
         .unwrap_or_else(|| "brp".to_string());
-    if label.starts_with("kvk") {
-        run_kvk(&path, &label, &args)
+
+    let library_name = if judge_target.is_some() {
+        format!("zer+judge_{}", judge_target.unwrap())
     } else {
-        run_brp(&path, &label, &args)
+        "zer".to_owned()
+    };
+    let header_label = match run_index {
+        Some((i, n)) => format!("[{i}/{n}] {library_name}"),
+        None         => library_name,
+    };
+    super::util::print_bench_header(&[&header_label, "throughput", scenario.unwrap_or("brp/dedupe"), &args.target]);
+
+    if label.starts_with("kvk") {
+        run_kvk(path, &label, args, out, judge_target)?;
+    } else {
+        run_brp(path, &label, args, out, judge_target)?;
     }
+    Ok(())
+}
+
+fn run_compare_libs(
+    args:         &ThroughputArgs,
+    scenario:     Option<&str>,
+    path:         &str,
+    out:          &str,
+    compare_libs: &[String],
+    start_index:  usize,
+    total:        usize,
+) -> anyhow::Result<()> {
+    let bench_root = super::library::resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
+    let datasets = [path];
+    let scenario_disp = scenario.unwrap_or("brp/dedupe");
+    let mut errors: Vec<String> = Vec::new();
+    for (i, lib) in compare_libs.iter().enumerate() {
+        let idx = start_index + i;
+        super::util::print_bench_header(&[&format!("[{idx}/{total}] {lib}"), "throughput", scenario_disp]);
+        println!("running library  library={lib}  mode=throughput");
+        if let Err(e) = super::library::run_library(
+            &bench_root, lib, "throughput",
+            scenario,
+            &datasets, None, out,
+            None, args.force_setup,
+        ) {
+            eprintln!("warning: library failed  library={lib}  error={e}");
+            errors.push(format!("{lib}: {e}"));
+        }
+    }
+    if !errors.is_empty() {
+        anyhow::bail!("some libraries failed:\n{}", errors.join("\n"));
+    }
+    Ok(())
 }
 
 // ── BRP scenario (replaces brp_throughput) ────────────────────────────────────
@@ -178,25 +311,35 @@ fn load_kvk(path: &str) -> anyhow::Result<(Vec<Record>, Schema)> {
     ])
 }
 
-fn run_brp(path: &str, label: &str, args: &ThroughputArgs) -> anyhow::Result<()> {
+fn run_brp(path: &str, label: &str, args: &ThroughputArgs, out: &str, judge_target: Option<&str>) -> anyhow::Result<()> {
     println!("loading records  path={path}");
     let (records, schema) = load_brp(path)?;
     let blocker = CompositeBlocker::new()
         .add(ExactFieldKey::new("achternaam"))
         .add(ExactFieldKey::new("geboortedatum"));
-    run_scenario(records, schema, blocker, label, args)
+    run_scenario(records, schema, blocker, label, args, out, judge_target)?;
+    Ok(())
 }
 
-fn run_kvk(path: &str, label: &str, args: &ThroughputArgs) -> anyhow::Result<()> {
+fn run_kvk(path: &str, label: &str, args: &ThroughputArgs, out: &str, judge_target: Option<&str>) -> anyhow::Result<()> {
     println!("loading records  path={path}");
     let (records, schema) = load_kvk(path)?;
     let blocker = CompositeBlocker::new()
         .add(ExactFieldKey::new("achternaam"))
         .add(ExactFieldKey::new("geboortedatum"));
-    run_scenario(records, schema, blocker, label, args)
+    run_scenario(records, schema, blocker, label, args, out, judge_target)?;
+    Ok(())
 }
 
-fn run_scenario(records: Vec<Record>, schema: Schema, blocker: CompositeBlocker, label: &str, args: &ThroughputArgs) -> anyhow::Result<()> {
+fn run_scenario(
+    records:      Vec<Record>,
+    schema:       Schema,
+    blocker:      CompositeBlocker,
+    label:        &str,
+    args:         &ThroughputArgs,
+    out:          &str,
+    judge_target: Option<&str>,
+) -> anyhow::Result<()> {
     println!("records loaded  count={}", records.len());
 
     let t = Instant::now();
@@ -214,19 +357,20 @@ fn run_scenario(records: Vec<Record>, schema: Schema, blocker: CompositeBlocker,
     println!("backend={}", backend.name());
 
     // Build judge outside the pipeline timer, init is not counted.
-    let judge = build_judge(args, &records, &schema)?;
+    let judge = build_judge(judge_target, args.judge_models_dir.as_deref(), &records, &schema)?;
 
-    if args.scale {
-        run_scale_comparison(&records, &pairs, &schema, &backend, args.em_iter);
-    } else {
-        let metrics = run_pipeline_timed(&backend, &records, &pairs, &schema, args.em_iter, block_ms, judge.as_ref());
-        print_metrics(label, &records, &pairs, &backend, &metrics, &args.out, args.judge_target.as_deref());
-    }
+    let metrics = run_pipeline_timed(&backend, &records, &pairs, &schema, args.em_iter, block_ms, judge.as_ref());
+    print_metrics(label, &records, &pairs, &backend, &metrics, out, judge_target);
     Ok(())
 }
 
-fn build_judge(args: &ThroughputArgs, records: &[Record], schema: &Schema) -> anyhow::Result<Option<DebertaJudge>> {
-    let Some(ref jt) = args.judge_target else { return Ok(None) };
+fn build_judge(
+    judge_target:    Option<&str>,
+    judge_models_dir: Option<&str>,
+    records:         &[Record],
+    schema:          &Schema,
+) -> anyhow::Result<Option<DebertaJudge>> {
+    let Some(jt) = judge_target else { return Ok(None) };
 
     if jt == "tensorrt" {
         log_trt_cache_status();
@@ -238,13 +382,13 @@ fn build_judge(args: &ThroughputArgs, records: &[Record], schema: &Schema) -> an
     }
 
     let judge_backend = JudgeBackend::from_target(jt);
-    let models_base = args.judge_models_dir.as_deref()
+    let models_base = judge_models_dir
         .map(PathBuf::from)
         .unwrap_or_else(|| judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base")));
     let minilm_dir = models_base.join("nli-minilm-onnx");
     let spec = MiniLmSpec::from_dir(&minilm_dir);
 
-    println!("loading judge  target={}  path={}", jt.as_str(), minilm_dir.display());
+    println!("loading judge  target={jt}  path={}", minilm_dir.display());
     let t_load = Instant::now();
     let judge = DebertaJudge::new(&spec, &judge_backend, record_store, schema.clone(), DebertaJudgeConfig::default())
         .map_err(|e| anyhow::anyhow!("failed to load judge: {e}"))?;
@@ -296,7 +440,6 @@ fn run_pipeline_timed(
     block_ms: u128,
     judge:    Option<&DebertaJudge>,
 ) -> PipelineMetrics {
-    zer_prof::init();
     let comparator = Comparator::new(schema, backend);
     let scorer     = Scorer::new(backend);
 
@@ -398,6 +541,9 @@ fn write_summary(
     std::fs::create_dir_all(&out_path)
         .map_err(|e| anyhow::anyhow!("cannot create {}: {e}", out_path.display()))?;
 
+    // elapsed_ms = full pipeline including blocking, matching splink's pipeline_ms definition
+    // (splink's predict() call covers blocking+compare+score as a single DuckDB stage, so
+    // their elapsed_ms always includes blocking; zer must match for a fair comparison).
     let elapsed_ms = m.block_ms + m.setup_ms + m.compare_ms + m.em_ms + m.score_ms + m.judge_ms.unwrap_or(0);
     let ts        = unix_secs_now();
     let run_id    = format!("{ts}");
@@ -447,7 +593,8 @@ fn write_summary(
         "backend":          backend,
         "total_records":    n_records,
         "candidate_pairs":  n_pairs,
-        // Common schema: block/compare/em/score/judge pipeline stages (non-init path only).
+        // Pipeline stage breakdown.  total_ms = compute pipeline only (setup+compare+em+score+judge).
+        // block_ms is reported separately; it is CPU-only inverted-index work independent of the backend.
         "pipeline": {
             "block_ms":   m.block_ms,
             "setup_ms":   m.setup_ms,
@@ -496,63 +643,13 @@ fn write_summary(
     Ok(())
 }
 
+// ── Scenario listing ─────────────────────────────────────────────────────────
 
-// ── Device-vs-CPU scaling (replaces device_scale) ────────────────────────────
-
-fn run_scale_comparison(
-    records:  &[Record],
-    pairs:    &[(usize, usize)],
-    schema:   &Schema,
-    device:   &Backend,
-    em_iter:  usize,
-) {
-    zer_prof::init();
-    let d = run_pipeline_timed(device,          records, pairs, schema, em_iter, 0, None);
-    let c = run_pipeline_timed(&Backend::cpu(), records, pairs, schema, em_iter, 0, None);
-
-    let speedup = |dev_ms: u128, cpu_ms: u128| -> String {
-        if dev_ms == 0 { return "∞".into(); }
-        format!("{:.2} times ", cpu_ms as f64 / dev_ms as f64)
-    };
-
-    let d_total = d.compare_ms + d.em_ms + d.score_ms;
-    let c_total = c.compare_ms + c.em_ms + c.score_ms;
-
-    println!("records\t\t{}", records.len());
-    println!("candidate_pairs\t{}", pairs.len());
-    println!();
-    println!("{:<16} {:>10} {:>10} {:>10}", "stage", device.name(), "cpu", "speedup");
-    println!("{}", "-".repeat(50));
-    println!("{:<16} {:>9}ms {:>9}ms {:>10}", "compare", d.compare_ms, c.compare_ms, speedup(d.compare_ms, c.compare_ms));
-    println!("{:<16} {:>9}ms {:>9}ms {:>10}", "em",      d.em_ms,      c.em_ms,      speedup(d.em_ms,      c.em_ms));
-    println!("{:<16} {:>9}ms {:>9}ms {:>10}", "score",   d.score_ms,   c.score_ms,   speedup(d.score_ms,   c.score_ms));
-    println!("{}", "-".repeat(50));
-    println!("{:<16} {:>9}ms {:>9}ms {:>10}", "total",   d_total,      c_total,      speedup(d_total, c_total));
-}
-
-// ── Profiling helper ──────────────────────────────────────────────────────────
-
-fn print_profile_cmd(args: &ThroughputArgs) {
-    let binary  = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.to_str().map(str::to_owned))
-        .unwrap_or_else(|| "zer-bench".into());
-    let dataset = args.dataset.as_deref().unwrap_or("data/benchmarks/bench_dedup/source.csv");
-    let target  = &args.target;
-
-    if target.contains("cuda") {
-        println!(
-            "nsys profile --trace=cuda,nvtx --output=report_%q{{SLURM_JOB_ID}} \\\n  \
-             {binary} throughput --dataset {dataset} --target {target}"
-        );
-        println!(
-            "\n# For kernel-level metrics:\nncu --set full -o ncu_report \\\n  \
-             {binary} throughput --dataset {dataset} --target {target}"
-        );
-    } else {
-        println!(
-            "perf record -g -- {binary} throughput --dataset {dataset} --target {target}"
-        );
+fn print_throughput_scenarios() {
+    println!("{:<35}  {}", "SCENARIO", "DESCRIPTION");
+    println!("{}", "-".repeat(80));
+    for s in throughput_scenarios() {
+        println!("{:<35}  {}", s.name, s.description);
     }
 }
 
@@ -565,4 +662,3 @@ fn resolve_backend(target: &str) -> Backend {
 fn text_col(row: &csv::StringRecord, col: usize) -> FieldValue {
     FieldValue::Text(row.get(col).unwrap_or("").to_string())
 }
-

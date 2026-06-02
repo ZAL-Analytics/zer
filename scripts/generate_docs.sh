@@ -67,8 +67,40 @@ if [[ $WITH_BENCH_FIGURES -eq 1 ]]; then
     "$RES_DIR/pr_curves.svg"
 
   copy_bench_figure \
-    "$PLOTS/throughput_all_cuda/throughput_comparison.svg" \
+    "$PLOTS/throughput_cuda/throughput_comparison.svg" \
     "$RES_DIR/throughput_comparison_cuda.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/brp_dedupe/zer_cuda/stage_pie/stage_pie.svg" \
+    "$RES_DIR/throughput_stage_pie_brp_zer_cuda.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/brp_dedupe/splink/stage_pie/stage_pie.svg" \
+    "$RES_DIR/throughput_stage_pie_brp_splink.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/kvk_dedupe/zer_cuda/stage_pie/stage_pie.svg" \
+    "$RES_DIR/throughput_stage_pie_kvk_zer_cuda.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/kvk_dedupe/splink/stage_pie/stage_pie.svg" \
+    "$RES_DIR/throughput_stage_pie_kvk_splink.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/brp_dedupe/zer_cuda/memory_timeline/memory_timeline.svg" \
+    "$RES_DIR/throughput_mem_timeline_brp_zer_cuda.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/brp_dedupe/splink/memory_timeline/memory_timeline.svg" \
+    "$RES_DIR/throughput_mem_timeline_brp_splink.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/kvk_dedupe/zer_cuda/memory_timeline/memory_timeline.svg" \
+    "$RES_DIR/throughput_mem_timeline_kvk_zer_cuda.svg"
+
+  copy_bench_figure \
+    "$PLOTS/throughput_cuda/kvk_dedupe/splink/memory_timeline/memory_timeline.svg" \
+    "$RES_DIR/throughput_mem_timeline_kvk_splink.svg"
 
   echo "    Benchmark figures: $RES_DIR"
 fi

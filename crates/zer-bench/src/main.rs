@@ -2,50 +2,44 @@
 //!
 //! # Subcommands
 //!
-//! | Subcommand    | Purpose                                                        |
-//! |---------------|----------------------------------------------------------------|
-//! | `throughput`  | Measure raw compare/EM/score throughput (replaces old crates)  |
-//! | `accuracy`    | Run zer against a labeled dataset; write shared CSV summary    |
-//! | `library`     | Run a competitor library script and collect its CSV            |
-//! | `library-all` | Run all configured libraries for a given mode and dataset      |
-//! | `compare`     | Read multiple CSV summaries; print side-by-side table          |
+//! | Subcommand   | Purpose                                                                |
+//! |--------------|------------------------------------------------------------------------|
+//! | `throughput` | Measure raw compare/EM/score throughput; optionally benchmark libs too |
+//! | `accuracy`   | Run zer against a labeled dataset; optionally benchmark libs too       |
+//! | `compare`    | Read multiple CSV summaries; print side-by-side table                  |
+//! | `plot`       | Delegate to benchmarks/utils/plot_results.py                           |
 //!
 //! # Examples
 //!
 //! ```bash
 //! # Throughput (BRP-style, CUDA)
-//! cargo run --release -p zer-bench --features=cuda -- \
-//!     throughput --preset brp --target cuda
+//! cargo run -p zer-bench --features=cuda -- \
+//!     throughput --scenario brp/dedupe --target cuda
 //!
-//! # Accuracy, run a named preset (datasets/GT wired up automatically)
-//! cargo run --release -p zer-bench -- \
-//!     accuracy --preset brp-dedupe-small --out bench_results/
+//! # Throughput + Splink comparison in one command
+//! cargo run -p zer-bench -- \
+//!     throughput --scenario brp/dedupe --compare-libs splink --out bench_results/
 //!
-//! # Accuracy, manual dataset override
-//! cargo run --release -p zer-bench -- \
-//!     accuracy --dataset data/benchmarks/brp_small/brp_persons.csv --source brp \
-//!              --mode deduplicate \
-//!              --ground-truth data/benchmarks/brp_small/ground_truth_pairs.csv \
-//!              --out bench_results/
+//! # Accuracy, run a named scenario (datasets/GT wired up automatically)
+//! cargo run -p zer-bench -- \
+//!     accuracy --scenario brp/dedupe --out bench_results/
 //!
-//! # Library benchmark, uses data/benchmarks/brp_small/ by default (no --dataset needed)
-//! cargo run --release -p zer-bench -- \
-//!     library --library splink --mode dedupe --out bench_results/
+//! # Accuracy + Splink comparison in one command
+//! cargo run -p zer-bench -- \
+//!     accuracy --scenario brp/dedupe --compare-libs splink --out bench_results/
 //!
-//! # Library benchmark, explicit dataset override
-//! cargo run --release -p zer-bench -- \
-//!     library --library splink --mode dedupe \
-//!             --dataset /path/to/custom.csv --out bench_results/
-//!
-//! # Cross-library comparison table
-//! cargo run --release -p zer-bench -- \
+//! # Cross-library comparison table from existing CSV files
+//! cargo run -p zer-bench -- \
 //!     compare --results bench_results/ --mode dedupe --dataset brp_persons
+//!
+//! # Plot results
+//! cargo run -p zer-bench -- \
+//!     plot --input bench_results/ --output results.png
 //! ```
 
 use clap::{Parser, Subcommand};
 
 mod cmd;
-mod nvtx_layer;
 
 #[derive(Parser)]
 #[command(name = "zer-bench", about = "zer benchmark harness")]
@@ -57,20 +51,18 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Measure raw compare/EM/score throughput.
+    /// Use --compare-libs to also run competitor libraries and print an inline table.
     Throughput(cmd::throughput::ThroughputArgs),
 
     /// Run zer against a labeled dataset and write a shared CSV summary.
+    /// Use --compare-libs to also run competitor libraries and print an inline table.
     Accuracy(cmd::accuracy::AccuracyArgs),
-
-    /// Run a competitor library benchmark script and collect its summary CSV.
-    Library(cmd::library::LibraryArgs),
-
-    /// Run all configured competitor libraries for a given mode and dataset.
-    #[command(name = "library-all")]
-    LibraryAll(cmd::library::LibraryArgs),
 
     /// Read multiple summary CSVs and print a side-by-side comparison table.
     Compare(cmd::compare::CompareArgs),
+
+    /// Generate plots from benchmark summary CSVs via plot_results.py.
+    Plot(cmd::plot::PlotArgs),
 }
 
 #[tokio::main]
@@ -79,9 +71,8 @@ async fn main() {
     let result = match cli.command {
         Command::Throughput(args) => cmd::throughput::run(args),
         Command::Accuracy(args)   => cmd::accuracy::run(args).await,
-        Command::Library(args)    => cmd::library::run(args),
-        Command::LibraryAll(args) => cmd::library::run_all(args),
         Command::Compare(args)    => cmd::compare::run(args),
+        Command::Plot(args)       => cmd::plot::run(args),
     };
     if let Err(e) = result {
         eprintln!("error: {e}");

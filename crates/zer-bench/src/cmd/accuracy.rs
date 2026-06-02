@@ -55,7 +55,7 @@ use tempfile::TempDir;
 use zer::prelude::*;
 use zer_core::field_mapping::FieldMapping;
 
-use super::scenarios::{ALL_SCENARIOS, find_scenario, find_scenario_by_preset, datasets_for_scenario};
+use super::scenarios::{ALL_SCENARIOS, find_scenario, find_scenario_by_preset, datasets_for_scenario, full_size_scenarios};
 use super::strategies;
 use super::util::{log_trt_cache_status, resolve_out_dir};
 use zer_adapters::{AccuracyMetrics, BenchBatchSummary, BenchResultWriter, PairRecord, band_to_match};
@@ -138,6 +138,23 @@ pub struct AccuracyArgs {
     /// `models/nli-base/fp16_fused` → `models/nli-base/fp16` → `models/nli-base/base`.
     #[arg(long)]
     pub judge_models_dir: Option<String>,
+
+    /// Comma-separated list of external libraries to benchmark alongside zer.
+    /// Each library's accuracy script is run after zer, then an inline
+    /// comparison table is printed.  Example: `--compare-libs splink,foo`.
+    #[arg(long, value_delimiter = ',')]
+    pub compare_libs: Vec<String>,
+
+    /// Root directory containing external library benchmark scripts.
+    /// Scripts are resolved as `<dir>/<library>/<mode>/run.py`.
+    /// Falls back to the `ZER_EXTERNAL_BENCHMARKS_DIR` env var, then
+    /// `benchmarks/` inside the workspace root.
+    #[arg(long, env = "ZER_EXTERNAL_BENCHMARKS_DIR")]
+    pub external_benchmarks_dir: Option<String>,
+
+    /// Re-run setup.sh for each library even if the `.setup_done` sentinel exists.
+    #[arg(long)]
+    pub force_setup: bool,
 }
 
 // ── Resolved run parameters (from preset or manual args) ──────────────────────
@@ -152,9 +169,9 @@ struct RunParams {
 }
 
 impl RunParams {
-    fn from_args(args: &AccuracyArgs) -> anyhow::Result<Self> {
-        if let Some(scenario_name) = &args.scenario {
-            let spec = find_scenario(scenario_name.as_str()).ok_or_else(|| {
+    fn from_args_with(args: &AccuracyArgs, scenario: Option<&str>) -> anyhow::Result<Self> {
+        if let Some(scenario_name) = scenario {
+            let spec = find_scenario(scenario_name).ok_or_else(|| {
                 let names: Vec<&str> = ALL_SCENARIOS.iter().map(|s| s.name).collect();
                 anyhow::anyhow!(
                     "unknown scenario {scenario_name:?}; available: {}",
@@ -234,19 +251,77 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let params = RunParams::from_args(&args)?;
-    let link_mode    = parse_link_mode(&params.mode_str)?;
-    let use_judge    = args.judge_target.is_some();
-    let judge_target = args.judge_target.as_deref().unwrap_or("cpu");
-    let backend      = Backend::from_target(&args.target);
+    super::util::validate_compute_target(&args.target)?;
+    if let Some(jt) = &args.judge_target {
+        super::util::validate_judge_target(jt)?;
+    }
+
+    let scenario_val = args.scenario.as_deref().unwrap_or("").to_owned();
+    let judge_target = args.judge_target.clone();
+
+    // ── --scenario=all: iterate over every full-size scenario ─────────────────
+    if scenario_val == "all" {
+        let base_out = args.out.clone();
+        for spec in full_size_scenarios() {
+            let s_out = format!("{}/{}", base_out, spec.name.replace('/', "_"));
+            std::fs::create_dir_all(&s_out)?;
+            let run_start = std::time::SystemTime::now();
+            if judge_target.is_some() {
+                run_pass(&args, Some(spec.name), &s_out, None, &args.compare_libs, run_start).await?;
+                run_pass(&args, Some(spec.name), &s_out, judge_target.as_deref(), &[], run_start).await?;
+                super::compare::print_comparison_for_dir(&s_out, run_start)?;
+            } else {
+                run_pass(&args, Some(spec.name), &s_out, None, &args.compare_libs, run_start).await?;
+            }
+        }
+        println!("\nDone. All scenario results in: {base_out}/");
+        return Ok(());
+    }
+
+    // ── Judge dual-pass: run without judge first, then with judge, then compare ─
+    if judge_target.is_some() {
+        std::fs::create_dir_all(&args.out)?;
+        let run_start = std::time::SystemTime::now();
+        run_pass(&args, args.scenario.as_deref(), &args.out, None, &args.compare_libs, run_start).await?;
+        run_pass(&args, args.scenario.as_deref(), &args.out, judge_target.as_deref(), &[], run_start).await?;
+        super::compare::print_comparison_for_dir(&args.out, run_start)?;
+        return Ok(());
+    }
+
+    // ── Single pass (default) ─────────────────────────────────────────────────
+    run_pass(&args, args.scenario.as_deref(), &args.out, None, &args.compare_libs, std::time::SystemTime::now()).await
+}
+
+async fn run_pass(
+    args:         &AccuracyArgs,
+    scenario:     Option<&str>,
+    out:          &str,
+    judge_target: Option<&str>,
+    compare_libs: &[String],
+    run_start:    std::time::SystemTime,
+) -> anyhow::Result<()> {
+    let params = RunParams::from_args_with(args, scenario)?;
+    let link_mode        = parse_link_mode(&params.mode_str)?;
+    let use_judge        = judge_target.is_some();
+    let judge_target_str = judge_target.unwrap_or("cpu");
+    let backend          = Backend::from_target(&args.target);
     let library_name = if use_judge {
-        format!("zer+judge_{judge_target}")
+        format!("zer+judge_{judge_target_str}")
     } else {
         "zer".to_owned()
     };
     let run_id = make_run_id(&library_name, &params.mode_str, &params.dataset_name);
 
-    println!("accuracy run  run_id={run_id}  library={library_name}  mode={}  target={}  out={}", params.mode_str, backend.name(), args.out);
+    let total = 1 + compare_libs.len();
+    let scenario_disp = scenario.unwrap_or(&params.dataset_name);
+    let zer_label = if compare_libs.is_empty() {
+        library_name.clone()
+    } else {
+        format!("[1/{total}] {library_name}")
+    };
+    super::util::print_bench_header(&[&zer_label, "accuracy", scenario_disp, &args.target]);
+
+    println!("accuracy run  run_id={run_id}  library={library_name}  mode={}  target={}  out={}", params.mode_str, backend.name(), out);
     for (i, ds) in params.datasets.iter().enumerate() {
         println!("dataset  index={i}  path={}", ds.as_str());
     }
@@ -339,17 +414,17 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
     });
 
     let pipeline: Arc<Pipeline> = if use_judge {
-        if judge_target == "tensorrt" {
+        if judge_target_str == "tensorrt" {
             log_trt_cache_status();
         }
         let record_store: Arc<dyn RecordStore> = Arc::new(VecRecordStore::new());
-        let judge_backend = JudgeBackend::from_target(judge_target);
+        let judge_backend = JudgeBackend::from_target(judge_target_str);
         let models_base  = args.judge_models_dir.as_deref()
             .map(PathBuf::from)
             .unwrap_or_else(|| judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base")));
         let minilm_dir   = models_base.join("nli-minilm-onnx");
         let spec         = MiniLmSpec::from_dir(&minilm_dir);
-        println!("loading judge  target={judge_target}  path={}", minilm_dir.display());
+        println!("loading judge  target={judge_target_str}  path={}", minilm_dir.display());
         let t_load = Instant::now();
         let judge = DebertaJudge::new(
             &spec,
@@ -498,7 +573,7 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
     };
 
     // ── Write output ──────────────────────────────────────────────────────────
-    let writer = BenchResultWriter::new(resolve_out_dir(&args.out).as_path(), &run_id)?;
+    let writer = BenchResultWriter::new(resolve_out_dir(out).as_path(), &run_id)?;
     writer.write_pairs(&pair_records)?;
     if let Some(ref pairs) = scored_pairs {
         writer.write_scored_pairs_csv(pairs)?;
@@ -537,7 +612,7 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
         path:             &json_path,
         run_id:           &run_id,
         library:          &library_name,
-        scenario:         args.scenario.as_deref(),
+        scenario:         scenario,
         mode:             &params.mode_str,
         dataset:          &params.dataset_name,
         target:           &args.target,
@@ -577,6 +652,32 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
     }
     if let Some(blk) = cluster_recall {
         println!("cluster_recall: {:.4}", blk);
+    }
+
+    // ── Run competitor libraries and print inline comparison ──────────────────
+    if !compare_libs.is_empty() {
+        let bench_root = super::library::resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
+        let mode_dir = super::library::mode_dir_name(&params.mode_str);
+        let dataset_refs: Vec<&str> = params.datasets.iter().map(String::as_str).collect();
+        let gt = params.ground_truth.as_deref();
+        let mut lib_errors: Vec<String> = Vec::new();
+        for (i, lib) in compare_libs.iter().enumerate() {
+            super::util::print_bench_header(&[&format!("[{}/{total}] {lib}", i + 2), "accuracy", scenario_disp]);
+            println!("running library  library={lib}  mode={mode_dir}");
+            if let Err(e) = super::library::run_library(
+                &bench_root, lib, mode_dir,
+                scenario,
+                &dataset_refs, gt, out,
+                None, args.force_setup,
+            ) {
+                eprintln!("warning: library failed  library={lib}  error={e}");
+                lib_errors.push(format!("{lib}: {e}"));
+            }
+        }
+        super::compare::print_comparison_for_dir(out, run_start)?;
+        if !lib_errors.is_empty() {
+            anyhow::bail!("some libraries failed:\n{}", lib_errors.join("\n"));
+        }
     }
 
     Ok(())

@@ -42,3 +42,48 @@ codegen-units = 1
 incremental = false
 debug = 2
 strip = "none"
+
+# zer-bench is a benchmarking tool.  All crates workspace members AND
+# external dependencies must compile at release optimisation level so that
+# `cargo run -p zer-bench` gives accurate results without needing --release.
+# The wildcard entry covers external deps (hashbrown, tokenizers, ort, …);
+# the named entries cover workspace members (path deps, excluded by "*").
+# zer-bench itself also disables debug-assertions and overflow-checks to
+# match installed-binary behaviour.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev.package.zer-bench]
+opt-level        = 3
+debug-assertions = false
+overflow-checks  = false
+
+[profile.dev.package.zer]
+opt-level = 3
+
+[profile.dev.package.zer-core]
+opt-level = 3
+
+[profile.dev.package.zer-schema]
+opt-level = 3
+
+[profile.dev.package.zer-compute]
+opt-level = 3
+
+[profile.dev.package.zer-blocking]
+opt-level = 3
+
+[profile.dev.package.zer-compare]
+opt-level = 3
+
+[profile.dev.package.zer-cluster]
+opt-level = 3
+
+[profile.dev.package.zer-pipeline]
+opt-level = 3
+
+[profile.dev.package.zer-judge]
+opt-level = 3
+
+[profile.dev.package.zer-adapters]
+opt-level = 3

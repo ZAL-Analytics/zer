@@ -69,7 +69,22 @@ struct SummaryRow {
     f1:              String,
 }
 
-// ── Entry point ───────────────────────────────────────────────────────────────
+// ── Entry points ─────────────────────────────────────────────────────────────
+
+/// Load all summary CSVs from `dir` written at or after `since`, and print an
+/// inline comparison table.  Pass `std::time::SystemTime::UNIX_EPOCH` to include
+/// all files.  Used by `--compare-libs` at the end of a run.
+pub fn print_comparison_for_dir(dir: &str, since: std::time::SystemTime) -> anyhow::Result<()> {
+    let results_dir = resolve_out_dir(dir);
+    let rows = load_summary_rows(&results_dir, "", "", since)?;
+    if rows.is_empty() {
+        eprintln!("warning: no summary files found for inline comparison  dir={}", results_dir.display());
+        return Ok(());
+    }
+    super::util::print_bench_header(&["Comparison"]);
+    print_comparison_table(&rows);
+    Ok(())
+}
 
 pub fn run(args: CompareArgs) -> anyhow::Result<()> {
     let results_dir = resolve_out_dir(&args.results);
@@ -77,13 +92,14 @@ pub fn run(args: CompareArgs) -> anyhow::Result<()> {
         anyhow::bail!("results directory not found: {}", results_dir.display());
     }
 
-    let rows = load_summary_rows(&results_dir, &args.mode, &args.dataset)?;
+    let rows = load_summary_rows(&results_dir, &args.mode, &args.dataset, std::time::SystemTime::UNIX_EPOCH)?;
 
     if rows.is_empty() {
         eprintln!("warning: no matching summary files found  dir={}  mode={}  dataset={}", results_dir.display(), args.mode, args.dataset);
         return Ok(());
     }
 
+    super::util::print_bench_header(&["Comparison"]);
     print_comparison_table(&rows);
 
     let out_dir = resolve_out_dir(
@@ -100,6 +116,7 @@ fn load_summary_rows(
     dir:     &PathBuf,
     mode:    &str,
     dataset: &str,
+    since:   std::time::SystemTime,
 ) -> anyhow::Result<Vec<SummaryRow>> {
     let mut rows = Vec::new();
 
@@ -110,6 +127,13 @@ fn load_summary_rows(
         let name = entry.file_name().to_string_lossy().into_owned();
         if !name.ends_with("_summary.csv") {
             continue;
+        }
+        if let Ok(meta) = entry.metadata() {
+            if let Ok(modified) = meta.modified() {
+                if modified < since {
+                    continue;
+                }
+            }
         }
 
         let path = entry.path();

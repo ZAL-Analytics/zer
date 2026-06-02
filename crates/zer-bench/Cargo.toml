@@ -14,7 +14,7 @@ name = "zer-bench"
 path = "src/main.rs"
 
 [features]
-default = []
+default = ["collect-pairs"]
 cpu            = ["zer/cpu"]
 cuda           = ["zer/cuda"]
 avx2           = ["zer/avx2"]
@@ -24,8 +24,6 @@ judge_tensorrt = ["zer-judge/judge_tensorrt"]
 judge_rocm     = ["zer-judge/judge_rocm"]
 judge_directml = ["zer-judge/judge_directml"]
 judge_openvino = ["zer-judge/judge_openvino"]
-# Enable NVTX tracing bridge, maps tracing spans to Nsight Systems ranges.
-nvtx           = ["zer-prof/nvtx"]
 # Print human-readable pipeline stage progress during accuracy runs.
 progress       = []
 # Print per-phase timing metrics (blocking_ms, compare_ms, etc.) during accuracy runs.
@@ -39,17 +37,22 @@ zer          = { path = "../zer",          version = "1.0", features = ["pipelin
 zer-core     = { path = "../zer-core",     version = "1.0" }
 zer-pipeline = { path = "../zer-pipeline", version = "1.0" }
 zer-adapters = { path = "../zer-adapters", version = "1.0" }
-zer-prof     = { path = "../zer-prof",     version = "1.0" }
 zer-judge    = { path = "../zer-judge",    version = "1.0" }
 
 anyhow              = "1"
 clap                = { version = "4", features = ["derive", "env"] }
 serde               = { version = "1", features = ["derive"] }
 serde_json          = "1"
-toml                = { workspace = true }
 csv                 = "1"
 tempfile            = "3"
 tokio               = { version = "1", features = ["full"] }
-tracing             = { workspace = true }
-tracing-subscriber  = { workspace = true }
 sysinfo             = { workspace = true }
+
+# Applied when the crate is installed standalone via `cargo install zer-bench`.
+# (Cargo ignores [profile.*] in workspace-member Cargo.toml during workspace builds;
+#  the workspace root's profiles take precedence there.)
+[profile.release]
+opt-level     = 3
+lto           = "thin"
+codegen-units = 1
+strip         = "debuginfo"

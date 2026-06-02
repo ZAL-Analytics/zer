@@ -21,7 +21,7 @@ single CPU thread (Python 3.12, Splink 4.x).
 Accuracy
 ---------
 
-All eight benchmark scenarios are shown below — select a tab to compare
+All eight benchmark scenarios are shown below select a tab to compare
 zer against Splink side by side.  The higher value in each metric column is
 shown in **bold**.  All runs use default thresholds; no per-dataset tuning
 was applied.  Splink PR-AUC is computed from each scenario's
@@ -263,7 +263,7 @@ the same ~22 200-record BRP and KvK dedupe datasets.
 
    Splink runs on the host CPU in all cases; the backend column refers
    to the zer compute backend selected for that run.  zer always uses
-   the same CPU for blocking and comparison,only the EM scoring stage
+   the same CPU for blocking and comparison; only the EM scoring stage
    is accelerated by AVX2/CUDA/Vulkan.
 
 BRP deduplication (22 200 records, ~2.68 M candidate pairs)
@@ -279,30 +279,30 @@ BRP deduplication (22 200 records, ~2.68 M candidate pairs)
      - Peak memory (MB)
      - Speedup vs Splink
    * - Splink (CPU)
-     - ~432 k
-     - 6 200
-     - 3 112
-     - 1 times 
+     - ~488 k
+     - 5 498
+     - 3 828
+     - 1×
    * - zer CPU
-     - ~735 k
-     - 3 653
-     - 163
-     - **1.7 times**
+     - ~628 k
+     - 4 275
+     - 413
+     - **1.3×**
    * - zer AVX2
-     - ~768 k
-     - 3 494
-     - 147
-     - **1.8 times**
+     - ~671 k
+     - 3 998
+     - 414
+     - **1.4×**
    * - zer CUDA
-     - ~4.1 M
-     - 661
-     - 246
-     - **9.4 times**
+     - ~3.6 M
+     - 739
+     - 523
+     - **7.4×**
    * - zer Vulkan
-     - ~3.9 M
-     - 680
-     - 280
-     - **9.1 times**
+     - ~3.5 M
+     - 757
+     - 553
+     - **7.3×**
 
 KvK deduplication (22 200 records, ~2.64 M candidate pairs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,30 +317,30 @@ KvK deduplication (22 200 records, ~2.64 M candidate pairs)
      - Peak memory (MB)
      - Speedup vs Splink
    * - Splink (CPU)
-     - ~688 k
-     - 3 830
-     - 2 737
-     - 1 times 
+     - ~813 k
+     - 3 240
+     - 3 370
+     - 1×
    * - zer CPU
-     - ~748 k
-     - 3 523
-     - 407
-     - **1.1 times**
+     - ~713 k
+     - 3 695
+     - 410
+     - 0.9×
    * - zer AVX2
-     - ~787 k
-     - 3 348
-     - 407
-     - **1.1 times**
+     - ~741 k
+     - 3 560
+     - 410
+     - 0.9×
    * - zer CUDA
-     - ~4.6 M
-     - 573
-     - 516
-     - **6.7 times**
+     - ~4.0 M
+     - 654
+     - 521
+     - **5.0×**
    * - zer Vulkan
-     - ~4.5 M
-     - 584
-     - 533
-     - **6.6 times**
+     - ~4.0 M
+     - 657
+     - 551
+     - **4.9×**
 
 .. raw:: html
 
@@ -350,9 +350,63 @@ KvK deduplication (22 200 records, ~2.64 M candidate pairs)
           style="max-width:100%; border-radius:6px;" />
    </div>
 
+   <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1.5rem 0;">
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">BRP dedupe zer (CUDA)</p>
+       <img src="../res/throughput_stage_pie_brp_zer_cuda.svg"
+            alt="BRP dedupe pipeline stage breakdown, zer CUDA"
+            style="width:100%; border-radius:6px;" />
+     </div>
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">BRP dedupe Splink</p>
+       <img src="../res/throughput_stage_pie_brp_splink.svg"
+            alt="BRP dedupe pipeline stage breakdown, Splink"
+            style="width:100%; border-radius:6px;" />
+     </div>
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">KvK dedupe zer (CUDA)</p>
+       <img src="../res/throughput_stage_pie_kvk_zer_cuda.svg"
+            alt="KvK dedupe pipeline stage breakdown, zer CUDA"
+            style="width:100%; border-radius:6px;" />
+     </div>
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">KvK dedupe Splink</p>
+       <img src="../res/throughput_stage_pie_kvk_splink.svg"
+            alt="KvK dedupe pipeline stage breakdown, Splink"
+            style="width:100%; border-radius:6px;" />
+     </div>
+   </div>
+
+   <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1.5rem 0;">
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">BRP dedupe zer (CUDA)</p>
+       <img src="../res/throughput_mem_timeline_brp_zer_cuda.svg"
+            alt="BRP dedupe memory timeline, zer CUDA"
+            style="width:100%; border-radius:6px;" />
+     </div>
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">BRP dedupe Splink</p>
+       <img src="../res/throughput_mem_timeline_brp_splink.svg"
+            alt="BRP dedupe memory timeline, Splink"
+            style="width:100%; border-radius:6px;" />
+     </div>
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">KvK dedupe zer (CUDA)</p>
+       <img src="../res/throughput_mem_timeline_kvk_zer_cuda.svg"
+            alt="KvK dedupe memory timeline, zer CUDA"
+            style="width:100%; border-radius:6px;" />
+     </div>
+     <div>
+       <p style="text-align:center; font-weight:bold; margin-bottom:0.4rem;">KvK dedupe Splink</p>
+       <img src="../res/throughput_mem_timeline_kvk_splink.svg"
+            alt="KvK dedupe memory timeline, Splink"
+            style="width:100%; border-radius:6px;" />
+     </div>
+   </div>
+
 The largest memory gap is the most practical: Splink loads the full
-scored-pair matrix into a Polars/DuckDB DataFrame (~3 GB peak for 2.6 M
-pairs), whereas zer processes pairs in streaming batches (~150–530 MB
+scored-pair matrix into a Polars/DuckDB DataFrame (~3.4–3.8 GB peak for 2.6–2.7 M
+pairs), whereas zer processes pairs in streaming batches (~410–555 MB
 depending on backend).
 
 ----
@@ -372,31 +426,31 @@ For reference, the zer pipeline cost breakdown on BRP dedupe (AVX2):
      - Notes
    * - Setup
      - 6
-     - 7
+     - 6
      - Schema compilation, index init
    * - Blocking
-     - 106
-     - 105
+     - 131
+     - 131
      - Always on CPU; phonetic + suffix keys
    * - Comparison
-     - 357
-     - 349
+     - 405
+     - 393
      - Field-level similarity vectors; CPU SIMD
    * - EM scoring
-     - 2 897
+     - 3 318
      - 34
      - Fellegi-Sunter iteration; GPU-accelerated on CUDA/Vulkan
    * - Score / classify
-     - 128
-     - 166
+     - 138
+     - 175
      - Threshold application, cluster update
    * - **Total**
-     - **3 494**
-     - **661**
+     - **3 998**
+     - **739**
      - \
 
-The EM stage dominates on CPU.  CUDA reduces it from ~2.9 s to ~34 ms
-(85 times  speedup on that stage alone), yielding a ~5 times  end-to-end speedup
+The EM stage dominates on CPU.  CUDA reduces it from ~3.3 s to ~34 ms
+(~97× speedup on that stage alone), yielding a ~5.4× end-to-end speedup
 after accounting for the fixed blocking and comparison costs.
 
 ----

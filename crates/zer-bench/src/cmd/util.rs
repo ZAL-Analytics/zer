@@ -1,5 +1,108 @@
 use std::path::PathBuf;
 
+/// Error if `target` names a compute backend that was not compiled in.
+///
+/// "auto" and "cpu" are always accepted.  Any other value requires the
+/// matching feature flag (e.g. `--features=cuda`); without it the backend
+/// would silently fall back to CPU, producing a misleading benchmark label.
+pub fn validate_compute_target(target: &str) -> anyhow::Result<()> {
+    match target {
+        "auto" | "cpu" => {}
+        "cuda" => {
+            #[cfg(not(feature = "cuda"))]
+            anyhow::bail!(
+                "--target cuda requires compiling with --features=cuda\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=cuda"
+            );
+        }
+        "avx2" => {
+            #[cfg(not(feature = "avx2"))]
+            anyhow::bail!(
+                "--target avx2 requires compiling with --features=avx2\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=avx2"
+            );
+        }
+        "vulkan" => {
+            #[cfg(not(feature = "vulkan"))]
+            anyhow::bail!(
+                "--target vulkan requires compiling with --features=vulkan\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=vulkan"
+            );
+        }
+        other => anyhow::bail!(
+            "unknown compute target: {other:?}; valid: auto, cpu, cuda, avx2, vulkan"
+        ),
+    }
+    Ok(())
+}
+
+/// Error if `target` names a judge execution provider that was not compiled in.
+///
+/// "cpu" is always accepted.  Any GPU/accelerator provider requires its
+/// matching feature flag; without it ORT would silently fall back to CPU.
+pub fn validate_judge_target(target: &str) -> anyhow::Result<()> {
+    match target {
+        "cpu" => {}
+        "cuda" => {
+            #[cfg(not(feature = "judge_cuda"))]
+            anyhow::bail!(
+                "--judge-target cuda requires compiling with --features=judge_cuda\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=judge_cuda"
+            );
+        }
+        "tensorrt" => {
+            #[cfg(not(feature = "judge_tensorrt"))]
+            anyhow::bail!(
+                "--judge-target tensorrt requires compiling with --features=judge_tensorrt\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=judge_tensorrt"
+            );
+        }
+        "rocm" => {
+            #[cfg(not(feature = "judge_rocm"))]
+            anyhow::bail!(
+                "--judge-target rocm requires compiling with --features=judge_rocm\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=judge_rocm"
+            );
+        }
+        "directml" => {
+            #[cfg(not(feature = "judge_directml"))]
+            anyhow::bail!(
+                "--judge-target directml requires compiling with --features=judge_directml\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=judge_directml"
+            );
+        }
+        "openvino" => {
+            #[cfg(not(feature = "judge_openvino"))]
+            anyhow::bail!(
+                "--judge-target openvino requires compiling with --features=judge_openvino\n  \
+                 Rebuild: cargo build --release -p zer-bench --features=judge_openvino"
+            );
+        }
+        other => anyhow::bail!(
+            "unknown judge target: {other:?}; valid: cpu, cuda, tensorrt, rocm, directml, openvino"
+        ),
+    }
+    Ok(())
+}
+
+/// Print a visual section header that separates benchmark runs in the output.
+///
+/// `parts` are joined with ` │ ` and surrounded by a full-width `═` bar.
+///
+/// ```text
+/// ════════════════════════════════════════════════════
+///   [1/2] zer  │  accuracy  │  brp/dedupe  │  cpu
+/// ════════════════════════════════════════════════════
+/// ```
+pub fn print_bench_header(parts: &[&str]) {
+    let content = parts.join("  │  ");
+    let width = content.chars().count() + 4; // 2 spaces padding each side
+    let bar = "═".repeat(width.max(52));
+    println!("\n{bar}");
+    println!("  {content}");
+    println!("{bar}");
+}
+
 /// Log whether TensorRT engine cache is warm (engines present) or cold (first-run compile).
 pub fn log_trt_cache_status() {
     let cache_dir = format!(

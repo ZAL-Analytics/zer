@@ -283,6 +283,22 @@ pub fn find_scenario_by_preset(tag: &str) -> Option<&'static ScenarioSpec> {
     ALL_SCENARIOS.iter().find(|s| s.name == tag || s.tags.contains(&tag))
 }
 
+/// Returns an iterator over scenarios eligible for throughput benchmarks
+/// (deduplicate-mode only; link modes are not applicable to throughput).
+pub fn throughput_scenarios() -> impl Iterator<Item = &'static ScenarioSpec> {
+    ALL_SCENARIOS.iter().filter(|s| s.mode.as_str() == "deduplicate")
+}
+
+/// Full-size (non-micro) scenarios the 8 production-scale scenarios used by `--scenario=all`.
+pub fn full_size_scenarios() -> impl Iterator<Item = &'static ScenarioSpec> {
+    ALL_SCENARIOS.iter().filter(|s| !s.name.starts_with("micro/"))
+}
+
+/// Full-size throughput-eligible scenarios: non-micro dedupe scenarios only.
+pub fn full_size_throughput_scenarios() -> impl Iterator<Item = &'static ScenarioSpec> {
+    ALL_SCENARIOS.iter().filter(|s| !s.name.starts_with("micro/") && s.mode.as_str() == "deduplicate")
+}
+
 /// Returns `(dataset_paths, source_labels, ground_truth_path)` for a scenario,
 /// all rooted at `workspace_root`.
 pub fn datasets_for_scenario(
