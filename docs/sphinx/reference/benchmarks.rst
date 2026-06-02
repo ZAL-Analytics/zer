@@ -266,8 +266,8 @@ the same ~22 200-record BRP and KvK dedupe datasets.
    the same CPU for blocking and comparison; only the EM scoring stage
    is accelerated by AVX2/CUDA/Vulkan.
 
-BRP deduplication (22 200 records, ~2.68 M candidate pairs)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BRP deduplication
+~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
@@ -304,8 +304,8 @@ BRP deduplication (22 200 records, ~2.68 M candidate pairs)
      - 553
      - **7.3×**
 
-KvK deduplication (22 200 records, ~2.64 M candidate pairs)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+KvK deduplication
+~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
@@ -572,15 +572,13 @@ Subcommands
    * - Subcommand
      - Description
    * - ``throughput``
-     - Raw compare/EM/score throughput on a single dataset
+     - Raw compare/EM/score throughput on a single dataset.  Pass ``--compare-libs`` to also run competitor libraries
    * - ``accuracy``
-     - Precision, recall, F1, and PR-AUC against labelled ground truth
-   * - ``library``
-     - Run a competitor library script and capture its summary CSV
-   * - ``library-all``
-     - Run all configured competitor libraries for a given mode and dataset
+     - Precision, recall, F1, and PR-AUC against labelled ground truth.  Pass ``--compare-libs`` to also run competitor libraries
    * - ``compare``
-     - Read multiple CSV summaries and print a side-by-side comparison table
+     - Read multiple ``_summary.csv`` files and print a side-by-side comparison table
+   * - ``plot``
+     - Generate plots from benchmark summary CSVs via ``plot_results.py``
 
 Quick examples
 ~~~~~~~~~~~~~~
@@ -602,12 +600,20 @@ Direct ``zer-bench`` invocations (use after ``cargo install zer-bench``):
    zer-bench throughput --scenario brp/dedupe --out bench_results/
    zer-bench throughput --scenario brp/dedupe --target cuda --out bench_results/
 
-   # zer vs Splink: run both to the same --out dir, then compare
-   zer-bench accuracy --scenario brp/dedupe --out bench_results/
-   zer-bench library  --library splink --scenario brp/dedupe --out bench_results/
-   zer-bench compare  --results bench_results/
+   # Run all dedupe throughput scenarios back-to-back
+   zer-bench throughput --scenario all --out bench_results/
+
+   # zer vs Splink: run both and print an inline comparison table
+   zer-bench accuracy  --scenario brp/dedupe --compare-libs splink --out bench_results/
+   zer-bench throughput --scenario brp/dedupe --compare-libs splink --out bench_results/
+
+   # Compare previously written summary CSVs side by side
+   zer-bench compare --results bench_results/
+
+   # Generate plots from summary CSVs
+   zer-bench plot --input bench_results/ --output bench_results/plots/
 
    # Library scripts outside a zer repo clone
-   zer-bench library --library splink --scenario brp/dedupe \
+   zer-bench accuracy --scenario brp/dedupe --compare-libs splink \
        --external-benchmarks-dir /path/to/my/benchmarks --out bench_results/
 

@@ -48,20 +48,23 @@ The ``zer-bench`` crate drives all accuracy and throughput scenarios:
 
 Benchmark output is written to ``bench_results/`` as JSON and CSV files.
 
-Running the Splink comparison benchmarks
+Running zer alongside competitor libraries
 ------------------------------------------
 
-The Python comparison benchmarks live in ``benchmarks/splink/``. They run
-the same datasets through Splink 4.x so the results are directly comparable:
+Pass ``--compare-libs`` to any ``accuracy`` or ``throughput`` invocation to
+run competitor libraries on the same dataset and print an inline comparison
+table.  The library scripts live in ``benchmarks/<library>/``.
 
 .. code-block:: bash
 
-   cd benchmarks/splink
-   pip install -r ../../requirements.txt
-   python strategies/brp_link.py
+   # Accuracy: zer vs Splink on BRP dedupe
+   cargo run -p zer-bench -- accuracy --scenario brp/dedupe --compare-libs splink
 
-Each script prints precision, recall, F1, and elapsed time to stdout and
-appends a row to ``bench_results/splink_results.csv``.
+   # Throughput: zer (CUDA) vs Splink on all dedupe scenarios
+   cargo run -p zer-bench --features cuda -- throughput --scenario all --compare-libs splink
+
+   # Compare previously written CSV summaries side by side
+   cargo run -p zer-bench -- compare --results bench_results/
 
 Sharing your results
 ---------------------
