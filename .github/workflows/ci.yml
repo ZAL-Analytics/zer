@@ -57,8 +57,10 @@ jobs:
         id: cache-datasets
         uses: actions/cache@v4
         with:
-          path: data/tests
-          key: test-datasets-v1-${{ hashFiles('data_generator/generate_examples_tests.py', 'data_generator/_common.py') }}
+          path: |
+            data/tests
+            data/examples
+          key: test-datasets-v2-${{ hashFiles('data_generator/generate_examples_tests.py', 'data_generator/_common.py') }}
 
       - name: Download test datasets
         id: download-datasets
@@ -68,11 +70,11 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_API_KEY }}
         run: |
           pip install 'huggingface_hub' --quiet
-          bash scripts/download_dataset.sh
+          bash scripts/download_dataset.sh --examples
 
       - name: Generate test datasets (fallback)
         if: steps.cache-datasets.outputs.cache-hit != 'true' && steps.download-datasets.outcome == 'failure'
-        run: bash scripts/generate_data.sh --tests
+        run: bash scripts/generate_data.sh --examples --tests
 
       - run: cargo test --workspace ${{ env.CI_EXCLUDE }} --features cpu --release
 
