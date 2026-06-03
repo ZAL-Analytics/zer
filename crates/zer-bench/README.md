@@ -47,6 +47,23 @@ hf download arsalan-anwari/zjudge --local-dir ~/.cache/zer/models
 # ZER_MODEL_DIR defaults to ~/.cache/zer/models; override if needed
 ```
 
+### External library benchmarks
+
+Head-to-head comparisons with competitor libraries (`--compare-libs`) require the external benchmark scripts. Clone the repository and point `ZER_EXTERNAL_BENCHMARKS_DIR` at it:
+
+```bash
+git clone https://github.com/ZAL-Analytics/zer-external-libs-benchmarks \
+    ~/benchmarks/zer-external-libs
+export ZER_EXTERNAL_BENCHMARKS_DIR=~/benchmarks/zer-external-libs
+```
+
+Or pass the path directly at runtime:
+
+```bash
+zer-bench accuracy --scenario brp/dedupe --compare-libs splink \
+    --external-benchmarks-dir ~/benchmarks/zer-external-libs
+```
+
 ### Environment variables
 
 | Variable | Default | Description |
