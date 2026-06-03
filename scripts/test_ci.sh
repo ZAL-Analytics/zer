@@ -105,7 +105,7 @@ _ensure_datasets() {
         return 0
     fi
 
-    if command -v huggingface-cli &>/dev/null; then
+    if command -v hf &>/dev/null; then
         echo "downloading from HuggingFace…"
         if bash "$REPO_ROOT/scripts/download_dataset.sh"; then
             return 0

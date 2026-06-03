@@ -6,7 +6,7 @@
 #   ./scripts/download_dataset.sh --all    # download everything
 #
 # Prerequisites:
-#   pip install 'huggingface_hub[cli]'
+#   pip install 'huggingface_hub'
 #
 # Optional: set HF_TOKEN env var to authenticate (required for private/gated repos).
 #   export HF_TOKEN=hf_...
@@ -27,8 +27,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if ! command -v huggingface-cli &>/dev/null; then
-    echo "Error: huggingface-cli not found. Install with: pip install 'huggingface_hub[cli]'" >&2
+if ! command -v hf &>/dev/null; then
+    echo "Error: hf not found. Install with: pip install 'huggingface_hub'" >&2
     exit 1
 fi
 
@@ -43,7 +43,7 @@ if [[ -n "${HF_TOKEN:-}" ]]; then
 fi
 
 echo "Downloading datasets from ${REPO} into data/ ..."
-huggingface-cli download "$REPO" \
+hf download "$REPO" \
     --repo-type dataset \
     --local-dir "$DATA_DIR" \
     "${INCLUDE_ARGS[@]}" \
