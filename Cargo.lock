@@ -3087,7 +3087,7 @@ checksum = "fdd20c5420375476fbd4394763288da7eb0cc0b8c11deed431a91562af7335d3"
 
 [[package]]
 name = "zer"
-version = "1.0.8"
+version = "1.0.9"
 dependencies = [
  "bincode 2.0.1",
  "csv",
