@@ -23,14 +23,14 @@ pub(crate) const BLOCK_DIM: u32 = 256;
 // ── Per-kernel resource bundles ───────────────────────────────────────────────
 
 pub(crate) struct EmKernels {
-    pub _module:    Arc<CudaModule>,
-    pub estep_fn:   CudaFunction,
+    pub _module: Arc<CudaModule>,
+    pub estep_fn: CudaFunction,
     pub partial_fn: CudaFunction,
-    pub final_fn:   CudaFunction,
+    pub final_fn: CudaFunction,
 }
 
 pub(crate) struct HelloKernels {
-    pub _module:   Arc<CudaModule>,
+    pub _module: Arc<CudaModule>,
     pub launch_fn: CudaFunction,
 }
 
@@ -41,12 +41,12 @@ pub(crate) struct HelloKernels {
 /// Fields are `pub(crate)` so that the `launch/` submodules can access them
 /// directly.
 pub struct CudaDevice {
-    pub(crate) ctx:    Arc<CudaContext>,
+    pub(crate) ctx: Arc<CudaContext>,
     pub(crate) stream: Arc<CudaStream>,
-    pub(crate) em:     EmKernels,
-    pub(crate) hello:  HelloKernels,
+    pub(crate) em: EmKernels,
+    pub(crate) hello: HelloKernels,
     device_name: String,
-    total_vram:  u64,
+    total_vram: u64,
 }
 
 impl CudaDevice {
@@ -54,7 +54,8 @@ impl CudaDevice {
         let ctx = CudaContext::new(0)
             .map_err(|e| GpuError::Cuda(format!("CudaContext::new failed: {e}")))?;
 
-        let (sm_major, sm_minor) = ctx.compute_capability()
+        let (sm_major, sm_minor) = ctx
+            .compute_capability()
             .map_err(|e| GpuError::Cuda(format!("compute_capability query failed: {e}")))?;
         if (sm_major, sm_minor) < (8, 6) {
             return Err(GpuError::Cuda(format!(
@@ -64,13 +65,12 @@ impl CudaDevice {
         }
         tracing::debug!(sm_major, sm_minor, "CUDA compute capability check passed");
 
-        let device_name = ctx.name()
-            .map_err(|e| GpuError::Cuda(e.to_string()))?;
-        let total_vram = ctx.total_mem()
-            .map_err(|e| GpuError::Cuda(e.to_string()))? as u64;
+        let device_name = ctx.name().map_err(|e| GpuError::Cuda(e.to_string()))?;
+        let total_vram = ctx.total_mem().map_err(|e| GpuError::Cuda(e.to_string()))? as u64;
 
         let (free_mb, total_mb) = {
-            let (f, t) = ctx.mem_get_info()
+            let (f, t) = ctx
+                .mem_get_info()
                 .map_err(|e| GpuError::Cuda(e.to_string()))?;
             (f / (1024 * 1024), t / (1024 * 1024))
         };
@@ -79,35 +79,62 @@ impl CudaDevice {
         let stream = ctx.default_stream();
 
         let em = {
-            let ptx    = cudarc::nvrtc::Ptx::from_src(em_reduce::PTX_SRC.to_string());
-            let module = ctx.load_module(ptx)
+            let ptx = cudarc::nvrtc::Ptx::from_src(em_reduce::PTX_SRC.to_string());
+            let module = ctx
+                .load_module(ptx)
                 .map_err(|e| GpuError::Cuda(format!("load_module em_reduce: {e}")))?;
-            let estep_fn   = module.load_function(em_reduce::ESTEP_FN)
+            let estep_fn = module
+                .load_function(em_reduce::ESTEP_FN)
                 .map_err(|_| GpuError::ShaderNotFound(em_reduce::ESTEP_FN.into()))?;
-            let partial_fn = module.load_function(em_reduce::PARTIAL_FN)
+            let partial_fn = module
+                .load_function(em_reduce::PARTIAL_FN)
                 .map_err(|_| GpuError::ShaderNotFound(em_reduce::PARTIAL_FN.into()))?;
-            let final_fn   = module.load_function(em_reduce::FINAL_FN)
+            let final_fn = module
+                .load_function(em_reduce::FINAL_FN)
                 .map_err(|_| GpuError::ShaderNotFound(em_reduce::FINAL_FN.into()))?;
-            EmKernels { _module: module, estep_fn, partial_fn, final_fn }
+            EmKernels {
+                _module: module,
+                estep_fn,
+                partial_fn,
+                final_fn,
+            }
         };
 
         let hello = {
-            let ptx    = cudarc::nvrtc::Ptx::from_src(hello_backend::PTX_SRC.to_string());
-            let module = ctx.load_module(ptx)
+            let ptx = cudarc::nvrtc::Ptx::from_src(hello_backend::PTX_SRC.to_string());
+            let module = ctx
+                .load_module(ptx)
                 .map_err(|e| GpuError::Cuda(format!("load_module hello_backend: {e}")))?;
-            let launch_fn = module.load_function(hello_backend::LAUNCH_FN)
+            let launch_fn = module
+                .load_function(hello_backend::LAUNCH_FN)
                 .map_err(|_| GpuError::ShaderNotFound(hello_backend::LAUNCH_FN.into()))?;
-            HelloKernels { _module: module, launch_fn }
+            HelloKernels {
+                _module: module,
+                launch_fn,
+            }
         };
 
-        Ok(Self { ctx, stream, em, hello, device_name, total_vram })
+        Ok(Self {
+            ctx,
+            stream,
+            em,
+            hello,
+            device_name,
+            total_vram,
+        })
     }
 
-    pub fn name(&self) -> &str { &self.device_name }
-    pub fn total_vram_bytes(&self) -> u64 { self.total_vram }
+    pub fn name(&self) -> &str {
+        &self.device_name
+    }
+    pub fn total_vram_bytes(&self) -> u64 {
+        self.total_vram
+    }
 
     pub fn available_vram_bytes(&self) -> Result<u64, GpuError> {
-        let (free, _) = self.ctx.mem_get_info()
+        let (free, _) = self
+            .ctx
+            .mem_get_info()
             .map_err(|e| GpuError::Cuda(e.to_string()))?;
         Ok(free as u64)
     }

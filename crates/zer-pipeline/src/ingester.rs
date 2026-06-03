@@ -21,7 +21,7 @@ pub struct IngestResult {
     /// Assigned entity, if the record was auto-matched or auto-rejected into one.
     pub entity_id: Option<EntityId>,
     /// Scoring band for the best candidate pair (or AutoReject for singletons).
-    pub band:      MatchBand,
+    pub band: MatchBand,
     /// The highest-scoring candidate pair, if any candidates existed.
     pub top_match: Option<ScoredPair>,
 }
@@ -68,7 +68,11 @@ impl Ingester {
     ///
     /// Returns results in the same order as the input iterator.  The first
     /// error short-circuits the remaining rows.
-    pub async fn send_all<I>(&self, rows: I, id_start: RecordId) -> Result<Vec<IngestResult>, ZerError>
+    pub async fn send_all<I>(
+        &self,
+        rows: I,
+        id_start: RecordId,
+    ) -> Result<Vec<IngestResult>, ZerError>
     where
         I: IntoIterator,
         I::Item: IntoRecord,
@@ -97,18 +101,18 @@ impl Ingester {
 // ── Background task ───────────────────────────────────────────────────────────
 
 struct IngesterState {
-    pipeline:     Arc<Pipeline>,
-    index:        InvertedIndex,
+    pipeline: Arc<Pipeline>,
+    index: InvertedIndex,
     record_store: Arc<dyn RecordStore>,
-    params:       ModelParams,
+    params: ModelParams,
     rate_adapter: RateAdapter,
 }
 
 impl IngesterState {
     fn new(pipeline: Arc<Pipeline>) -> Self {
-        let rate_adapter  = RateAdapter::new(pipeline.config.rate_config.clone());
-        let params        = load_initial_params(&pipeline);
-        let record_store  = Arc::clone(&pipeline.record_store);
+        let rate_adapter = RateAdapter::new(pipeline.config.rate_config.clone());
+        let params = load_initial_params(&pipeline);
+        let record_store = Arc::clone(&pipeline.record_store);
         Self {
             pipeline,
             index: InvertedIndex::new(),
@@ -122,9 +126,9 @@ impl IngesterState {
 fn load_initial_params(pipeline: &Pipeline) -> ModelParams {
     let fp = SchemaFingerprint::from_schema(&pipeline.schema);
     match pipeline.registry.lookup_startup_mode(&fp) {
-        Ok(zer_schema::StartupMode::WarmLoad(art))              => art.params,
+        Ok(zer_schema::StartupMode::WarmLoad(art)) => art.params,
         Ok(zer_schema::StartupMode::WarmStart { artifact, .. }) => artifact.params,
-        _                                                        => default_params(pipeline.schema.fields.len()),
+        _ => default_params(pipeline.schema.fields.len()),
     }
 }
 
@@ -156,7 +160,10 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
 
     // Persist and index the new record.
     state.record_store.insert(record.clone());
-    state.pipeline.blocker.index_record(&record, &state.pipeline.schema, &mut state.index);
+    state
+        .pipeline
+        .blocker
+        .index_record(&record, &state.pipeline.schema, &mut state.index);
 
     if cand_ids.is_empty() {
         return singleton_result(&*state.pipeline.store, record_id);
@@ -193,12 +200,18 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
         })
         .cloned();
 
-    let band = top_match.as_ref().map_or(MatchBand::AutoReject, |sp| sp.band);
+    let band = top_match
+        .as_ref()
+        .map_or(MatchBand::AutoReject, |sp| sp.band);
 
     let entity_id = match band {
         MatchBand::AutoMatch => {
             if let Some(ref sp) = top_match {
-                let partner_id = if sp.record_a == record_id { sp.record_b } else { sp.record_a };
+                let partner_id = if sp.record_a == record_id {
+                    sp.record_b
+                } else {
+                    sp.record_a
+                };
                 merge_into_entity(
                     &*state.pipeline.store,
                     record_id,
@@ -212,30 +225,40 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
         MatchBand::AutoReject => singleton_entity_id(&*state.pipeline.store, record_id)?,
         MatchBand::Borderline => {
             // Leave unresolved, caller can call flush_borderlines or handle externally.
-            return Ok(IngestResult { record_id, entity_id: None, band, top_match });
+            return Ok(IngestResult {
+                record_id,
+                entity_id: None,
+                band,
+                top_match,
+            });
         }
     };
 
-    Ok(IngestResult { record_id, entity_id: Some(entity_id), band, top_match })
+    Ok(IngestResult {
+        record_id,
+        entity_id: Some(entity_id),
+        band,
+        top_match,
+    })
 }
 
 // ── Entity persistence helpers ────────────────────────────────────────────────
 
 fn singleton_result(
-    store:     &dyn zer_core::traits::EntityStore,
+    store: &dyn zer_core::traits::EntityStore,
     record_id: RecordId,
 ) -> Result<IngestResult, ZerError> {
     let entity_id = singleton_entity_id(store, record_id)?;
     Ok(IngestResult {
         record_id,
         entity_id: Some(entity_id),
-        band:      MatchBand::AutoReject,
+        band: MatchBand::AutoReject,
         top_match: None,
     })
 }
 
 fn singleton_entity_id(
-    store:     &dyn zer_core::traits::EntityStore,
+    store: &dyn zer_core::traits::EntityStore,
     record_id: RecordId,
 ) -> Result<EntityId, ZerError> {
     // If this record already belongs to an entity, return that entity.
@@ -243,10 +266,10 @@ fn singleton_entity_id(
         return Ok(eid);
     }
     let entity = Entity {
-        id:      record_id,
+        id: record_id,
         members: vec![EntityMember {
             record_id,
-            score:  1.0,
+            score: 1.0,
             method: ResolutionMethod::Manual,
             source: None,
         }],
@@ -255,17 +278,17 @@ fn singleton_entity_id(
 }
 
 fn merge_into_entity(
-    store:       &dyn zer_core::traits::EntityStore,
-    record_id:   RecordId,
-    partner_id:  RecordId,
-    score:       f32,
+    store: &dyn zer_core::traits::EntityStore,
+    record_id: RecordId,
+    partner_id: RecordId,
+    score: f32,
 ) -> Result<EntityId, ZerError> {
     let existing_eid = store.record_to_entity(partner_id)?;
     let mut entity = if let Some(eid) = existing_eid {
         store.get_entity(eid)?
     } else {
         Entity {
-            id:      partner_id,
+            id: partner_id,
             members: vec![EntityMember {
                 record_id: partner_id,
                 score,
@@ -302,8 +325,8 @@ mod tests {
 
     fn person_schema() -> zer_core::schema::Schema {
         SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
             .build()
             .unwrap()
@@ -323,43 +346,58 @@ mod tests {
 
     fn make_record(id: u64, name: &str, last: &str, dob: &str) -> Record {
         Record::new(id)
-            .insert("voornamen",     FieldValue::Text(name.into()))
-            .insert("achternaam",    FieldValue::Text(last.into()))
+            .insert("voornamen", FieldValue::Text(name.into()))
+            .insert("achternaam", FieldValue::Text(last.into()))
             .insert("geboortedatum", FieldValue::Text(dob.into()))
     }
 
     #[tokio::test]
     async fn singleton_gets_entity() {
-        let dir      = TempDir::new().unwrap();
+        let dir = TempDir::new().unwrap();
         let pipeline = make_pipeline(&dir);
         let ingester = Arc::clone(&pipeline).ingester();
-        let result   = ingester.send(make_record(1, "Alice", "Smith", "1990-01-01")).await.unwrap();
+        let result = ingester
+            .send(make_record(1, "Alice", "Smith", "1990-01-01"))
+            .await
+            .unwrap();
         assert_eq!(result.record_id, 1);
-        assert!(result.entity_id.is_some(), "singleton must be assigned an entity");
+        assert!(
+            result.entity_id.is_some(),
+            "singleton must be assigned an entity"
+        );
     }
 
     #[tokio::test]
     async fn second_record_has_correct_id() {
-        let dir      = TempDir::new().unwrap();
+        let dir = TempDir::new().unwrap();
         let pipeline = make_pipeline(&dir);
         let ingester = Arc::clone(&pipeline).ingester();
-        let _r1 = ingester.send(make_record(1, "Jan", "de Vries", "1985-03-15")).await.unwrap();
-        let r2  = ingester.send(make_record(2, "Jan", "de Vries", "1985-03-15")).await.unwrap();
+        let _r1 = ingester
+            .send(make_record(1, "Jan", "de Vries", "1985-03-15"))
+            .await
+            .unwrap();
+        let r2 = ingester
+            .send(make_record(2, "Jan", "de Vries", "1985-03-15"))
+            .await
+            .unwrap();
         assert_eq!(r2.record_id, 2);
     }
 
     #[tokio::test]
     async fn flush_borderlines_succeeds() {
-        let dir      = TempDir::new().unwrap();
+        let dir = TempDir::new().unwrap();
         let pipeline = make_pipeline(&dir);
         let ingester = Arc::clone(&pipeline).ingester();
-        ingester.send(make_record(1, "Test", "User", "2000-01-01")).await.unwrap();
+        ingester
+            .send(make_record(1, "Test", "User", "2000-01-01"))
+            .await
+            .unwrap();
         ingester.flush_borderlines().await.unwrap();
     }
 
     #[tokio::test]
     async fn multiple_records_returned_in_order() {
-        let dir      = TempDir::new().unwrap();
+        let dir = TempDir::new().unwrap();
         let pipeline = make_pipeline(&dir);
         let ingester = Arc::clone(&pipeline).ingester();
         for i in 1u64..=5 {
@@ -373,12 +411,21 @@ mod tests {
 
     #[tokio::test]
     async fn distinct_records_each_get_entity() {
-        let dir      = TempDir::new().unwrap();
+        let dir = TempDir::new().unwrap();
         let pipeline = make_pipeline(&dir);
         let ingester = Arc::clone(&pipeline).ingester();
-        let r1 = ingester.send(make_record(1, "Alice",  "Smith",   "1990-01-01")).await.unwrap();
-        let r2 = ingester.send(make_record(2, "Bob",    "Jones",   "1975-06-20")).await.unwrap();
-        let r3 = ingester.send(make_record(3, "Carlos", "Ramirez", "1988-11-03")).await.unwrap();
+        let r1 = ingester
+            .send(make_record(1, "Alice", "Smith", "1990-01-01"))
+            .await
+            .unwrap();
+        let r2 = ingester
+            .send(make_record(2, "Bob", "Jones", "1975-06-20"))
+            .await
+            .unwrap();
+        let r3 = ingester
+            .send(make_record(3, "Carlos", "Ramirez", "1988-11-03"))
+            .await
+            .unwrap();
         assert!(r1.entity_id.is_some());
         assert!(r2.entity_id.is_some());
         assert!(r3.entity_id.is_some());

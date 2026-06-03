@@ -2,7 +2,8 @@
 name    = "multi-source-linkage"
 version     = "1.0.0"
 edition = "2021"
-publish = false
+publish  = false
+license  = "Apache-2.0"
 description = "Multi-source linkage demo: BRP ↔ KvK with LinkOnly and LinkAndDedupe modes"
 
 [features]

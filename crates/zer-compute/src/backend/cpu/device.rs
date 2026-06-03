@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use zer_compare::{FieldComparator, FellegiSunterScorer};
+use zer_compare::{FellegiSunterScorer, FieldComparator};
 use zer_core::{
     comparison::{ComparisonBatch, ComparisonVector},
-    error::ZerError,
     record::Record,
     record_pool::RecordPool,
     schema::Schema,
@@ -25,7 +24,9 @@ pub struct CpuFallbackComparator {
 
 impl CpuFallbackComparator {
     pub fn from_schema(schema: &Schema) -> Self {
-        Self { inner: Arc::new(FieldComparator::from_schema(schema)) }
+        Self {
+            inner: Arc::new(FieldComparator::from_schema(schema)),
+        }
     }
 }
 
@@ -36,9 +37,9 @@ impl Comparator for CpuFallbackComparator {
 
     fn compare_batch_from_pool(
         &self,
-        pool:    &RecordPool,
+        pool: &RecordPool,
         indices: &[(usize, usize)],
-        schema:  &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
         self.inner.compare_batch_from_pool(pool, indices, schema)
     }
@@ -61,8 +62,8 @@ impl Scorer for CpuFallbackScorer {
 
     fn estimate_params(
         &self,
-        batch:    &ComparisonBatch,
-        init:     Option<ModelParams>,
+        batch: &ComparisonBatch,
+        init: Option<ModelParams>,
         max_iter: usize,
     ) -> ZerResult<ModelParams> {
         FellegiSunterScorer.estimate_params(batch, init, max_iter)
@@ -71,9 +72,9 @@ impl Scorer for CpuFallbackScorer {
 
 /// Convenience wrapper for `DeviceScorer::estimate_params` CPU fallback.
 pub fn cpu_estimate_params(
-    batch:    &ComparisonBatch,
-    init:     Option<ModelParams>,
+    batch: &ComparisonBatch,
+    init: Option<ModelParams>,
     max_iter: usize,
 ) -> ZerResult<ModelParams> {
-    zer_compare::run_em(batch, init, max_iter).map_err(ZerError::from)
+    zer_compare::run_em(batch, init, max_iter)
 }

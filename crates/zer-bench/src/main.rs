@@ -70,9 +70,9 @@ async fn main() {
     let cli = Cli::parse();
     let result = match cli.command {
         Command::Throughput(args) => cmd::throughput::run(args),
-        Command::Accuracy(args)   => cmd::accuracy::run(args).await,
-        Command::Compare(args)    => cmd::compare::run(args),
-        Command::Plot(args)       => cmd::plot::run(args),
+        Command::Accuracy(args) => cmd::accuracy::run(args).await,
+        Command::Compare(args) => cmd::compare::run(args),
+        Command::Plot(args) => cmd::plot::run(args),
     };
     if let Err(e) = result {
         eprintln!("error: {e}");

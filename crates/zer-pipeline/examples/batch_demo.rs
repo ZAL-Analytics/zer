@@ -1,7 +1,6 @@
 /// Demonstrates `Pipeline::run_batch` with a set of synthetic records.
 ///
 /// Run with:  cargo run --example batch_demo -p zer-pipeline
-
 use tempfile::TempDir;
 use zer_cluster::ZalEntityStore;
 use zer_core::{
@@ -15,8 +14,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
 
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()?;
 
@@ -32,15 +31,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Mix of true duplicates and unique individuals
     let records = vec![
         // Cluster A, same person, three records
-        make_record(1, "Jan",    "de Vries", "1985-03-15"),
-        make_record(2, "Jan",    "de Vries", "1985-03-15"),
-        make_record(3, "Jan",    "de Vries", "1985-03-15"),
+        make_record(1, "Jan", "de Vries", "1985-03-15"),
+        make_record(2, "Jan", "de Vries", "1985-03-15"),
+        make_record(3, "Jan", "de Vries", "1985-03-15"),
         // Cluster B, another person, two records
-        make_record(4, "Maria",  "Jansen",   "1992-07-04"),
-        make_record(5, "Maria",  "Jansen",   "1992-07-04"),
+        make_record(4, "Maria", "Jansen", "1992-07-04"),
+        make_record(5, "Maria", "Jansen", "1992-07-04"),
         // Unique individuals
-        make_record(6, "Carlos", "Ramirez",  "1978-11-01"),
-        make_record(7, "Alice",  "Smith",    "1990-01-01"),
+        make_record(6, "Carlos", "Ramirez", "1978-11-01"),
+        make_record(7, "Alice", "Smith", "1990-01-01"),
     ];
 
     println!("Running batch with {} records…", records.len());
@@ -62,8 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pipeline2 = Pipeline::builder()
         .schema(
             SchemaBuilder::new()
-                .field("voornamen",     FieldKind::Name)
-                .field("achternaam",    FieldKind::Name)
+                .field("voornamen", FieldKind::Name)
+                .field("achternaam", FieldKind::Name)
                 .field("geboortedatum", FieldKind::Date)
                 .build()?,
         )
@@ -86,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }

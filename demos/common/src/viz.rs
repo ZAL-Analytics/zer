@@ -12,10 +12,10 @@ pub fn print_block_histogram(label: &str, block_sizes: &[usize]) {
     }
 
     let buckets: &[(usize, usize, &str)] = &[
-        (2,  4,   "2–4   "),
-        (5,  9,   "5–9   "),
-        (10, 24,  "10–24 "),
-        (25, 99,  "25–99 "),
+        (2, 4, "2–4   "),
+        (5, 9, "5–9   "),
+        (10, 24, "10–24 "),
+        (25, 99, "25–99 "),
         (100, usize::MAX, "100+  "),
     ];
 
@@ -34,10 +34,10 @@ pub fn print_block_histogram(label: &str, block_sizes: &[usize]) {
 
     println!("  {} block size distribution:", label);
     for (i, &(_, _, lbl)) in buckets.iter().enumerate() {
-        let c   = counts[i];
+        let c = counts[i];
         let bar = bar_width * c / max_count;
         let filled = "█".repeat(bar);
-        let empty  = "░".repeat(bar_width - bar);
+        let empty = "░".repeat(bar_width - bar);
         println!("    {}│{}{}│ {}", lbl, filled, empty, c);
     }
     println!(
@@ -51,10 +51,10 @@ pub fn print_block_histogram(label: &str, block_sizes: &[usize]) {
 
 /// One resolved entity shown in the cluster tree.
 pub struct ClusterEntry {
-    pub entity_id:   u64,
-    pub record_ids:  Vec<u64>,
+    pub entity_id: u64,
+    pub record_ids: Vec<u64>,
     pub best_scores: Vec<f32>,
-    pub labels:      Vec<String>,
+    pub labels: Vec<String>,
 }
 
 /// Print resolved entities as an indented tree.
@@ -67,7 +67,8 @@ pub fn print_cluster_tree(entries: &[ClusterEntry], max_clusters: usize) {
         println!("  ├─ entity #{}", entry.entity_id);
         let n = entry.record_ids.len();
         for (i, (rid, label)) in entry.record_ids.iter().zip(entry.labels.iter()).enumerate() {
-            let score_str = entry.best_scores
+            let score_str = entry
+                .best_scores
                 .get(i)
                 .map(|s| format!(" [{:.2}]", s))
                 .unwrap_or_default();
@@ -84,7 +85,7 @@ pub fn print_cluster_tree(entries: &[ClusterEntry], max_clusters: usize) {
 
 /// One row in the side-by-side pair table.
 pub struct PairRow {
-    pub score:    f32,
+    pub score: f32,
     pub a_fields: Vec<(String, String)>,
     pub b_fields: Vec<(String, String)>,
 }
@@ -104,10 +105,14 @@ pub fn print_pair_table(rows: &[PairRow], max_rows: usize) {
     for row in rows.iter().take(shown) {
         let fields = row.a_fields.len().max(row.b_fields.len());
         for fi in 0..fields {
-            let a = row.a_fields.get(fi)
+            let a = row
+                .a_fields
+                .get(fi)
                 .map(|(k, v)| format!("{}: {}", k, v))
                 .unwrap_or_default();
-            let b = row.b_fields.get(fi)
+            let b = row
+                .b_fields
+                .get(fi)
                 .map(|(k, v)| format!("{}: {}", k, v))
                 .unwrap_or_default();
             let score_col = if fi == 0 {
@@ -128,7 +133,7 @@ pub fn print_pair_table(rows: &[PairRow], max_rows: usize) {
 
 /// One field's comparison result.
 pub struct FieldComparison {
-    pub field:      String,
+    pub field: String,
     pub similarity: f32,
 }
 
@@ -140,7 +145,7 @@ pub fn print_comparison_vectors(header: &str, fields: &[FieldComparison]) {
     println!("  {}:", header);
     for fc in fields {
         let filled = ((fc.similarity.clamp(0.0, 1.0) * WIDTH as f32).round() as usize).min(WIDTH);
-        let bar    = format!("{}{}", "█".repeat(filled), "░".repeat(WIDTH - filled));
+        let bar = format!("{}{}", "█".repeat(filled), "░".repeat(WIDTH - filled));
         println!("    {:<20} │{}│ {:.3}", fc.field, bar, fc.similarity);
     }
 }
@@ -174,32 +179,58 @@ pub fn print_score_histogram(scores: &[f32], auto_match: f32, auto_reject: f32) 
         }
     }
 
-    let reject_col  = ((auto_reject * n_buckets as f32) as usize).min(n_buckets - 1);
-    let promote_col = ((auto_match  * n_buckets as f32) as usize).min(n_buckets - 1);
+    let reject_col = ((auto_reject * n_buckets as f32) as usize).min(n_buckets - 1);
+    let promote_col = ((auto_match * n_buckets as f32) as usize).min(n_buckets - 1);
 
-    println!("  score distribution  [reject<{:.2}  match>{:.2}]:", auto_reject, auto_match);
+    println!(
+        "  score distribution  [reject<{:.2}  match>{:.2}]:",
+        auto_reject, auto_match
+    );
     for (row_idx, row) in grid.iter().enumerate() {
-        let line: String = row.iter().enumerate().map(|(col, &ch)| {
-            if col == reject_col  { '|' }
-            else if col == promote_col { '|' }
-            else { ch }
-        }).collect();
-        let label = if row_idx == 0 { format!("{:>4}", max_count) } else { "    ".to_string() };
+        let line: String = row
+            .iter()
+            .enumerate()
+            .map(|(col, &ch)| {
+                if col == reject_col {
+                    '|'
+                } else if col == promote_col {
+                    '|'
+                } else {
+                    ch
+                }
+            })
+            .collect();
+        let label = if row_idx == 0 {
+            format!("{:>4}", max_count)
+        } else {
+            "    ".to_string()
+        };
         println!("  {}│{}│", label, line);
     }
-    let axis: String = (0..n_buckets).map(|i| {
-        if i == 0            { '0' }
-        else if i == n_buckets - 1 { '1' }
-        else if i == reject_col    { 'R' }
-        else if i == promote_col   { 'M' }
-        else                       { '─' }
-    }).collect();
+    let axis: String = (0..n_buckets)
+        .map(|i| {
+            if i == 0 {
+                '0'
+            } else if i == n_buckets - 1 {
+                '1'
+            } else if i == reject_col {
+                'R'
+            } else if i == promote_col {
+                'M'
+            } else {
+                '─'
+            }
+        })
+        .collect();
     println!("      └{}┘", axis);
     println!(
         "  n={} | auto-rejected: {} | borderline: {} | auto-matched: {}",
         scores.len(),
         scores.iter().filter(|&&s| s < auto_reject).count(),
-        scores.iter().filter(|&&s| s >= auto_reject && s <= auto_match).count(),
+        scores
+            .iter()
+            .filter(|&&s| s >= auto_reject && s <= auto_match)
+            .count(),
         scores.iter().filter(|&&s| s > auto_match).count(),
     );
 }

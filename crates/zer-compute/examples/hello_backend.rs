@@ -29,28 +29,28 @@ fn main() {
     // ── Forced CPU ────────────────────────────────────────────────────────────
     println!("\n=== CPU (forced) ===");
     match DeviceBackend::from_preference(BackendPreference::Cpu) {
-        Ok(b)  => run_hello(&b),
+        Ok(b) => run_hello(&b),
         Err(e) => println!("  error: {e}"),
     }
 
     // ── Forced CUDA (requires --features cuda) ────────────────────────────────
     println!("\n=== CUDA (forced) ===");
     match DeviceBackend::from_preference(BackendPreference::Cuda) {
-        Ok(b)  => run_hello(&b),
+        Ok(b) => run_hello(&b),
         Err(e) => println!("  not available: {e}"),
     }
 
     // ── Forced Vulkan (requires --features vulkan) ────────────────────────────
     println!("\n=== Vulkan (forced) ===");
     match DeviceBackend::from_preference(BackendPreference::Vulkan) {
-        Ok(b)  => run_hello(&b),
+        Ok(b) => run_hello(&b),
         Err(e) => println!("  not available: {e}"),
     }
 
     // ── Forced AVX2 (requires --features avx2 and x86_64 CPU with AVX2) ──────
     println!("\n=== AVX2 (forced) ===");
     match DeviceBackend::from_preference(BackendPreference::Avx2) {
-        Ok(b)  => run_hello(&b),
+        Ok(b) => run_hello(&b),
         Err(e) => println!("  not available: {e}"),
     }
 }
@@ -63,9 +63,11 @@ fn run_hello(backend: &DeviceBackend) {
             println!("token={:#010X}  ✓ kernel confirmed", out.token);
         }
         Ok(out) => {
-            println!("token={:#010X}  ✗ zero token, kernel did not execute", out.token);
+            println!(
+                "token={:#010X}  ✗ zero token, kernel did not execute",
+                out.token
+            );
         }
         Err(e) => println!("dispatch error: {e}"),
     }
 }
-

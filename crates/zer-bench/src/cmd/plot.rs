@@ -36,7 +36,8 @@ pub fn run(args: PlotArgs) -> anyhow::Result<()> {
     if let Some(out) = &args.output {
         cmd.arg("--output").arg(out);
     }
-    let status = cmd.status()
+    let status = cmd
+        .status()
         .map_err(|e| anyhow::anyhow!("failed to run plot script: {e}"))?;
     if !status.success() {
         anyhow::bail!("plot script exited with {status}");

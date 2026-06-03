@@ -13,17 +13,17 @@ use crate::{
 /// The `RecordId` for record `r` is `ids[r]`.
 #[derive(Debug, Clone)]
 pub struct RecordPool {
-    pub ids:      Vec<RecordId>,
+    pub ids: Vec<RecordId>,
     /// `columns[field_idx][record_idx]` = UTF-8 text value.
-    pub columns:  Vec<Vec<String>>,
+    pub columns: Vec<Vec<String>>,
     pub n_fields: usize,
 }
 
 impl RecordPool {
     pub fn new(n_fields: usize) -> Self {
         Self {
-            ids:      Vec::new(),
-            columns:  vec![Vec::new(); n_fields],
+            ids: Vec::new(),
+            columns: vec![Vec::new(); n_fields],
             n_fields,
         }
     }
@@ -61,8 +61,8 @@ impl RecordPool {
 
     pub fn with_capacity(cap: usize, n_fields: usize) -> Self {
         Self {
-            ids:      Vec::with_capacity(cap),
-            columns:  vec![Vec::with_capacity(cap); n_fields],
+            ids: Vec::with_capacity(cap),
+            columns: vec![Vec::with_capacity(cap); n_fields],
             n_fields,
         }
     }
@@ -92,12 +92,12 @@ impl RecordPool {
 
 fn field_value_to_string(v: Option<&FieldValue>) -> String {
     match v {
-        Some(FieldValue::Text(s))   => s.clone(),
-        Some(FieldValue::Int(i))    => i.to_string(),
-        Some(FieldValue::UInt(u))   => u.to_string(),
-        Some(FieldValue::Float(f))  => f.to_string(),
-        Some(FieldValue::Bool(b))   => b.to_string(),
-        Some(FieldValue::Bytes(_))  => String::new(),
+        Some(FieldValue::Text(s)) => s.clone(),
+        Some(FieldValue::Int(i)) => i.to_string(),
+        Some(FieldValue::UInt(u)) => u.to_string(),
+        Some(FieldValue::Float(f)) => f.to_string(),
+        Some(FieldValue::Bool(b)) => b.to_string(),
+        Some(FieldValue::Bytes(_)) => String::new(),
         Some(FieldValue::Null) | None => String::new(),
     }
 }
@@ -114,7 +114,7 @@ mod tests {
     fn person_schema() -> Schema {
         SchemaBuilder::new()
             .field("naam", FieldKind::Name)
-            .field("dob",  FieldKind::Date)
+            .field("dob", FieldKind::Date)
             .build()
             .unwrap()
     }
@@ -125,15 +125,15 @@ mod tests {
         let records = vec![
             Record::new(1)
                 .insert("naam", FieldValue::Text("Alice".into()))
-                .insert("dob",  FieldValue::Text("1990-01-01".into())),
+                .insert("dob", FieldValue::Text("1990-01-01".into())),
             Record::new(2)
                 .insert("naam", FieldValue::Text("Bob".into()))
-                .insert("dob",  FieldValue::Text("1985-06-15".into())),
+                .insert("dob", FieldValue::Text("1985-06-15".into())),
         ];
         let pool = RecordPool::from_records(&records, &schema);
 
         assert_eq!(pool.len(), 2);
-        assert_eq!(pool.ids,            vec![1, 2]);
+        assert_eq!(pool.ids, vec![1, 2]);
         assert_eq!(pool.get(0, 0), "Alice");
         assert_eq!(pool.get(0, 1), "Bob");
         assert_eq!(pool.get(1, 0), "1990-01-01");

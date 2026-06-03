@@ -3,10 +3,10 @@ use zer_core::schema::{FieldKind, Schema};
 use crate::{
     blocker::CompositeBlocker,
     keys::{
-        AddressInitialKey, AliasPhoneticKey, CameraTimeWindowKey, DateFragmentKey,
+        AddressInitialKey, AliasPhoneticKey, BlockingKey, CameraTimeWindowKey, DateFragmentKey,
         DateGranularity, DocumentSuffixKey, ExactFieldKey, FuzzyYearKey, GeoGridKey,
         LicensePlateNormKey, PhoneticNameDobInitialKey, PhoneticNameDobKey, PlateOCRFuzzyKey,
-        SuffixKey, TransliteratedPhoneticKey, BlockingKey,
+        SuffixKey, TransliteratedPhoneticKey,
     },
 };
 
@@ -163,12 +163,12 @@ impl BlockerFactory {
     pub fn from_schema(schema: &Schema) -> CompositeBlocker {
         let mut blocker = CompositeBlocker::new();
 
-        let name_fields: Vec<&str>  = schema.fields_of_kind(FieldKind::Name).collect();
-        let date_fields: Vec<&str>  = schema.fields_of_kind(FieldKind::Date).collect();
-        let addr_fields: Vec<&str>  = schema.fields_of_kind(FieldKind::Address).collect();
+        let name_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Name).collect();
+        let date_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Date).collect();
+        let addr_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Address).collect();
         let phone_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Phone).collect();
-        let id_fields: Vec<&str>    = schema.fields_of_kind(FieldKind::Id).collect();
-        let cat_fields: Vec<&str>   = schema.fields_of_kind(FieldKind::Categorical).collect();
+        let id_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Id).collect();
+        let cat_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Categorical).collect();
 
         if let (Some(&surname), Some(&dob)) = (name_fields.last(), date_fields.first()) {
             if name_fields.len() >= 2 {
@@ -254,8 +254,9 @@ impl BlockerFactory {
                     if let Some(&dob) = dates.first() {
                         if names.len() >= 2 {
                             let first_name = names[0];
-                            let surname    = names[names.len() - 1];
-                            blocker = blocker.add(PhoneticNameDobInitialKey::new(surname, first_name, dob));
+                            let surname = names[names.len() - 1];
+                            blocker = blocker
+                                .add(PhoneticNameDobInitialKey::new(surname, first_name, dob));
                         } else if let Some(&surname) = names.last() {
                             blocker = blocker.add(PhoneticNameDobKey::new(surname, dob));
                         }
@@ -279,9 +280,15 @@ impl BlockerFactory {
 
     fn telecom_blocker(schema: &Schema) -> CompositeBlocker {
         let mut blocker = CompositeBlocker::new();
-        for f in schema.fields_of_kind(FieldKind::Phone)       { blocker = blocker.add(SuffixKey::new(f, 7)); }
-        for f in schema.fields_of_kind(FieldKind::Id)          { blocker = blocker.add(SuffixKey::new(f, 6)); }
-        for f in schema.fields_of_kind(FieldKind::Categorical) { blocker = blocker.add(ExactFieldKey::new(f)); }
+        for f in schema.fields_of_kind(FieldKind::Phone) {
+            blocker = blocker.add(SuffixKey::new(f, 7));
+        }
+        for f in schema.fields_of_kind(FieldKind::Id) {
+            blocker = blocker.add(SuffixKey::new(f, 6));
+        }
+        for f in schema.fields_of_kind(FieldKind::Categorical) {
+            blocker = blocker.add(ExactFieldKey::new(f));
+        }
         blocker
     }
 
@@ -296,10 +303,10 @@ impl BlockerFactory {
             SchemaCategory::WantedPersons => {
                 let mut blocker = CompositeBlocker::new();
 
-                let name_fields:  Vec<&str> = schema.fields_of_kind(FieldKind::Name).collect();
-                let date_fields:  Vec<&str> = schema.fields_of_kind(FieldKind::Date).collect();
+                let name_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Name).collect();
+                let date_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Date).collect();
                 let alias_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Alias).collect();
-                let id_fields:    Vec<&str> = schema.fields_of_kind(FieldKind::Id).collect();
+                let id_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Id).collect();
 
                 if let (Some(&surname), Some(&dob)) = (name_fields.last(), date_fields.first()) {
                     blocker = blocker.add(PhoneticNameDobKey::new(surname, dob));
@@ -323,10 +330,12 @@ impl BlockerFactory {
             SchemaCategory::ANPRPassages => {
                 let mut blocker = CompositeBlocker::new();
 
-                let plate_fields: Vec<&str> = schema.fields_of_kind(FieldKind::LicensePlate).collect();
-                let ts_fields:    Vec<&str> = schema.fields_of_kind(FieldKind::Timestamp).collect();
-                let cat_fields:   Vec<&str> = schema.fields_of_kind(FieldKind::Categorical).collect();
-                let lat_fields:   Vec<&str> = schema.fields_of_kind(FieldKind::GpsCoordinate).collect();
+                let plate_fields: Vec<&str> =
+                    schema.fields_of_kind(FieldKind::LicensePlate).collect();
+                let ts_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Timestamp).collect();
+                let cat_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Categorical).collect();
+                let lat_fields: Vec<&str> =
+                    schema.fields_of_kind(FieldKind::GpsCoordinate).collect();
 
                 for &plate in &plate_fields {
                     blocker = blocker.add(LicensePlateNormKey::new(plate));
@@ -346,15 +355,16 @@ impl BlockerFactory {
                 blocker
             }
 
-            SchemaCategory::CallDetailRecords |
-            SchemaCategory::SIMSubscribers => Self::telecom_blocker(schema),
+            SchemaCategory::CallDetailRecords | SchemaCategory::SIMSubscribers => {
+                Self::telecom_blocker(schema)
+            }
 
             SchemaCategory::FinancialIntelligence => {
                 let mut blocker = CompositeBlocker::new();
 
-                let id_fields:   Vec<&str> = schema.fields_of_kind(FieldKind::Id).collect();
+                let id_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Id).collect();
                 let date_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Date).collect();
-                let cat_fields:  Vec<&str> = schema.fields_of_kind(FieldKind::Categorical).collect();
+                let cat_fields: Vec<&str> = schema.fields_of_kind(FieldKind::Categorical).collect();
 
                 for &id in &id_fields {
                     blocker = blocker.add(SuffixKey::new(id, 6));
@@ -377,20 +387,20 @@ impl BlockerFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::index::InvertedIndex;
     use zer_core::{
         record::FieldValue,
         schema::{FieldKind, SchemaBuilder},
         traits::Blocker,
     };
-    use crate::index::InvertedIndex;
 
     fn person_schema() -> Schema {
         SchemaBuilder::new()
-            .field("voornamen",    FieldKind::Name)
-            .field("achternaam",   FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
-            .field("woonplaats",   FieldKind::Address)
-            .field("postcode",     FieldKind::Id)
+            .field("woonplaats", FieldKind::Address)
+            .field("postcode", FieldKind::Id)
             .build()
             .unwrap()
     }
@@ -402,8 +412,8 @@ mod tests {
         // identical DOB but different surnames must still be candidates via the
         // secondary key even if their phonetic codes diverge.
         let schema = SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
             .build()
             .unwrap();
@@ -411,11 +421,11 @@ mod tests {
 
         let mut idx = InvertedIndex::new();
         let r1 = zer_core::record::Record::new(1)
-            .insert("achternaam",    FieldValue::Text("Jansen".into()))
+            .insert("achternaam", FieldValue::Text("Jansen".into()))
             .insert("geboortedatum", FieldValue::Text("1985-06-15".into()));
         // Completely different surname but same birth year-month.
         let r2 = zer_core::record::Record::new(2)
-            .insert("achternaam",    FieldValue::Text("Pietersen".into()))
+            .insert("achternaam", FieldValue::Text("Pietersen".into()))
             .insert("geboortedatum", FieldValue::Text("1985-06-22".into()));
 
         blocker.index_record(&r1, &schema, &mut idx);
@@ -430,14 +440,17 @@ mod tests {
 
     #[test]
     fn factory_produces_non_empty_blocker() {
-        let schema  = person_schema();
+        let schema = person_schema();
         let blocker = BlockerFactory::from_schema(&schema);
-        let record  = zer_core::record::Record::new(1)
-            .insert("achternaam",   FieldValue::Text("Jansen".into()))
+        let record = zer_core::record::Record::new(1)
+            .insert("achternaam", FieldValue::Text("Jansen".into()))
             .insert("geboortedatum", FieldValue::Text("1980-01-15".into()));
 
         let keys = blocker.blocking_keys(&record, &schema);
-        assert!(!keys.is_empty(), "BlockerFactory should produce at least one key");
+        assert!(
+            !keys.is_empty(),
+            "BlockerFactory should produce at least one key"
+        );
     }
 
     #[test]
@@ -447,8 +460,8 @@ mod tests {
             .build()
             .unwrap();
         let blocker = BlockerFactory::from_schema(&schema);
-        let r = zer_core::record::Record::new(1)
-            .insert("dob", FieldValue::Text("1990-06-01".into()));
+        let r =
+            zer_core::record::Record::new(1).insert("dob", FieldValue::Text("1990-06-01".into()));
 
         let mut idx = InvertedIndex::new();
         blocker.index_record(&r, &schema, &mut idx);
@@ -458,16 +471,16 @@ mod tests {
     #[test]
     fn category_wanted_persons_produces_keys() {
         let schema = SchemaBuilder::new()
-            .field("voornamen",    FieldKind::Name)
-            .field("achternaam",   FieldKind::Name)
-            .field("alias_namen",  FieldKind::Alias)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
+            .field("alias_namen", FieldKind::Alias)
             .field("geboortedatum", FieldKind::Date)
             .field("document_nummer", FieldKind::Id)
             .build()
             .unwrap();
         let blocker = BlockerFactory::from_schema_category(&schema, SchemaCategory::WantedPersons);
         let r = zer_core::record::Record::new(1)
-            .insert("achternaam",   FieldValue::Text("Benabdallah".into()))
+            .insert("achternaam", FieldValue::Text("Benabdallah".into()))
             .insert("geboortedatum", FieldValue::Text("1999-06-14".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
@@ -477,16 +490,16 @@ mod tests {
     #[test]
     fn category_anpr_produces_plate_keys() {
         let schema = SchemaBuilder::new()
-            .field("kenteken",  FieldKind::LicensePlate)
+            .field("kenteken", FieldKind::LicensePlate)
             .field("camera_id", FieldKind::Categorical)
-            .field("tijdstip",  FieldKind::Timestamp)
+            .field("tijdstip", FieldKind::Timestamp)
             .build()
             .unwrap();
         let blocker = BlockerFactory::from_schema_category(&schema, SchemaCategory::ANPRPassages);
         let r = zer_core::record::Record::new(1)
-            .insert("kenteken",  FieldValue::Text("25-XKL-9".into()))
+            .insert("kenteken", FieldValue::Text("25-XKL-9".into()))
             .insert("camera_id", FieldValue::Text("CAM-A12-001".into()))
-            .insert("tijdstip",  FieldValue::Text("2025-06-01T10:00:00".into()));
+            .insert("tijdstip", FieldValue::Text("2025-06-01T10:00:00".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
         assert!(!keys.is_empty());
@@ -501,14 +514,17 @@ mod tests {
             .field("telefoon", FieldKind::Phone)
             .build()
             .unwrap();
-        let cat     = CustomSchemaCategory::new().with_phone_suffix(7);
+        let cat = CustomSchemaCategory::new().with_phone_suffix(7);
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
         let r = zer_core::record::Record::new(1)
             .insert("telefoon", FieldValue::Text("0612345678".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
         assert!(!keys.is_empty(), "phone suffix rule must produce a key");
-        assert!(keys.iter().any(|k| k.ends_with("2345678")), "key must end with last 7 digits");
+        assert!(
+            keys.iter().any(|k| k.ends_with("2345678")),
+            "key must end with last 7 digits"
+        );
     }
 
     #[test]
@@ -517,14 +533,17 @@ mod tests {
             .field("postcode", FieldKind::Id)
             .build()
             .unwrap();
-        let cat     = CustomSchemaCategory::new().with_id_suffix(4);
+        let cat = CustomSchemaCategory::new().with_id_suffix(4);
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
-        let r = zer_core::record::Record::new(1)
-            .insert("postcode", FieldValue::Text("1011AB".into()));
+        let r =
+            zer_core::record::Record::new(1).insert("postcode", FieldValue::Text("1011AB".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
         // postcode "1011AB" → digits only = "1011" → last 4 = "1011"
-        assert!(keys.iter().any(|k| k.ends_with("1011")), "id suffix must be 4 digits: {keys:?}");
+        assert!(
+            keys.iter().any(|k| k.ends_with("1011")),
+            "id suffix must be 4 digits: {keys:?}"
+        );
     }
 
     #[test]
@@ -533,21 +552,30 @@ mod tests {
             .field("tussenvoegsel", FieldKind::Categorical)
             .build()
             .unwrap();
-        let cat     = CustomSchemaCategory::new().with_exact_categorical();
+        let cat = CustomSchemaCategory::new().with_exact_categorical();
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
 
         let mut idx = InvertedIndex::new();
-        let r1 = zer_core::record::Record::new(1).insert("tussenvoegsel", FieldValue::Text("van".into()));
-        let r2 = zer_core::record::Record::new(2).insert("tussenvoegsel", FieldValue::Text("van".into()));
-        let r3 = zer_core::record::Record::new(3).insert("tussenvoegsel", FieldValue::Text("de".into()));
+        let r1 = zer_core::record::Record::new(1)
+            .insert("tussenvoegsel", FieldValue::Text("van".into()));
+        let r2 = zer_core::record::Record::new(2)
+            .insert("tussenvoegsel", FieldValue::Text("van".into()));
+        let r3 =
+            zer_core::record::Record::new(3).insert("tussenvoegsel", FieldValue::Text("de".into()));
 
         blocker.index_record(&r1, &schema, &mut idx);
         blocker.index_record(&r2, &schema, &mut idx);
         blocker.index_record(&r3, &schema, &mut idx);
 
         let cands = blocker.candidates(&r1, &schema, &idx);
-        assert!(cands.contains(&2), "r2 (same tussenvoegsel) must be a candidate");
-        assert!(!cands.contains(&3), "r3 (different tussenvoegsel) must NOT be a candidate");
+        assert!(
+            cands.contains(&2),
+            "r2 (same tussenvoegsel) must be a candidate"
+        );
+        assert!(
+            !cands.contains(&3),
+            "r3 (different tussenvoegsel) must NOT be a candidate"
+        );
     }
 
     #[test]
@@ -556,35 +584,38 @@ mod tests {
             .field("geboortedatum", FieldKind::Date)
             .build()
             .unwrap();
-        let cat     = CustomSchemaCategory::new().with_date_fragment(DateGranularity::YearMonth);
+        let cat = CustomSchemaCategory::new().with_date_fragment(DateGranularity::YearMonth);
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
         let r = zer_core::record::Record::new(1)
             .insert("geboortedatum", FieldValue::Text("1990-06-15".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
-        assert!(keys.iter().any(|k| k.contains("1990-06")), "key must contain YYYY-MM: {keys:?}");
+        assert!(
+            keys.iter().any(|k| k.contains("1990-06")),
+            "key must contain YYYY-MM: {keys:?}"
+        );
     }
 
     #[test]
     fn custom_phonetic_name_dob_links_same_person() {
         let schema = SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
             .build()
             .unwrap();
-        let cat     = CustomSchemaCategory::new().with_phonetic_name_dob();
+        let cat = CustomSchemaCategory::new().with_phonetic_name_dob();
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
 
         let mut idx = InvertedIndex::new();
         let r1 = zer_core::record::Record::new(1)
-            .insert("achternaam",    FieldValue::Text("Jansen".into()))
+            .insert("achternaam", FieldValue::Text("Jansen".into()))
             .insert("geboortedatum", FieldValue::Text("1978-03-15".into()));
         let r2 = zer_core::record::Record::new(2)
-            .insert("achternaam",    FieldValue::Text("Jansen".into()))
+            .insert("achternaam", FieldValue::Text("Jansen".into()))
             .insert("geboortedatum", FieldValue::Text("1978-03-15".into()));
         let r3 = zer_core::record::Record::new(3)
-            .insert("achternaam",    FieldValue::Text("de Wit".into()))
+            .insert("achternaam", FieldValue::Text("de Wit".into()))
             .insert("geboortedatum", FieldValue::Text("1990-07-22".into()));
 
         blocker.index_record(&r1, &schema, &mut idx);
@@ -593,7 +624,10 @@ mod tests {
 
         let cands = blocker.candidates(&r1, &schema, &idx);
         assert!(cands.contains(&2), "same surname+DOB must be a candidate");
-        assert!(!cands.contains(&3), "different surname+DOB must NOT be a candidate");
+        assert!(
+            !cands.contains(&3),
+            "different surname+DOB must NOT be a candidate"
+        );
     }
 
     #[test]
@@ -603,7 +637,7 @@ mod tests {
             .field("achternaam", FieldKind::Name)
             .build()
             .unwrap();
-        let cat     = CustomSchemaCategory::new().with_phone_suffix(7);
+        let cat = CustomSchemaCategory::new().with_phone_suffix(7);
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
         let r = zer_core::record::Record::new(1)
             .insert("achternaam", FieldValue::Text("Jansen".into()));
@@ -619,22 +653,25 @@ mod tests {
             .build()
             .unwrap();
         // Provide a SuffixKey(4) via the escape hatch instead of with_id_suffix.
-        let cat     = CustomSchemaCategory::new().with_key(SuffixKey::new("postcode", 4));
+        let cat = CustomSchemaCategory::new().with_key(SuffixKey::new("postcode", 4));
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
-        let r = zer_core::record::Record::new(1)
-            .insert("postcode", FieldValue::Text("1011AB".into()));
+        let r =
+            zer_core::record::Record::new(1).insert("postcode", FieldValue::Text("1011AB".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
-        assert!(!keys.is_empty(), "escape-hatch key must produce at least one key");
+        assert!(
+            !keys.is_empty(),
+            "escape-hatch key must produce at least one key"
+        );
     }
 
     #[test]
     fn custom_combined_rules_produce_multiple_key_types() {
         let schema = SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
-            .field("postcode",      FieldKind::Id)
+            .field("postcode", FieldKind::Id)
             .field("tussenvoegsel", FieldKind::Categorical)
             .build()
             .unwrap();
@@ -644,13 +681,16 @@ mod tests {
             .with_exact_categorical();
         let blocker = BlockerFactory::from_custom_category(&schema, cat);
         let r = zer_core::record::Record::new(1)
-            .insert("achternaam",    FieldValue::Text("van den Berg".into()))
+            .insert("achternaam", FieldValue::Text("van den Berg".into()))
             .insert("geboortedatum", FieldValue::Text("1978-03-15".into()))
-            .insert("postcode",      FieldValue::Text("1011AB".into()))
+            .insert("postcode", FieldValue::Text("1011AB".into()))
             .insert("tussenvoegsel", FieldValue::Text("van den".into()));
 
         let keys = blocker.blocking_keys(&r, &schema);
         // Expect at least a phonetic key and a suffix key and a categorical key.
-        assert!(keys.len() >= 3, "combined rules must produce at least 3 keys: {keys:?}");
+        assert!(
+            keys.len() >= 3,
+            "combined rules must produce at least 3 keys: {keys:?}"
+        );
     }
 }

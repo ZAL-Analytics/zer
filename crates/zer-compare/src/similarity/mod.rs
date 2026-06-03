@@ -36,8 +36,12 @@ impl SimilarityFn for NullSimilarity {
     }
     // compare_pool_field already guards empty strings → ComparisonLevel::None;
     // any non-empty strings reaching here mean neither side is null.
-    fn similarity_str(&self, _a: &str, _b: &str) -> f32 { 1.0 }
-    fn field_kind(&self) -> FieldKind { FieldKind::Name }
+    fn similarity_str(&self, _a: &str, _b: &str) -> f32 {
+        1.0
+    }
+    fn field_kind(&self) -> FieldKind {
+        FieldKind::Name
+    }
 }
 
 #[cfg(test)]
@@ -47,8 +51,14 @@ mod null_tests {
     #[test]
     fn null_similarity_either_null() {
         let sim = NullSimilarity;
-        assert_eq!(sim.similarity(&FieldValue::Null, &FieldValue::Text("x".into())), 0.0);
-        assert_eq!(sim.similarity(&FieldValue::Text("x".into()), &FieldValue::Null), 0.0);
+        assert_eq!(
+            sim.similarity(&FieldValue::Null, &FieldValue::Text("x".into())),
+            0.0
+        );
+        assert_eq!(
+            sim.similarity(&FieldValue::Text("x".into()), &FieldValue::Null),
+            0.0
+        );
         assert_eq!(sim.similarity(&FieldValue::Null, &FieldValue::Null), 0.0);
     }
 
@@ -57,7 +67,11 @@ mod null_tests {
         let sim = NullSimilarity;
         let a = FieldValue::Text("Alice".into());
         let b = FieldValue::Text("Bob".into());
-        assert_eq!(sim.similarity(&a, &b), 1.0, "non-null values pass through as 1.0");
+        assert_eq!(
+            sim.similarity(&a, &b),
+            1.0,
+            "non-null values pass through as 1.0"
+        );
     }
 }
 
@@ -79,12 +93,8 @@ pub fn default_fns_for(kind: FieldKind) -> Vec<Box<dyn SimilarityFn>> {
             Box::new(JaroWinklerSimilarity),
             Box::new(TokenOverlapSimilarity),
         ],
-        FieldKind::Date | FieldKind::Timestamp => vec![
-            Box::new(DateSimilarity),
-        ],
-        FieldKind::Address => vec![
-            Box::new(AddressTokenOverlap),
-        ],
+        FieldKind::Date | FieldKind::Timestamp => vec![Box::new(DateSimilarity)],
+        FieldKind::Address => vec![Box::new(AddressTokenOverlap)],
         FieldKind::Id => vec![
             Box::new(ExactIdSimilarity),
             Box::new(HammingSimilarity { max_distance: 1 }),
@@ -97,17 +107,9 @@ pub fn default_fns_for(kind: FieldKind) -> Vec<Box<dyn SimilarityFn>> {
             Box::new(ExactIdSimilarity),
             Box::new(HammingSimilarity { max_distance: 1 }),
         ],
-        FieldKind::Numeric | FieldKind::GpsCoordinate => vec![
-            Box::new(NumericBucketedSimilarity),
-        ],
-        FieldKind::Categorical => vec![
-            Box::new(ExactIdSimilarity),
-        ],
-        FieldKind::FreeText => vec![
-            Box::new(TokenOverlapSimilarity),
-        ],
-        FieldKind::Alias => vec![
-            Box::new(AliasTokenOverlapSimilarity),
-        ],
+        FieldKind::Numeric | FieldKind::GpsCoordinate => vec![Box::new(NumericBucketedSimilarity)],
+        FieldKind::Categorical => vec![Box::new(ExactIdSimilarity)],
+        FieldKind::FreeText => vec![Box::new(TokenOverlapSimilarity)],
+        FieldKind::Alias => vec![Box::new(AliasTokenOverlapSimilarity)],
     }
 }

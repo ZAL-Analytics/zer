@@ -65,7 +65,7 @@ pub use dummy::DummyJudge;
 pub use error::JudgeError;
 pub use judge::{DebertaJudge, DebertaJudgeConfig};
 pub use spec::{
-    default_models_dir, spec_from_env, spec_from_vram,
-    DebertaBaseSpec, JudgeModelSpec, MiniLmSpec, ModelPrecision, TokenizerSource,
+    default_models_dir, spec_from_env, spec_from_vram, DebertaBaseSpec, JudgeModelSpec, MiniLmSpec,
+    ModelPrecision, TokenizerSource,
 };
 pub use test_utils::NearDuplicateGenerator;

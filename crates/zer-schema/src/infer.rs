@@ -55,9 +55,9 @@ fn collect_field_names(records: &[Record]) -> Vec<String> {
 ///     .unwrap();
 /// ```
 pub struct SchemaInferrer {
-    overrides:       HashMap<String, FieldKind>,
+    overrides: HashMap<String, FieldKind>,
     name_heuristics: NameHeuristics,
-    value_patterns:  ValuePatterns,
+    value_patterns: ValuePatterns,
 }
 
 impl SchemaInferrer {
@@ -65,9 +65,9 @@ impl SchemaInferrer {
     /// (or from `ZER_NAME_HEURISTICS` / `ZER_VALUE_PATTERNS` env vars if set).
     pub fn new() -> Self {
         Self {
-            overrides:       HashMap::new(),
+            overrides: HashMap::new(),
             name_heuristics: NameHeuristics::load_default(),
-            value_patterns:  ValuePatterns::load_default(),
+            value_patterns: ValuePatterns::load_default(),
         }
     }
 
@@ -266,7 +266,11 @@ mod tests {
             .unwrap();
 
         let dob = schema.fields.iter().find(|f| f.name == "dob").unwrap();
-        assert_eq!(dob.kind, FieldKind::Id, "override must win over name heuristic");
+        assert_eq!(
+            dob.kind,
+            FieldKind::Id,
+            "override must win over name heuristic"
+        );
     }
 
     #[test]
@@ -306,7 +310,11 @@ exact = ["custom_col"]
             .infer(&records)
             .unwrap();
 
-        let f = schema.fields.iter().find(|f| f.name == "custom_col").unwrap();
+        let f = schema
+            .fields
+            .iter()
+            .find(|f| f.name == "custom_col")
+            .unwrap();
         assert_eq!(f.kind, FieldKind::Id);
     }
 

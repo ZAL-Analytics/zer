@@ -26,17 +26,23 @@ fn build_comparator(schema: &Schema) -> FieldComparator {
     for (i, field) in schema.fields.iter().enumerate() {
         match field.kind {
             FieldKind::Name => {
-                cmp = cmp.with_fns(i, vec![
-                    Box::new(JaroWinklerSimilarity)      as Box<dyn SimilarityFn>,
-                    Box::new(PhoneticEqualitySimilarity) as Box<dyn SimilarityFn>,
-                    Box::new(TokenOverlapSimilarity)     as Box<dyn SimilarityFn>,
-                ]);
+                cmp = cmp.with_fns(
+                    i,
+                    vec![
+                        Box::new(JaroWinklerSimilarity) as Box<dyn SimilarityFn>,
+                        Box::new(PhoneticEqualitySimilarity) as Box<dyn SimilarityFn>,
+                        Box::new(TokenOverlapSimilarity) as Box<dyn SimilarityFn>,
+                    ],
+                );
             }
             FieldKind::Address => {
-                cmp = cmp.with_fns(i, vec![
-                    Box::new(AddressTokenOverlap)        as Box<dyn SimilarityFn>,
-                    Box::new(StreetNumberEditDistance)   as Box<dyn SimilarityFn>,
-                ]);
+                cmp = cmp.with_fns(
+                    i,
+                    vec![
+                        Box::new(AddressTokenOverlap) as Box<dyn SimilarityFn>,
+                        Box::new(StreetNumberEditDistance) as Box<dyn SimilarityFn>,
+                    ],
+                );
             }
             _ => {}
         }

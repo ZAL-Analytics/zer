@@ -6,7 +6,6 @@
 /// format for record linkage mode and mirrors splink's `predict()` pairs table.
 ///
 /// Run with:  cargo run --example linked_pairs_output -p zer-pipeline
-
 use tempfile::TempDir;
 use zer_cluster::ZalEntityStore;
 use zer_core::{
@@ -25,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
 
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()?;
 
@@ -42,17 +41,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ── Three persons, each appearing in two sources ──────────────────────────
 
-    let brp = label_source(vec![
-        make_record(1, "Jan",    "de Vries",  "1985-03-15"),
-        make_record(2, "Maria",  "Jansen",    "1992-07-04"),
-        make_record(3, "Ahmed",  "El Amrani", "1978-11-20"),
-    ], "brp");
+    let brp = label_source(
+        vec![
+            make_record(1, "Jan", "de Vries", "1985-03-15"),
+            make_record(2, "Maria", "Jansen", "1992-07-04"),
+            make_record(3, "Ahmed", "El Amrani", "1978-11-20"),
+        ],
+        "brp",
+    );
 
-    let kvk = label_source(vec![
-        make_record(101, "Jan",    "de Vries",  "1985-03-15"),
-        make_record(102, "Maria",  "Jansen",    "1992-07-04"),
-        make_record(103, "Ahmed",  "El Amrani", "1978-11-20"),
-    ], "kvk");
+    let kvk = label_source(
+        vec![
+            make_record(101, "Jan", "de Vries", "1985-03-15"),
+            make_record(102, "Maria", "Jansen", "1992-07-04"),
+            make_record(103, "Ahmed", "El Amrani", "1978-11-20"),
+        ],
+        "kvk",
+    );
 
     let all_records: Vec<Record> = [brp, kvk].concat();
     let report = pipeline.run_batch(all_records).await?;
@@ -65,16 +70,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ── Iterate linked_pairs() ────────────────────────────────────────────────
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs: Vec<LinkedPair> = view.linked_pairs();
 
     println!("\nLinked pairs ({}):", pairs.len());
-    println!("{:<10} {:<12} {:<8} {:<12} {:<8} {:<8}",
-             "entity_id", "record_a", "src_a", "record_b", "src_b", "score");
+    println!(
+        "{:<10} {:<12} {:<8} {:<12} {:<8} {:<8}",
+        "entity_id", "record_a", "src_a", "record_b", "src_b", "score"
+    );
     println!("{}", "-".repeat(62));
 
     for lp in &pairs {
-        println!("{:<10} {:<12} {:<8} {:<12} {:<8} {:.4}",
+        println!(
+            "{:<10} {:<12} {:<8} {:<12} {:<8} {:.4}",
             lp.entity_id,
             lp.record_id_a,
             lp.source_a.as_deref().unwrap_or("?"),
@@ -88,8 +96,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // All linked pairs must be cross-source
     for lp in &pairs {
-        assert_ne!(lp.source_a, lp.source_b,
-                   "linked_pairs() must only emit cross-source pairs");
+        assert_ne!(
+            lp.source_a, lp.source_b,
+            "linked_pairs() must only emit cross-source pairs"
+        );
     }
     println!("\nOK, all {} linked pairs are cross-source.", pairs.len());
 
@@ -98,7 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }

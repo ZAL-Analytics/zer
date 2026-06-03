@@ -6,15 +6,19 @@ use zer_core::{
 
 const N_LEVELS: usize = 4; // None=0, Partial=1, Close=2, Exact=3
 
-
 // ── E-step ────────────────────────────────────────────────────────────────────
 
 /// Compute P(match | comparison_vector) for a single pair given current params.
 pub fn e_step(vector: &ComparisonVector, params: &ModelParams) -> f32 {
     let log_odds: f32 = params.log_prior_odds
-        + vector.levels.iter().enumerate()
+        + vector
+            .levels
+            .iter()
+            .enumerate()
             .map(|(i, &level)| {
-                if level == ComparisonLevel::Null { return 0.0_f32; }
+                if level == ComparisonLevel::Null {
+                    return 0.0_f32;
+                }
                 let l = level as usize;
                 let m = params.m[i][l].max(1e-9_f32);
                 let u = params.u[i][l].max(1e-9_f32);
@@ -31,7 +35,9 @@ fn e_step_p(batch: &ComparisonBatch, p: usize, params: &ModelParams) -> f32 {
         + (0..batch.n_fields)
             .map(|f| {
                 let l_u8 = batch.levels[f * n_pairs + p];
-                if l_u8 == 255 { return 0.0_f32; } // ComparisonLevel::Null, skip
+                if l_u8 == 255 {
+                    return 0.0_f32;
+                } // ComparisonLevel::Null, skip
                 let l = l_u8 as usize;
                 let m = params.m[f][l].max(1e-9_f32);
                 let u = params.u[f][l].max(1e-9_f32);
@@ -43,23 +49,19 @@ fn e_step_p(batch: &ComparisonBatch, p: usize, params: &ModelParams) -> f32 {
 
 // ── M-step ────────────────────────────────────────────────────────────────────
 
-fn m_step(
-    batch:     &ComparisonBatch,
-    posteriors: &[f32],
-    prev:      &ModelParams,
-) -> ModelParams {
+fn m_step(batch: &ComparisonBatch, posteriors: &[f32], prev: &ModelParams) -> ModelParams {
     let n_fields = batch.n_fields;
-    let n_pairs  = batch.n_pairs;
+    let n_pairs = batch.n_pairs;
 
     let mut m_num = vec![vec![0.0f32; N_LEVELS]; n_fields];
     let mut u_num = vec![vec![0.0f32; N_LEVELS]; n_fields];
 
-    let mut total_match    = 0.0f32;
+    let mut total_match = 0.0f32;
     let mut total_nonmatch = 0.0f32;
 
-    for p in 0..n_pairs {
-        total_match    += posteriors[p];
-        total_nonmatch += 1.0 - posteriors[p];
+    for &post in posteriors.iter().take(n_pairs) {
+        total_match += post;
+        total_nonmatch += 1.0 - post;
     }
 
     // Field-outer, pair-inner: sequential reads of levels[f*n_pairs+p].
@@ -69,14 +71,16 @@ fn m_step(
         let field_slice = &batch.levels[f * n_pairs..(f + 1) * n_pairs];
         for p in 0..n_pairs {
             let l_u8 = field_slice[p];
-            if l_u8 == 255 { continue; } // ComparisonLevel::Null
+            if l_u8 == 255 {
+                continue;
+            } // ComparisonLevel::Null
             let l = l_u8 as usize;
             m_num[f][l] += posteriors[p];
             u_num[f][l] += 1.0 - posteriors[p];
         }
     }
 
-    let total_match    = total_match.max(1e-9);
+    let total_match = total_match.max(1e-9);
     let total_nonmatch = total_nonmatch.max(1e-9);
 
     let mut m = vec![vec![1e-9f32; N_LEVELS]; n_fields];
@@ -95,13 +99,13 @@ fn m_step(
         }
     }
 
-    let lambda    = (total_match / n_pairs as f32).max(0.001).min(0.999);
+    let lambda = (total_match / n_pairs as f32).clamp(0.001, 0.999);
     let log_prior = (lambda / (1.0 - lambda)).ln();
 
     ModelParams {
         m,
         u,
-        log_prior_odds:  log_prior,
+        log_prior_odds: log_prior,
         upper_threshold: prev.upper_threshold,
         lower_threshold: prev.lower_threshold,
     }
@@ -132,7 +136,7 @@ fn init_from_priors(n_fields: usize) -> ModelParams {
     ModelParams {
         m,
         u,
-        log_prior_odds:  0.0,
+        log_prior_odds: 0.0,
         upper_threshold: 0.9,
         lower_threshold: 0.1,
     }
@@ -142,24 +146,26 @@ fn init_from_priors(n_fields: usize) -> ModelParams {
 
 /// Estimate the prior match rate λ = P(true match in candidate set).
 pub fn estimate_lambda(batch: &ComparisonBatch) -> f32 {
-    if batch.n_pairs == 0 { return 0.01; }
+    if batch.n_pairs == 0 {
+        return 0.01;
+    }
     let exact = ComparisonLevel::Exact as u8;
     let n_pairs = batch.n_pairs;
     let high_sim_count = (0..n_pairs)
-        .filter(|&p| {
-            (0..batch.n_fields).any(|f| batch.levels[f * n_pairs + p] == exact)
-        })
+        .filter(|&p| (0..batch.n_fields).any(|f| batch.levels[f * n_pairs + p] == exact))
         .count();
     let raw = high_sim_count as f32 / n_pairs as f32;
-    raw.max(0.001).min(0.5)
+    raw.clamp(0.001, 0.5)
 }
 
 /// Auto-calibrate upper/lower thresholds after EM converges.
 pub fn auto_calibrate_thresholds(scores: &[f32]) -> (f32, f32) {
-    if scores.is_empty() { return (0.9, 0.1); }
+    if scores.is_empty() {
+        return (0.9, 0.1);
+    }
 
     let high: Vec<f32> = scores.iter().copied().filter(|&s| s >= 0.7).collect();
-    let low:  Vec<f32> = scores.iter().copied().filter(|&s| s <= 0.3).collect();
+    let low: Vec<f32> = scores.iter().copied().filter(|&s| s <= 0.3).collect();
 
     let upper = if high.len() >= 10 {
         let mut sorted = high.clone();
@@ -182,12 +188,15 @@ pub fn auto_calibrate_thresholds(scores: &[f32]) -> (f32, f32) {
 
 /// Run the EM algorithm to learn m/u parameters without labels.
 pub fn run_em(
-    batch:    &ComparisonBatch,
-    init:     Option<ModelParams>,
+    batch: &ComparisonBatch,
+    init: Option<ModelParams>,
     max_iter: usize,
 ) -> Result<ModelParams, ZerError> {
     if batch.n_pairs == 0 {
-        return Err(ZerError::SchemaMismatch { expected: 1, got: 0 });
+        return Err(ZerError::SchemaMismatch {
+            expected: 1,
+            got: 0,
+        });
     }
 
     let n_fields = batch.n_fields;
@@ -209,7 +218,7 @@ pub fn run_em(
             .collect();
 
         let new_params = m_step(batch, &posteriors, &params);
-        let delta      = params_delta(&params, &new_params);
+        let delta = params_delta(&params, &new_params);
 
         params = new_params;
         tracing::debug!(iter, delta, "EM iteration");
@@ -228,31 +237,47 @@ mod tests {
     use super::*;
     use zer_core::comparison::{ComparisonBatch, ComparisonLevel, ComparisonVector};
 
-    fn uniform_vector(id_a: u64, id_b: u64, n_fields: usize, level: ComparisonLevel) -> ComparisonVector {
+    fn uniform_vector(
+        id_a: u64,
+        id_b: u64,
+        n_fields: usize,
+        level: ComparisonLevel,
+    ) -> ComparisonVector {
         ComparisonVector::new(id_a, id_b, vec![level; n_fields])
     }
 
     fn synthetic_batch(n_match: usize, n_nonmatch: usize, n_fields: usize) -> ComparisonBatch {
         let mut vecs = Vec::with_capacity(n_match + n_nonmatch);
         for i in 0..n_match {
-            vecs.push(uniform_vector(i as u64, (i + 1_000_000) as u64, n_fields, ComparisonLevel::Exact));
+            vecs.push(uniform_vector(
+                i as u64,
+                (i + 1_000_000) as u64,
+                n_fields,
+                ComparisonLevel::Exact,
+            ));
         }
         for i in 0..n_nonmatch {
-            vecs.push(uniform_vector((i + 2_000_000) as u64, (i + 3_000_000) as u64, n_fields, ComparisonLevel::None));
+            vecs.push(uniform_vector(
+                (i + 2_000_000) as u64,
+                (i + 3_000_000) as u64,
+                n_fields,
+                ComparisonLevel::None,
+            ));
         }
         ComparisonBatch::from_vectors(&vecs)
     }
 
     #[test]
     fn em_converges_on_synthetic_data() {
-        let batch  = synthetic_batch(200, 800, 4);
+        let batch = synthetic_batch(200, 800, 4);
         let params = run_em(&batch, None, 100).expect("EM should succeed");
         for f in 0..4 {
             let exact_idx = ComparisonLevel::Exact as usize;
             assert!(
                 params.m[f][exact_idx] > params.u[f][exact_idx],
                 "m[Exact] should exceed u[Exact] for field {f}: m={}, u={}",
-                params.m[f][exact_idx], params.u[f][exact_idx]
+                params.m[f][exact_idx],
+                params.u[f][exact_idx]
             );
         }
     }
@@ -264,7 +289,7 @@ mod tests {
         let warm = ModelParams {
             m: vec![vec![0.02, 0.06, 0.12, 0.78]; 3],
             u: vec![vec![0.75, 0.12, 0.08, 0.05]; 3],
-            log_prior_odds:  (0.2_f32 / 0.8_f32).ln(),
+            log_prior_odds: (0.2_f32 / 0.8_f32).ln(),
             upper_threshold: 0.9,
             lower_threshold: 0.1,
         };
@@ -272,8 +297,10 @@ mod tests {
         let params = run_em(&batch, Some(warm), 5).expect("warm start EM should succeed");
         for f in 0..3 {
             let exact_idx = ComparisonLevel::Exact as usize;
-            assert!(params.m[f][exact_idx] > params.u[f][exact_idx],
-                "warm-start: m[Exact] should exceed u[Exact] for field {f}");
+            assert!(
+                params.m[f][exact_idx] > params.u[f][exact_idx],
+                "warm-start: m[Exact] should exceed u[Exact] for field {f}"
+            );
         }
     }
 
@@ -286,14 +313,14 @@ mod tests {
 
     #[test]
     fn estimate_lambda_all_exact() {
-        let batch  = synthetic_batch(100, 0, 2);
+        let batch = synthetic_batch(100, 0, 2);
         let lambda = estimate_lambda(&batch);
         assert_eq!(lambda, 0.5);
     }
 
     #[test]
     fn estimate_lambda_all_none() {
-        let batch  = synthetic_batch(0, 100, 2);
+        let batch = synthetic_batch(0, 100, 2);
         let lambda = estimate_lambda(&batch);
         assert_eq!(lambda, 0.001);
     }
@@ -301,11 +328,21 @@ mod tests {
     #[test]
     fn auto_calibrate_bimodal_distribution() {
         let mut scores = vec![];
-        for _ in 0..50  { scores.push(0.95_f32); }
-        for _ in 0..200 { scores.push(0.05_f32); }
+        for _ in 0..50 {
+            scores.push(0.95_f32);
+        }
+        for _ in 0..200 {
+            scores.push(0.05_f32);
+        }
         let (upper, lower) = auto_calibrate_thresholds(&scores);
-        assert!(upper >= 0.85, "upper threshold should be ≥ 0.85, got {upper}");
-        assert!(lower <= 0.15, "lower threshold should be ≤ 0.15, got {lower}");
+        assert!(
+            upper >= 0.85,
+            "upper threshold should be ≥ 0.85, got {upper}"
+        );
+        assert!(
+            lower <= 0.15,
+            "lower threshold should be ≤ 0.15, got {lower}"
+        );
     }
 
     #[test]

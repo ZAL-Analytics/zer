@@ -1,5 +1,8 @@
 use zer_cluster::partition_by_band;
-use zer_core::{comparison::ComparisonVector, scoring::{MatchBand, ModelParams, ScoredPair}};
+use zer_core::{
+    comparison::ComparisonVector,
+    scoring::{MatchBand, ModelParams, ScoredPair},
+};
 
 fn params() -> ModelParams {
     ModelParams {
@@ -13,11 +16,15 @@ fn params() -> ModelParams {
 
 fn pair(a: u64, b: u64, prob: f32, band: MatchBand) -> ScoredPair {
     ScoredPair {
-        record_a:          a,
-        record_b:          b,
-        match_weight:      0.0,
+        record_a: a,
+        record_b: b,
+        match_weight: 0.0,
         match_probability: prob,
-        vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
+        vector: ComparisonVector {
+            record_a: a,
+            record_b: b,
+            levels: vec![],
+        },
         band,
     }
 }

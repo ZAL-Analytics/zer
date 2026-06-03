@@ -81,10 +81,19 @@ mod tests {
 
         assert_eq!(original.tag, loaded.tag);
         assert_eq!(original.em_iterations, loaded.em_iterations);
-        assert_eq!(original.params.upper_threshold, loaded.params.upper_threshold);
-        assert_eq!(original.params.lower_threshold, loaded.params.lower_threshold);
+        assert_eq!(
+            original.params.upper_threshold,
+            loaded.params.upper_threshold
+        );
+        assert_eq!(
+            original.params.lower_threshold,
+            loaded.params.lower_threshold
+        );
         assert_eq!(original.params.log_prior_odds, loaded.params.log_prior_odds);
-        assert_eq!(original.fingerprint.schema_hash, loaded.fingerprint.schema_hash);
+        assert_eq!(
+            original.fingerprint.schema_hash,
+            loaded.fingerprint.schema_hash
+        );
     }
 
     #[test]
@@ -96,7 +105,10 @@ mod tests {
         assert_eq!(original.params.m.len(), loaded.params.m.len());
         for (row_a, row_b) in original.params.m.iter().zip(loaded.params.m.iter()) {
             for (va, vb) in row_a.iter().zip(row_b.iter()) {
-                assert!((va - vb).abs() < 1e-9, "m values must be bit-exact after roundtrip");
+                assert!(
+                    (va - vb).abs() < 1e-9,
+                    "m values must be bit-exact after roundtrip"
+                );
             }
         }
     }

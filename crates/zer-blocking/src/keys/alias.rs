@@ -1,8 +1,8 @@
 use rphonetic::{DoubleMetaphone, Encoder};
 use zer_core::{record::Record, schema::Schema};
 
-use crate::normalize::{extract_surname_token, normalize_text};
 use super::BlockingKey;
+use crate::normalize::{extract_surname_token, normalize_text};
 
 // ── AliasPhoneticKey ──────────────────────────────────────────────────────────
 
@@ -14,14 +14,14 @@ use super::BlockingKey;
 /// requirement for SIS II cross-Schengen romanization pairs.
 pub struct AliasPhoneticKey {
     alias_field: String,
-    dob_field:   String,
+    dob_field: String,
 }
 
 impl AliasPhoneticKey {
     pub fn new(alias_field: &str, dob_field: &str) -> Self {
         Self {
             alias_field: alias_field.into(),
-            dob_field:   dob_field.into(),
+            dob_field: dob_field.into(),
         }
     }
 }
@@ -37,7 +37,7 @@ impl BlockingKey for AliasPhoneticKey {
         let dob_cow = record.field_as_str(&self.dob_field);
         let dob = match dob_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         let year = match dob.get(..4) {
             Some(y) if y.len() == 4 && y.chars().all(|c| c.is_ascii_digit()) => y,
@@ -55,12 +55,18 @@ impl BlockingKey for AliasPhoneticKey {
 
         for alias in aliases_raw.split('|') {
             let alias = alias.trim();
-            if alias.is_empty() { continue; }
-            let norm    = normalize_text(alias);
+            if alias.is_empty() {
+                continue;
+            }
+            let norm = normalize_text(alias);
             let surname = extract_surname_token(&norm);
-            if surname.is_empty() { continue; }
+            if surname.is_empty() {
+                continue;
+            }
             let code = dm.encode(surname);
-            if code.is_empty() { continue; }
+            if code.is_empty() {
+                continue;
+            }
             keys.push(format!("{}:{}", code, year));
         }
 
@@ -76,8 +82,8 @@ impl BlockingKey for AliasPhoneticKey {
 /// (the `YYYY-01-01` Jan-1 convention), so estimated DOBs that differ by up to `fuzzy_range`
 /// years still share a blocking key.
 pub struct FuzzyYearKey {
-    name_field:  String,
-    dob_field:   String,
+    name_field: String,
+    dob_field: String,
     fuzzy_range: u32,
 }
 
@@ -85,8 +91,8 @@ impl FuzzyYearKey {
     /// `fuzzy_range = 1` means emit YEAR-1, YEAR, YEAR+1 for estimated DOBs.
     pub fn new(name_field: &str, dob_field: &str, fuzzy_range: u32) -> Self {
         Self {
-            name_field:  name_field.into(),
-            dob_field:   dob_field.into(),
+            name_field: name_field.into(),
+            dob_field: dob_field.into(),
             fuzzy_range,
         }
     }
@@ -105,7 +111,7 @@ impl BlockingKey for FuzzyYearKey {
         let dob_cow = record.field_as_str(&self.dob_field);
         let dob = match dob_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
 
         if !is_estimated_dob(dob) {
@@ -114,21 +120,25 @@ impl BlockingKey for FuzzyYearKey {
 
         let year: i32 = match dob.get(..4).and_then(|y| y.parse().ok()) {
             Some(y) => y,
-            None    => return vec![],
+            None => return vec![],
         };
 
         let surname_cow = record.field_as_str(&self.name_field);
         let surname_raw = match surname_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
 
-        let norm    = normalize_text(surname_raw);
+        let norm = normalize_text(surname_raw);
         let surname = extract_surname_token(&norm);
-        if surname.is_empty() { return vec![]; }
+        if surname.is_empty() {
+            return vec![];
+        }
 
         let code = DoubleMetaphone::default().encode(surname);
-        if code.is_empty() { return vec![]; }
+        if code.is_empty() {
+            return vec![];
+        }
 
         let r = self.fuzzy_range as i32;
         ((-r)..=r)
@@ -142,32 +152,40 @@ impl BlockingKey for FuzzyYearKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::{FieldKind, SchemaBuilder}};
+    use zer_core::{
+        record::FieldValue,
+        schema::{FieldKind, SchemaBuilder},
+    };
 
     fn schema() -> Schema {
         SchemaBuilder::new()
-            .field("achternaam",  FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("alias_namen", FieldKind::Alias)
-            .field("dob",         FieldKind::Date)
+            .field("dob", FieldKind::Date)
             .build()
             .unwrap()
     }
 
     fn rec(id: u64, achternaam: &str, aliases: &str, dob: &str) -> Record {
         Record::new(id)
-            .insert("achternaam",  FieldValue::Text(achternaam.into()))
+            .insert("achternaam", FieldValue::Text(achternaam.into()))
             .insert("alias_namen", FieldValue::Text(aliases.into()))
-            .insert("dob",         FieldValue::Text(dob.into()))
+            .insert("dob", FieldValue::Text(dob.into()))
     }
 
     #[test]
     fn alias_key_emits_phonetic_for_each_alias() {
         let schema = schema();
-        let key    = AliasPhoneticKey::new("alias_namen", "dob");
+        let key = AliasPhoneticKey::new("alias_namen", "dob");
 
         // "Benabdallah Fatima" → surname token "FATIMA" → phonetic code
         // "F. Benabdallah"     → surname token "BENABDALLAH" → phonetic code
-        let r = rec(1, "Benabdallah", "Benabdallah Fatima|F. Benabdallah", "1999-06-14");
+        let r = rec(
+            1,
+            "Benabdallah",
+            "Benabdallah Fatima|F. Benabdallah",
+            "1999-06-14",
+        );
         let keys = key.extract(&r, &schema);
         assert!(keys.len() >= 1, "should emit at least one alias key");
     }
@@ -175,15 +193,15 @@ mod tests {
     #[test]
     fn alias_key_empty_aliases_returns_empty() {
         let schema = schema();
-        let key    = AliasPhoneticKey::new("alias_namen", "dob");
-        let r      = rec(1, "Jong", "", "1985-01-01");
+        let key = AliasPhoneticKey::new("alias_namen", "dob");
+        let r = rec(1, "Jong", "", "1985-01-01");
         assert!(key.extract(&r, &schema).is_empty());
     }
 
     #[test]
     fn alias_key_cross_record_collision() {
         let schema = schema();
-        let key    = AliasPhoneticKey::new("alias_namen", "dob");
+        let key = AliasPhoneticKey::new("alias_namen", "dob");
 
         // Canonical: primary name "Benabdallah", alias points at "Fatima Benabdallah"
         let canonical = rec(1, "Benabdallah", "Benabdallah Fatima", "1999-06-14");
@@ -204,10 +222,10 @@ mod tests {
     #[test]
     fn fuzzy_year_key_emits_range_for_estimated_dob() {
         let schema = schema();
-        let key    = FuzzyYearKey::new("achternaam", "dob", 1);
+        let key = FuzzyYearKey::new("achternaam", "dob", 1);
 
         // Jan-1 = estimated DOB
-        let r    = rec(1, "Yilmaz", "", "1985-01-01");
+        let r = rec(1, "Yilmaz", "", "1985-01-01");
         let keys = key.extract(&r, &schema);
         assert_eq!(keys.len(), 3, "should emit year-1, year, year+1");
         // All three should share the same phonetic code prefix
@@ -219,16 +237,19 @@ mod tests {
     #[test]
     fn fuzzy_year_key_emits_nothing_for_precise_dob() {
         let schema = schema();
-        let key    = FuzzyYearKey::new("achternaam", "dob", 1);
+        let key = FuzzyYearKey::new("achternaam", "dob", 1);
 
         let r = rec(1, "Yilmaz", "", "1985-03-15");
-        assert!(key.extract(&r, &schema).is_empty(), "precise DOB → no fuzzy keys");
+        assert!(
+            key.extract(&r, &schema).is_empty(),
+            "precise DOB → no fuzzy keys"
+        );
     }
 
     #[test]
     fn fuzzy_year_key_pairs_cross_year_estimated_dobs() {
         let schema = schema();
-        let key    = FuzzyYearKey::new("achternaam", "dob", 1);
+        let key = FuzzyYearKey::new("achternaam", "dob", 1);
 
         // Same person, estimated DOBs differing by 1 year
         let r1 = rec(1, "Yilmaz", "", "1985-01-01");
@@ -238,6 +259,9 @@ mod tests {
         let k2: std::collections::HashSet<String> = key.extract(&r2, &schema).into_iter().collect();
 
         let shared: Vec<_> = k1.intersection(&k2).collect();
-        assert!(!shared.is_empty(), "neighbouring estimated years should share a fuzzy key");
+        assert!(
+            !shared.is_empty(),
+            "neighbouring estimated years should share a fuzzy key"
+        );
     }
 }

@@ -3,8 +3,8 @@
 
 use ash::vk;
 use gpu_allocator::{
-    MemoryLocation,
     vulkan::{Allocation, AllocationCreateDesc, AllocationScheme, Allocator},
+    MemoryLocation,
 };
 
 use crate::error::GpuError;
@@ -21,74 +21,91 @@ pub(crate) struct VulkanBuffer {
 impl VulkanBuffer {
     /// Allocate a host-visible, host-coherent staging buffer.
     pub fn new_staging(
-        device:    &ash::Device,
+        device: &ash::Device,
         allocator: &mut Allocator,
-        size:      u64,
-        name:      &str,
+        size: u64,
+        name: &str,
     ) -> Result<Self, GpuError> {
-        Self::new_inner(device, allocator, size, name,
+        Self::new_inner(
+            device,
+            allocator,
+            size,
+            name,
             vk::BufferUsageFlags::TRANSFER_SRC | vk::BufferUsageFlags::TRANSFER_DST,
-            MemoryLocation::CpuToGpu)
+            MemoryLocation::CpuToGpu,
+        )
     }
 
     /// Allocate a device-local buffer (not host-visible).
     pub fn new_device_local(
-        device:    &ash::Device,
+        device: &ash::Device,
         allocator: &mut Allocator,
-        size:      u64,
-        usage:     vk::BufferUsageFlags,
-        name:      &str,
+        size: u64,
+        usage: vk::BufferUsageFlags,
+        name: &str,
     ) -> Result<Self, GpuError> {
-        Self::new_inner(device, allocator, size, name,
+        Self::new_inner(
+            device,
+            allocator,
+            size,
+            name,
             usage | vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::TRANSFER_SRC,
-            MemoryLocation::GpuOnly)
+            MemoryLocation::GpuOnly,
+        )
     }
 
     fn new_inner(
-        device:    &ash::Device,
+        device: &ash::Device,
         allocator: &mut Allocator,
-        size:      u64,
-        name:      &str,
-        usage:     vk::BufferUsageFlags,
-        location:  MemoryLocation,
+        size: u64,
+        name: &str,
+        usage: vk::BufferUsageFlags,
+        location: MemoryLocation,
     ) -> Result<Self, GpuError> {
         let buf_ci = vk::BufferCreateInfo::default()
             .size(size)
             .usage(usage)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
-        let buffer = unsafe { device.create_buffer(&buf_ci, None) }
-            .map_err(|e| GpuError::AllocationFailed {
+        let buffer = unsafe { device.create_buffer(&buf_ci, None) }.map_err(|e| {
+            GpuError::AllocationFailed {
                 requested_bytes: size,
                 detail: format!("vkCreateBuffer: {e}"),
-            })?;
+            }
+        })?;
 
         let reqs = unsafe { device.get_buffer_memory_requirements(buffer) };
-        let allocation = allocator.allocate(&AllocationCreateDesc {
-            name,
-            requirements: reqs,
-            location,
-            linear: true,
-            allocation_scheme: AllocationScheme::GpuAllocatorManaged,
+        let allocation = allocator
+            .allocate(&AllocationCreateDesc {
+                name,
+                requirements: reqs,
+                location,
+                linear: true,
+                allocation_scheme: AllocationScheme::GpuAllocatorManaged,
+            })
+            .map_err(|e| GpuError::AllocationFailed {
+                requested_bytes: size,
+                detail: format!("gpu_allocator: {e}"),
+            })?;
+
+        unsafe { device.bind_buffer_memory(buffer, allocation.memory(), allocation.offset()) }
+            .map_err(|e| GpuError::AllocationFailed {
+                requested_bytes: size,
+                detail: format!("vkBindBufferMemory: {e}"),
+            })?;
+
+        Ok(Self {
+            buffer,
+            allocation: Some(allocation),
+            size,
         })
-        .map_err(|e| GpuError::AllocationFailed {
-            requested_bytes: size,
-            detail: format!("gpu_allocator: {e}"),
-        })?;
-
-        unsafe {
-            device.bind_buffer_memory(buffer, allocation.memory(), allocation.offset())
-        }
-        .map_err(|e| GpuError::AllocationFailed {
-            requested_bytes: size,
-            detail: format!("vkBindBufferMemory: {e}"),
-        })?;
-
-        Ok(Self { buffer, allocation: Some(allocation), size })
     }
 
     /// Map the buffer (host-visible only) and return a raw pointer for writing.
     pub fn mapped_ptr(&self) -> Option<*mut u8> {
-        self.allocation.as_ref()?.mapped_ptr().map(|p| p.as_ptr() as *mut u8)
+        self.allocation
+            .as_ref()?
+            .mapped_ptr()
+            .map(|p| p.as_ptr() as *mut u8)
     }
 
     /// Write `data` into the host-visible mapping.
@@ -98,13 +115,12 @@ impl VulkanBuffer {
     pub fn write<T: Copy>(&self, data: &[T]) {
         let ptr = self.mapped_ptr().expect("buffer is not host-visible");
         let byte_len = data.len() * std::mem::size_of::<T>();
-        assert!(byte_len as u64 <= self.size, "write exceeds buffer capacity");
+        assert!(
+            byte_len as u64 <= self.size,
+            "write exceeds buffer capacity"
+        );
         unsafe {
-            std::ptr::copy_nonoverlapping(
-                data.as_ptr() as *const u8,
-                ptr,
-                byte_len,
-            );
+            std::ptr::copy_nonoverlapping(data.as_ptr() as *const u8, ptr, byte_len);
         }
     }
 
@@ -115,11 +131,7 @@ impl VulkanBuffer {
         assert!(byte_len as u64 <= self.size, "read exceeds buffer size");
         let mut out = Vec::with_capacity(count);
         unsafe {
-            std::ptr::copy_nonoverlapping(
-                ptr,
-                out.as_mut_ptr() as *mut u8,
-                byte_len,
-            );
+            std::ptr::copy_nonoverlapping(ptr, out.as_mut_ptr() as *mut u8, byte_len);
             out.set_len(count);
         }
         out
@@ -139,9 +151,9 @@ impl VulkanBuffer {
 /// Record a full-buffer host-to-device copy on `cmd`.
 pub(crate) fn cmd_copy_buffer(
     device: &ash::Device,
-    cmd:    vk::CommandBuffer,
-    src:    &VulkanBuffer,
-    dst:    &VulkanBuffer,
+    cmd: vk::CommandBuffer,
+    src: &VulkanBuffer,
+    dst: &VulkanBuffer,
 ) {
     let region = vk::BufferCopy::default()
         .src_offset(0)
@@ -153,12 +165,12 @@ pub(crate) fn cmd_copy_buffer(
 /// Insert a buffer memory barrier that makes a preceding write visible to subsequent reads.
 pub(crate) fn buffer_barrier(
     device: &ash::Device,
-    cmd:    vk::CommandBuffer,
+    cmd: vk::CommandBuffer,
     buffer: &VulkanBuffer,
     src_access: vk::AccessFlags2,
     dst_access: vk::AccessFlags2,
-    src_stage:  vk::PipelineStageFlags2,
-    dst_stage:  vk::PipelineStageFlags2,
+    src_stage: vk::PipelineStageFlags2,
+    dst_stage: vk::PipelineStageFlags2,
 ) {
     let barrier = vk::BufferMemoryBarrier2::default()
         .src_stage_mask(src_stage)
@@ -168,8 +180,7 @@ pub(crate) fn buffer_barrier(
         .buffer(buffer.buffer)
         .offset(0)
         .size(vk::WHOLE_SIZE);
-    let dep = vk::DependencyInfo::default()
-        .buffer_memory_barriers(std::slice::from_ref(&barrier));
+    let dep = vk::DependencyInfo::default().buffer_memory_barriers(std::slice::from_ref(&barrier));
     unsafe { device.cmd_pipeline_barrier2(cmd, &dep) };
 }
 
@@ -180,10 +191,10 @@ pub(crate) fn buffer_barrier(
 /// `record_fn` receives the command buffer; after it returns, the buffer is
 /// submitted to `queue` and the host blocks until the GPU finishes.
 pub(crate) fn one_shot_submit<F>(
-    device:      &ash::Device,
-    pool:        vk::CommandPool,
-    queue:       vk::Queue,
-    record_fn:   F,
+    device: &ash::Device,
+    pool: vk::CommandPool,
+    queue: vk::Queue,
+    record_fn: F,
 ) -> Result<(), GpuError>
 where
     F: FnOnce(vk::CommandBuffer),
@@ -196,8 +207,8 @@ where
         .map_err(|e| GpuError::LaunchFailed(format!("allocate_command_buffers: {e}")))?;
     let cmd = cmds[0];
 
-    let begin_info = vk::CommandBufferBeginInfo::default()
-        .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+    let begin_info =
+        vk::CommandBufferBeginInfo::default().flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
     unsafe { device.begin_command_buffer(cmd, &begin_info) }
         .map_err(|e| GpuError::LaunchFailed(format!("begin_command_buffer: {e}")))?;
 
@@ -210,8 +221,7 @@ where
     let fence = unsafe { device.create_fence(&fence_ci, None) }
         .map_err(|e| GpuError::LaunchFailed(format!("create_fence: {e}")))?;
 
-    let submit_info = vk::SubmitInfo::default()
-        .command_buffers(std::slice::from_ref(&cmd));
+    let submit_info = vk::SubmitInfo::default().command_buffers(std::slice::from_ref(&cmd));
     unsafe { device.queue_submit(queue, std::slice::from_ref(&submit_info), fence) }
         .map_err(|e| GpuError::LaunchFailed(format!("queue_submit: {e}")))?;
 

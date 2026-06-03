@@ -7,16 +7,16 @@ use crate::record::FieldName;
 /// which field on each side should be compared.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FieldMapping {
-    pub a_field:     FieldName,
-    pub b_field:     FieldName,
+    pub a_field: FieldName,
+    pub b_field: FieldName,
     pub null_policy: NullPolicy,
 }
 
 impl FieldMapping {
     pub fn new(a_field: impl Into<FieldName>, b_field: impl Into<FieldName>) -> Self {
         Self {
-            a_field:     a_field.into(),
-            b_field:     b_field.into(),
+            a_field: a_field.into(),
+            b_field: b_field.into(),
             null_policy: NullPolicy::Skip,
         }
     }
@@ -50,8 +50,8 @@ mod tests {
 
     #[test]
     fn null_policy_round_trips_json() {
-        let m = FieldMapping::new("geboortedatum", "dob")
-            .with_null_policy(NullPolicy::PenaliseAbsence);
+        let m =
+            FieldMapping::new("geboortedatum", "dob").with_null_policy(NullPolicy::PenaliseAbsence);
         let json = serde_json::to_string(&m).unwrap();
         let back: FieldMapping = serde_json::from_str(&json).unwrap();
         assert_eq!(back.null_policy, NullPolicy::PenaliseAbsence);

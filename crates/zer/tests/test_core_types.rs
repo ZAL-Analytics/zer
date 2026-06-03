@@ -7,19 +7,22 @@ fn record_serde_json_round_trip() {
     let original = Record::new(42)
         .with_source("test")
         .insert("name", FieldValue::Text("Alice van den Berg".into()))
-        .insert("age",  FieldValue::Int(35))
+        .insert("age", FieldValue::Int(35))
         .insert("score", FieldValue::Float(0.95))
         .insert("active", FieldValue::Bool(true))
         .insert("missing", FieldValue::Null);
 
-    let json     = serde_json::to_string(&original).unwrap();
+    let json = serde_json::to_string(&original).unwrap();
     let restored: Record = serde_json::from_str(&json).unwrap();
 
     assert_eq!(restored.id, 42);
     assert_eq!(restored.source.as_deref(), Some("test"));
-    assert_eq!(restored.get("name"),    Some(&FieldValue::Text("Alice van den Berg".into())));
-    assert_eq!(restored.get("age"),     Some(&FieldValue::Int(35)));
-    assert_eq!(restored.get("active"),  Some(&FieldValue::Bool(true)));
+    assert_eq!(
+        restored.get("name"),
+        Some(&FieldValue::Text("Alice van den Berg".into()))
+    );
+    assert_eq!(restored.get("age"), Some(&FieldValue::Int(35)));
+    assert_eq!(restored.get("active"), Some(&FieldValue::Bool(true)));
     assert_eq!(restored.get("missing"), Some(&FieldValue::Null));
 }
 
@@ -27,13 +30,13 @@ fn record_serde_json_round_trip() {
 fn schema_serde_json_round_trip() {
     let original = SchemaBuilder::new()
         .field("first_name", FieldKind::Name)
-        .field("last_name",  FieldKind::Name)
-        .field("dob",        FieldKind::Date)
-        .field("phone",      FieldKind::Phone)
+        .field("last_name", FieldKind::Name)
+        .field("dob", FieldKind::Date)
+        .field("phone", FieldKind::Phone)
         .build()
         .unwrap();
 
-    let json:     String = serde_json::to_string(&original).unwrap();
+    let json: String = serde_json::to_string(&original).unwrap();
     let restored: Schema = serde_json::from_str(&json).unwrap();
 
     assert_eq!(restored.len(), 4);
@@ -46,11 +49,15 @@ fn comparison_vector_serde_json_round_trip() {
     let original = ComparisonVector::new(
         1,
         2,
-        vec![ComparisonLevel::Exact, ComparisonLevel::Close, ComparisonLevel::None],
+        vec![
+            ComparisonLevel::Exact,
+            ComparisonLevel::Close,
+            ComparisonLevel::None,
+        ],
     );
 
-    let json:     String            = serde_json::to_string(&original).unwrap();
-    let restored: ComparisonVector  = serde_json::from_str(&json).unwrap();
+    let json: String = serde_json::to_string(&original).unwrap();
+    let restored: ComparisonVector = serde_json::from_str(&json).unwrap();
 
     assert_eq!(restored.record_a, 1);
     assert_eq!(restored.record_b, 2);
@@ -63,18 +70,18 @@ fn entity_serde_json_round_trip() {
     let mut e = Entity::new(7);
     e.members.push(EntityMember {
         record_id: 101,
-        score:     0.97,
-        method:    ResolutionMethod::AutoMatch,
-        source:    Some("kvk".into()),
+        score: 0.97,
+        method: ResolutionMethod::AutoMatch,
+        source: Some("kvk".into()),
     });
     e.members.push(EntityMember {
         record_id: 102,
-        score:     0.88,
-        method:    ResolutionMethod::JudgePromoted,
-        source:    None,
+        score: 0.88,
+        method: ResolutionMethod::JudgePromoted,
+        source: None,
     });
 
-    let json:     String = serde_json::to_string(&e).unwrap();
+    let json: String = serde_json::to_string(&e).unwrap();
     let restored: Entity = serde_json::from_str(&json).unwrap();
 
     assert_eq!(restored.id, 7);
@@ -94,8 +101,8 @@ fn schema_builder_rejects_empty() {
 fn schema_fields_of_kind_correct() {
     let s = SchemaBuilder::new()
         .field("first_name", FieldKind::Name)
-        .field("last_name",  FieldKind::Name)
-        .field("dob",        FieldKind::Date)
+        .field("last_name", FieldKind::Name)
+        .field("dob", FieldKind::Date)
         .build()
         .unwrap();
 
@@ -111,9 +118,18 @@ fn schema_fields_of_kind_correct() {
 #[test]
 fn comparison_level_total_order() {
     use std::cmp::Ordering;
-    assert_eq!(ComparisonLevel::Exact.cmp(&ComparisonLevel::Close),   Ordering::Greater);
-    assert_eq!(ComparisonLevel::None.cmp(&ComparisonLevel::Partial),  Ordering::Less);
-    assert_eq!(ComparisonLevel::Close.cmp(&ComparisonLevel::Close),   Ordering::Equal);
+    assert_eq!(
+        ComparisonLevel::Exact.cmp(&ComparisonLevel::Close),
+        Ordering::Greater
+    );
+    assert_eq!(
+        ComparisonLevel::None.cmp(&ComparisonLevel::Partial),
+        Ordering::Less
+    );
+    assert_eq!(
+        ComparisonLevel::Close.cmp(&ComparisonLevel::Close),
+        Ordering::Equal
+    );
 }
 
 // ── Trait object safety ──────────────────────────────────────────────────────

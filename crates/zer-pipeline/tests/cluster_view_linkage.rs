@@ -3,7 +3,6 @@
 /// Builds a mock `ClusterView` by running a real pipeline in `LinkOnly` mode
 /// with two named sources, then verifies that `linked_pairs()` returns the
 /// expected cross-source rows.
-
 use std::sync::Arc;
 
 use tempfile::TempDir;
@@ -20,8 +19,8 @@ use zer_pipeline::{
 
 fn person_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()
         .unwrap()
@@ -42,8 +41,8 @@ fn make_pipeline(dir: &TempDir, mode: LinkMode) -> Arc<Pipeline> {
 
 fn jan_de_vries(id: u64, source: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text("Jan".into()))
-        .insert("achternaam",    FieldValue::Text("de Vries".into()))
+        .insert("voornamen", FieldValue::Text("Jan".into()))
+        .insert("achternaam", FieldValue::Text("de Vries".into()))
         .insert("geboortedatum", FieldValue::Text("1985-03-15".into()))
         .with_source(source)
 }
@@ -70,16 +69,30 @@ async fn linked_pairs_from_pipeline_run_cross_source() {
     records.extend(kvk_records());
     pipeline.run_batch(records).await.unwrap();
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.linked_pairs();
 
-    assert!(!pairs.is_empty(), "a matched cross-source pair must appear in linked_pairs()");
+    assert!(
+        !pairs.is_empty(),
+        "a matched cross-source pair must appear in linked_pairs()"
+    );
     let lp: &LinkedPair = &pairs[0];
     // The two records must come from different sources
-    assert_ne!(lp.source_a, lp.source_b, "linked pair must span two distinct sources");
-    let sources: Vec<_> = [lp.source_a.as_deref(), lp.source_b.as_deref()].into_iter().collect();
-    assert!(sources.contains(&Some("brp")), "source 'brp' must be present");
-    assert!(sources.contains(&Some("kvk")), "source 'kvk' must be present");
+    assert_ne!(
+        lp.source_a, lp.source_b,
+        "linked pair must span two distinct sources"
+    );
+    let sources: Vec<_> = [lp.source_a.as_deref(), lp.source_b.as_deref()]
+        .into_iter()
+        .collect();
+    assert!(
+        sources.contains(&Some("brp")),
+        "source 'brp' must be present"
+    );
+    assert!(
+        sources.contains(&Some("kvk")),
+        "source 'kvk' must be present"
+    );
 }
 
 #[tokio::test]
@@ -88,12 +101,10 @@ async fn linked_pairs_empty_when_single_source() {
     let pipeline = make_pipeline(&dir, LinkMode::Deduplicate);
 
     // All records from the same source, no cross-source pairs.
-    let records: Vec<Record> = (1..=4)
-        .map(|i| jan_de_vries(i, "brp"))
-        .collect();
+    let records: Vec<Record> = (1..=4).map(|i| jan_de_vries(i, "brp")).collect();
     pipeline.run_batch(records).await.unwrap();
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.linked_pairs();
 
     assert!(
@@ -112,13 +123,16 @@ async fn linked_pairs_entity_id_is_consistent() {
     records.extend(kvk_records());
     pipeline.run_batch(records).await.unwrap();
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.linked_pairs();
 
     if let Some(lp) = pairs.first() {
         // entity_id must reference an entity that actually exists in the store
         let entity_result = pipeline.store().get_entity(lp.entity_id);
-        assert!(entity_result.is_ok(), "entity_id in LinkedPair must exist in the entity store");
+        assert!(
+            entity_result.is_ok(),
+            "entity_id in LinkedPair must exist in the entity store"
+        );
     }
 }
 
@@ -134,10 +148,13 @@ async fn linked_pairs_record_ids_match_input() {
     records.extend(kvk);
     pipeline.run_batch(records).await.unwrap();
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.linked_pairs();
 
-    assert!(!pairs.is_empty(), "cross-source pairs must be produced for linked_pairs_record_ids_match_input");
+    assert!(
+        !pairs.is_empty(),
+        "cross-source pairs must be produced for linked_pairs_record_ids_match_input"
+    );
     for lp in &pairs {
         let ids = [lp.record_id_a, lp.record_id_b];
         assert!(
@@ -164,8 +181,8 @@ async fn linked_pairs_multiple_cross_source_entities() {
     // Person B: 5 records in brp + 5 in kvk (different person → different entity)
     let maria = |id: u64, source: &str| {
         Record::new(id)
-            .insert("voornamen",     FieldValue::Text("Maria".into()))
-            .insert("achternaam",    FieldValue::Text("Bakker".into()))
+            .insert("voornamen", FieldValue::Text("Maria".into()))
+            .insert("achternaam", FieldValue::Text("Bakker".into()))
             .insert("geboortedatum", FieldValue::Text("1990-07-22".into()))
             .with_source(source)
     };
@@ -174,11 +191,14 @@ async fn linked_pairs_multiple_cross_source_entities() {
 
     pipeline.run_batch(records).await.unwrap();
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.linked_pairs();
 
     // All returned pairs must span two distinct sources
     for lp in &pairs {
-        assert_ne!(lp.source_a, lp.source_b, "all linked_pairs must be cross-source");
+        assert_ne!(
+            lp.source_a, lp.source_b,
+            "all linked_pairs must be cross-source"
+        );
     }
 }

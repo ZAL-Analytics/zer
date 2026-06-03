@@ -22,30 +22,37 @@ use ort::ep::ExecutionProviderDispatch;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrtProfile {
     pub min_batch: usize,
-    pub min_seq:   usize,
+    pub min_seq: usize,
     pub opt_batch: usize,
-    pub opt_seq:   usize,
+    pub opt_seq: usize,
     pub max_batch: usize,
-    pub max_seq:   usize,
+    pub max_seq: usize,
 }
 
 impl TrtProfile {
     /// Shapes tuned for the BRP workload: ~20 borderline pairs padded to ~35–64 tokens.
     pub const DEFAULT: Self = Self {
-        min_batch: 1,  min_seq: 1,
-        opt_batch: 32, opt_seq: 64,
-        max_batch: 64, max_seq: 512,
+        min_batch: 1,
+        min_seq: 1,
+        opt_batch: 32,
+        opt_seq: 64,
+        max_batch: 64,
+        max_seq: 512,
     };
 
     fn to_shape_string(self, batch: usize, seq: usize) -> String {
-        format!(
-            "input_ids:{batch}x{seq},attention_mask:{batch}x{seq},token_type_ids:{batch}x{seq}",
-        )
+        format!("input_ids:{batch}x{seq},attention_mask:{batch}x{seq},token_type_ids:{batch}x{seq}",)
     }
 
-    pub fn min_shapes(self) -> String { self.to_shape_string(self.min_batch, self.min_seq) }
-    pub fn opt_shapes(self) -> String { self.to_shape_string(self.opt_batch, self.opt_seq) }
-    pub fn max_shapes(self) -> String { self.to_shape_string(self.max_batch, self.max_seq) }
+    pub fn min_shapes(self) -> String {
+        self.to_shape_string(self.min_batch, self.min_seq)
+    }
+    pub fn opt_shapes(self) -> String {
+        self.to_shape_string(self.opt_batch, self.opt_seq)
+    }
+    pub fn max_shapes(self) -> String {
+        self.to_shape_string(self.max_batch, self.max_seq)
+    }
 }
 
 /// Which ORT execution provider to use for neural judge inference.
@@ -74,23 +81,23 @@ impl JudgeTarget {
     /// Parse a target name as supplied to `--judge-target=`.
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
-            "cpu"       => Some(Self::Cpu),
-            "cuda"      => Some(Self::Cuda),
-            "tensorrt"  => Some(Self::TensorRt),
-            "rocm"      => Some(Self::Rocm),
-            "directml"  => Some(Self::DirectMl),
-            "openvino"  => Some(Self::OpenVino),
-            _           => None,
+            "cpu" => Some(Self::Cpu),
+            "cuda" => Some(Self::Cuda),
+            "tensorrt" => Some(Self::TensorRt),
+            "rocm" => Some(Self::Rocm),
+            "directml" => Some(Self::DirectMl),
+            "openvino" => Some(Self::OpenVino),
+            _ => None,
         }
     }
 
     /// Canonical lowercase name shown in diagnostics.
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::Cpu      => "cpu",
-            Self::Cuda     => "cuda",
+            Self::Cpu => "cpu",
+            Self::Cuda => "cuda",
             Self::TensorRt => "tensorrt",
-            Self::Rocm     => "rocm",
+            Self::Rocm => "rocm",
             Self::DirectMl => "directml",
             Self::OpenVino => "openvino",
         }
@@ -103,7 +110,7 @@ impl JudgeTarget {
 /// Create once per process; pass a reference wherever a session is built so
 /// that all judge models share the same EP selection.
 pub struct JudgeBackend {
-    target:      JudgeTarget,
+    target: JudgeTarget,
     trt_profile: TrtProfile,
 }
 
@@ -112,18 +119,21 @@ impl JudgeBackend {
     ///
     /// Falls back to CPU when the flag is absent, no hardware probing.
     pub fn auto_detect() -> Self {
-        let target = std::env::args()
-            .find_map(|a| a.strip_prefix("--judge-target=").map(str::to_owned));
+        let target =
+            std::env::args().find_map(|a| a.strip_prefix("--judge-target=").map(str::to_owned));
 
         match target.as_deref() {
             Some(t) => Self::from_target(t),
-            None    => Self::cpu(),
+            None => Self::cpu(),
         }
     }
 
     /// Force the CPU execution provider regardless of available hardware.
     pub fn cpu() -> Self {
-        Self { target: JudgeTarget::Cpu, trt_profile: TrtProfile::DEFAULT }
+        Self {
+            target: JudgeTarget::Cpu,
+            trt_profile: TrtProfile::DEFAULT,
+        }
     }
 
     /// Use CUDA if compiled in, otherwise fall back to CPU.
@@ -132,7 +142,10 @@ impl JudgeBackend {
     /// TRT cannot parse, CUDA still accelerates inference without the noise.
     pub fn cuda_or_cpu() -> Self {
         if cfg!(feature = "judge_cuda") {
-            Self { target: JudgeTarget::Cuda, trt_profile: TrtProfile::DEFAULT }
+            Self {
+                target: JudgeTarget::Cuda,
+                trt_profile: TrtProfile::DEFAULT,
+            }
         } else {
             Self::cpu()
         }
@@ -158,10 +171,16 @@ impl JudgeBackend {
                     tracing::error!(target, "judge target not compiled in; rebuild with 'judge_{{target}}' feature flag");
                     std::process::exit(1);
                 }
-                Self { target: t, trt_profile: TrtProfile::DEFAULT }
+                Self {
+                    target: t,
+                    trt_profile: TrtProfile::DEFAULT,
+                }
             }
             None => {
-                tracing::error!(target, "unknown --judge-target; valid: cpu, cuda, tensorrt, rocm, directml, openvino");
+                tracing::error!(
+                    target,
+                    "unknown --judge-target; valid: cpu, cuda, tensorrt, rocm, directml, openvino"
+                );
                 std::process::exit(1);
             }
         }
@@ -169,10 +188,10 @@ impl JudgeBackend {
 
     fn target_compiled_in(target: JudgeTarget) -> bool {
         match target {
-            JudgeTarget::Cpu      => true,
-            JudgeTarget::Cuda     => cfg!(feature = "judge_cuda"),
+            JudgeTarget::Cpu => true,
+            JudgeTarget::Cuda => cfg!(feature = "judge_cuda"),
             JudgeTarget::TensorRt => cfg!(feature = "judge_tensorrt"),
-            JudgeTarget::Rocm     => cfg!(feature = "judge_rocm"),
+            JudgeTarget::Rocm => cfg!(feature = "judge_rocm"),
             JudgeTarget::DirectMl => cfg!(feature = "judge_directml"),
             JudgeTarget::OpenVino => cfg!(feature = "judge_openvino"),
         }
@@ -196,7 +215,7 @@ impl JudgeBackend {
     pub fn models_subdir(&self) -> &'static str {
         match self.target {
             JudgeTarget::TensorRt | JudgeTarget::Cpu => "base",
-            _                                        => "fp16_fused",
+            _ => "fp16_fused",
         }
     }
 
@@ -249,8 +268,7 @@ impl JudgeBackend {
                 {
                     // Engine cache lives at ~/.cache/zer-judge/trt-engines so that
                     // re-runs skip the expensive JIT compilation step.
-                    let cache_dir = std::env::var("HOME")
-                        .unwrap_or_else(|_| ".".to_string())
+                    let cache_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string())
                         + "/.cache/zer-judge/trt-engines";
                     let _ = std::fs::create_dir_all(&cache_dir);
                     let p = self.trt_profile;
@@ -333,7 +351,10 @@ mod tests {
 
     #[test]
     fn from_name_tensorrt() {
-        assert_eq!(JudgeTarget::from_name("tensorrt"), Some(JudgeTarget::TensorRt));
+        assert_eq!(
+            JudgeTarget::from_name("tensorrt"),
+            Some(JudgeTarget::TensorRt)
+        );
     }
 
     #[test]
@@ -343,12 +364,18 @@ mod tests {
 
     #[test]
     fn from_name_directml() {
-        assert_eq!(JudgeTarget::from_name("directml"), Some(JudgeTarget::DirectMl));
+        assert_eq!(
+            JudgeTarget::from_name("directml"),
+            Some(JudgeTarget::DirectMl)
+        );
     }
 
     #[test]
     fn from_name_openvino() {
-        assert_eq!(JudgeTarget::from_name("openvino"), Some(JudgeTarget::OpenVino));
+        assert_eq!(
+            JudgeTarget::from_name("openvino"),
+            Some(JudgeTarget::OpenVino)
+        );
     }
 
     #[test]
@@ -394,8 +421,11 @@ mod tests {
     #[test]
     fn cpu_execution_providers_has_cpu_fallback() {
         let backend = JudgeBackend::cpu();
-        let eps     = backend.execution_providers();
-        assert!(!eps.is_empty(), "execution_providers must never return an empty vec");
+        let eps = backend.execution_providers();
+        assert!(
+            !eps.is_empty(),
+            "execution_providers must never return an empty vec"
+        );
     }
 
     #[test]
@@ -418,10 +448,20 @@ mod tests {
 
     #[test]
     fn models_subdir_gpu_providers_return_fp16_fused() {
-        for target in [JudgeTarget::Cuda, JudgeTarget::Rocm, JudgeTarget::DirectMl, JudgeTarget::OpenVino] {
+        for target in [
+            JudgeTarget::Cuda,
+            JudgeTarget::Rocm,
+            JudgeTarget::DirectMl,
+            JudgeTarget::OpenVino,
+        ] {
             let mut backend = JudgeBackend::cpu();
             backend.target = target;
-            assert_eq!(backend.models_subdir(), "fp16_fused", "expected fp16_fused for {}", target.as_str());
+            assert_eq!(
+                backend.models_subdir(),
+                "fp16_fused",
+                "expected fp16_fused for {}",
+                target.as_str()
+            );
         }
     }
 
@@ -452,21 +492,50 @@ mod tests {
     #[test]
     fn trt_profile_default_shape_strings() {
         let p = TrtProfile::DEFAULT;
-        assert_eq!(p.min_shapes(), "input_ids:1x1,attention_mask:1x1,token_type_ids:1x1");
-        assert_eq!(p.opt_shapes(), "input_ids:32x64,attention_mask:32x64,token_type_ids:32x64");
-        assert_eq!(p.max_shapes(), "input_ids:64x512,attention_mask:64x512,token_type_ids:64x512");
+        assert_eq!(
+            p.min_shapes(),
+            "input_ids:1x1,attention_mask:1x1,token_type_ids:1x1"
+        );
+        assert_eq!(
+            p.opt_shapes(),
+            "input_ids:32x64,attention_mask:32x64,token_type_ids:32x64"
+        );
+        assert_eq!(
+            p.max_shapes(),
+            "input_ids:64x512,attention_mask:64x512,token_type_ids:64x512"
+        );
     }
 
     #[test]
     fn trt_profile_custom_values() {
-        let p = TrtProfile { min_batch: 1, min_seq: 1, opt_batch: 16, opt_seq: 128, max_batch: 32, max_seq: 256 };
-        assert_eq!(p.opt_shapes(), "input_ids:16x128,attention_mask:16x128,token_type_ids:16x128");
-        assert_eq!(p.max_shapes(), "input_ids:32x256,attention_mask:32x256,token_type_ids:32x256");
+        let p = TrtProfile {
+            min_batch: 1,
+            min_seq: 1,
+            opt_batch: 16,
+            opt_seq: 128,
+            max_batch: 32,
+            max_seq: 256,
+        };
+        assert_eq!(
+            p.opt_shapes(),
+            "input_ids:16x128,attention_mask:16x128,token_type_ids:16x128"
+        );
+        assert_eq!(
+            p.max_shapes(),
+            "input_ids:32x256,attention_mask:32x256,token_type_ids:32x256"
+        );
     }
 
     #[test]
     fn with_trt_profile_overrides_default() {
-        let custom = TrtProfile { min_batch: 1, min_seq: 1, opt_batch: 8, opt_seq: 32, max_batch: 16, max_seq: 128 };
+        let custom = TrtProfile {
+            min_batch: 1,
+            min_seq: 1,
+            opt_batch: 8,
+            opt_seq: 32,
+            max_batch: 16,
+            max_seq: 128,
+        };
         let backend = JudgeBackend::cpu().with_trt_profile(custom);
         assert_eq!(backend.trt_profile, custom);
     }

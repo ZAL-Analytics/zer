@@ -1,16 +1,15 @@
 use crate::record::RecordId;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash,
-         serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[repr(u8)]
 pub enum ComparisonLevel {
-    None    = 0,
+    None = 0,
     Partial = 1,
-    Close   = 2,
-    Exact   = 3,
+    Close = 2,
+    Exact = 3,
     /// Field structurally absent on one or both sides (cross-schema linkage).
     /// Never fed to EM; both E-step and M-step skip pairs where any field carries this level.
-    Null    = 255,
+    Null = 255,
 }
 
 impl ComparisonLevel {
@@ -21,11 +20,11 @@ impl ComparisonLevel {
     #[inline]
     pub fn from_u8(v: u8) -> Self {
         match v {
-            1   => Self::Partial,
-            2   => Self::Close,
-            3   => Self::Exact,
+            1 => Self::Partial,
+            2 => Self::Close,
+            3 => Self::Exact,
             255 => Self::Null,
-            _   => Self::None,
+            _ => Self::None,
         }
     }
 }
@@ -53,12 +52,16 @@ impl Ord for ComparisonLevel {
 pub struct ComparisonVector {
     pub record_a: RecordId,
     pub record_b: RecordId,
-    pub levels:   Vec<ComparisonLevel>,
+    pub levels: Vec<ComparisonLevel>,
 }
 
 impl ComparisonVector {
     pub fn new(record_a: RecordId, record_b: RecordId, levels: Vec<ComparisonLevel>) -> Self {
-        Self { record_a, record_b, levels }
+        Self {
+            record_a,
+            record_b,
+            levels,
+        }
     }
 }
 
@@ -75,12 +78,12 @@ impl ComparisonVector {
 /// All values for field 0 across every pair are contiguous, then field 1, etc.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ComparisonBatch {
-    pub n_pairs:  usize,
+    pub n_pairs: usize,
     pub n_fields: usize,
     /// `(record_a_id, record_b_id)` for pair `p`.
     pub pair_ids: Vec<(RecordId, RecordId)>,
     /// Field-major levels: `levels[f * n_pairs + p]`.
-    pub levels:   Vec<u8>,
+    pub levels: Vec<u8>,
 }
 
 impl ComparisonBatch {
@@ -120,7 +123,7 @@ impl ComparisonBatch {
         if vectors.is_empty() {
             return Self::new(0, 0, vec![]);
         }
-        let n_pairs  = vectors.len();
+        let n_pairs = vectors.len();
         let n_fields = vectors[0].levels.len();
         let pair_ids = vectors.iter().map(|v| (v.record_a, v.record_b)).collect();
         let mut batch = Self::new(n_pairs, n_fields, pair_ids);
@@ -164,7 +167,12 @@ impl ComparisonBatch {
             offset += chunk.n_pairs;
         }
 
-        Self { n_pairs: n_total, n_fields, pair_ids, levels }
+        Self {
+            n_pairs: n_total,
+            n_fields,
+            pair_ids,
+            levels,
+        }
     }
 }
 
@@ -176,17 +184,17 @@ mod tests {
 
     #[test]
     fn comparison_level_ordering() {
-        assert!(ComparisonLevel::Exact   > ComparisonLevel::Close);
-        assert!(ComparisonLevel::Close   > ComparisonLevel::Partial);
+        assert!(ComparisonLevel::Exact > ComparisonLevel::Close);
+        assert!(ComparisonLevel::Close > ComparisonLevel::Partial);
         assert!(ComparisonLevel::Partial > ComparisonLevel::None);
     }
 
     #[test]
     fn comparison_level_repr_values() {
-        assert_eq!(ComparisonLevel::Exact.as_u8(),   3);
-        assert_eq!(ComparisonLevel::Close.as_u8(),   2);
+        assert_eq!(ComparisonLevel::Exact.as_u8(), 3);
+        assert_eq!(ComparisonLevel::Close.as_u8(), 2);
         assert_eq!(ComparisonLevel::Partial.as_u8(), 1);
-        assert_eq!(ComparisonLevel::None.as_u8(),    0);
+        assert_eq!(ComparisonLevel::None.as_u8(), 0);
     }
 
     #[test]
@@ -210,26 +218,29 @@ mod tests {
         let mut batch = ComparisonBatch::new(3, 2, pair_ids);
 
         // Set levels in a known pattern
-        batch.set_level(0, 0, ComparisonLevel::Exact);   // field 0, pair 0
-        batch.set_level(0, 1, ComparisonLevel::Close);   // field 0, pair 1
+        batch.set_level(0, 0, ComparisonLevel::Exact); // field 0, pair 0
+        batch.set_level(0, 1, ComparisonLevel::Close); // field 0, pair 1
         batch.set_level(0, 2, ComparisonLevel::Partial); // field 0, pair 2
-        batch.set_level(1, 0, ComparisonLevel::None);    // field 1, pair 0
-        batch.set_level(1, 1, ComparisonLevel::Exact);   // field 1, pair 1
-        batch.set_level(1, 2, ComparisonLevel::Close);   // field 1, pair 2
+        batch.set_level(1, 0, ComparisonLevel::None); // field 1, pair 0
+        batch.set_level(1, 1, ComparisonLevel::Exact); // field 1, pair 1
+        batch.set_level(1, 2, ComparisonLevel::Close); // field 1, pair 2
 
         // Field-major: field 0 values at indices 0,1,2; field 1 at 3,4,5
-        assert_eq!(batch.levels[0], ComparisonLevel::Exact   as u8);
-        assert_eq!(batch.levels[1], ComparisonLevel::Close   as u8);
+        assert_eq!(batch.levels[0], ComparisonLevel::Exact as u8);
+        assert_eq!(batch.levels[1], ComparisonLevel::Close as u8);
         assert_eq!(batch.levels[2], ComparisonLevel::Partial as u8);
-        assert_eq!(batch.levels[3], ComparisonLevel::None    as u8);
-        assert_eq!(batch.levels[4], ComparisonLevel::Exact   as u8);
-        assert_eq!(batch.levels[5], ComparisonLevel::Close   as u8);
+        assert_eq!(batch.levels[3], ComparisonLevel::None as u8);
+        assert_eq!(batch.levels[4], ComparisonLevel::Exact as u8);
+        assert_eq!(batch.levels[5], ComparisonLevel::Close as u8);
 
         // pair_as_vector reconstructs correctly
         let v = batch.pair_as_vector(1); // pair index 1
         assert_eq!(v.record_a, 3);
         assert_eq!(v.record_b, 4);
-        assert_eq!(v.levels, vec![ComparisonLevel::Close, ComparisonLevel::Exact]);
+        assert_eq!(
+            v.levels,
+            vec![ComparisonLevel::Close, ComparisonLevel::Exact]
+        );
     }
 
     #[test]
@@ -246,7 +257,7 @@ mod tests {
         for (orig, got) in vectors.iter().zip(back.iter()) {
             assert_eq!(orig.record_a, got.record_a);
             assert_eq!(orig.record_b, got.record_b);
-            assert_eq!(orig.levels,   got.levels);
+            assert_eq!(orig.levels, got.levels);
         }
     }
 

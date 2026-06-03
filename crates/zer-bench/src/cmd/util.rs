@@ -29,9 +29,9 @@ pub fn validate_compute_target(target: &str) -> anyhow::Result<()> {
                  Rebuild: cargo build --release -p zer-bench --features=vulkan"
             );
         }
-        other => anyhow::bail!(
-            "unknown compute target: {other:?}; valid: auto, cpu, cuda, avx2, vulkan"
-        ),
+        other => {
+            anyhow::bail!("unknown compute target: {other:?}; valid: auto, cpu, cuda, avx2, vulkan")
+        }
     }
     Ok(())
 }
@@ -117,7 +117,9 @@ pub fn log_trt_cache_status() {
         })
         .unwrap_or(0);
     if engine_count > 0 {
-        println!("TRT warm: cached engines found  engine_count={engine_count}  cache_dir={cache_dir}");
+        println!(
+            "TRT warm: cached engines found  engine_count={engine_count}  cache_dir={cache_dir}"
+        );
     } else {
         println!("TRT cold: no cached engines, TRT will compile now (takes 2-5 min, cached after)  cache_dir={cache_dir}");
     }

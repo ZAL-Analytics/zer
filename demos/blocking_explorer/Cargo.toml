@@ -2,7 +2,8 @@
 name    = "blocking-explorer"
 version     = "1.0.0"
 edition = "2021"
-publish = false
+publish  = false
+license  = "Apache-2.0"
 description = "Explore and compare blocking strategies for a person registry dataset"
 
 [dependencies]

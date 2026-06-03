@@ -32,20 +32,23 @@ use zer_pipeline::{Pipeline, PipelineConfig};
 /// demotes pairs below `low_threshold` to DecreaseConfidence.
 struct ThresholdJudge {
     high: f32,
-    low:  f32,
+    low: f32,
 }
 
 impl Judge for ThresholdJudge {
     fn adjudicate(&self, pairs: &[ScoredPair]) -> Result<Vec<JudgeVerdict>> {
-        Ok(pairs.iter().map(|p| {
-            if p.match_probability >= self.high {
-                JudgeVerdict::IncreaseConfidence
-            } else if p.match_probability < self.low {
-                JudgeVerdict::DecreaseConfidence
-            } else {
-                JudgeVerdict::NoChange
-            }
-        }).collect())
+        Ok(pairs
+            .iter()
+            .map(|p| {
+                if p.match_probability >= self.high {
+                    JudgeVerdict::IncreaseConfidence
+                } else if p.match_probability < self.low {
+                    JudgeVerdict::DecreaseConfidence
+                } else {
+                    JudgeVerdict::NoChange
+                }
+            })
+            .collect())
     }
 }
 
@@ -61,7 +64,11 @@ impl Blocker for PostcodeBlocker {
             .text("postcode")
             .map(|pc| {
                 let digits: String = pc.chars().take(4).collect();
-                if digits.len() == 4 { vec![format!("pc4:{}", digits)] } else { vec![] }
+                if digits.len() == 4 {
+                    vec![format!("pc4:{}", digits)]
+                } else {
+                    vec![]
+                }
             })
             .unwrap_or_default()
     }
@@ -71,7 +78,12 @@ impl Blocker for PostcodeBlocker {
         index.insert(record.id, keys);
     }
 
-    fn candidates(&self, record: &Record, schema: &Schema, index: &dyn BlockIndex) -> Vec<RecordId> {
+    fn candidates(
+        &self,
+        record: &Record,
+        schema: &Schema,
+        index: &dyn BlockIndex,
+    ) -> Vec<RecordId> {
         let keys = self.blocking_keys(record, schema);
         index.lookup_union(&keys, record.id)
     }
@@ -84,14 +96,14 @@ impl Blocker for PostcodeBlocker {
 ///
 /// This is intentionally simplistic, it shows the interface, not best practice.
 struct SimpleLogOddsScorer {
-    match_log_ratio:  f32,
+    match_log_ratio: f32,
     no_match_log_ratio: f32,
 }
 
 impl SimpleLogOddsScorer {
     fn new() -> Self {
         Self {
-            match_log_ratio:    (0.80_f32 / 0.05_f32).ln(),
+            match_log_ratio: (0.80_f32 / 0.05_f32).ln(),
             no_match_log_ratio: (0.05_f32 / 0.80_f32).ln(),
         }
     }
@@ -100,13 +112,15 @@ impl SimpleLogOddsScorer {
 impl Scorer for SimpleLogOddsScorer {
     fn score(&self, vector: &ComparisonVector, params: &ModelParams) -> ScoredPair {
         use zer_core::comparison::ComparisonLevel;
-        let weight: f32 = vector.levels.iter().map(|&level| {
-            match level {
+        let weight: f32 = vector
+            .levels
+            .iter()
+            .map(|&level| match level {
                 ComparisonLevel::Exact | ComparisonLevel::Close => self.match_log_ratio,
                 ComparisonLevel::Partial => 0.0,
-                _                        => self.no_match_log_ratio,
-            }
-        }).sum();
+                _ => self.no_match_log_ratio,
+            })
+            .sum();
 
         let prob = weight / (1.0 + weight.abs());
         let band = if prob >= params.upper_threshold {
@@ -118,19 +132,19 @@ impl Scorer for SimpleLogOddsScorer {
         };
 
         ScoredPair {
-            record_a:          vector.record_a,
-            record_b:          vector.record_b,
-            match_weight:      weight,
+            record_a: vector.record_a,
+            record_b: vector.record_b,
+            match_weight: weight,
             match_probability: prob,
-            vector:            vector.clone(),
+            vector: vector.clone(),
             band,
         }
     }
 
     fn estimate_params(
         &self,
-        batch:    &ComparisonBatch,
-        _init:    Option<ModelParams>,
+        batch: &ComparisonBatch,
+        _init: Option<ModelParams>,
         _max_iter: usize,
     ) -> Result<ModelParams> {
         // Delegate EM to the standard scorer since we only customise scoring.
@@ -142,27 +156,27 @@ impl Scorer for SimpleLogOddsScorer {
 
 fn person(id: u64, first: &str, last: &str, dob: &str, gender: &str, pc: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     first)
-        .insert("achternaam",    last)
+        .insert("voornamen", first)
+        .insert("achternaam", last)
         .insert("geboortedatum", dob)
-        .insert("geslacht",      gender)
-        .insert("postcode",      pc)
+        .insert("geslacht", gender)
+        .insert("postcode", pc)
 }
 
 fn synthetic_records() -> Vec<Record> {
     vec![
         // Cluster 1: Jan de Vries, same postcode, name variant
-        person(1,  "Jan",      "de Vries", "1985-03-22", "M", "1234AB"),
-        person(2,  "Johannes", "de Vries", "1985-03-22", "M", "1234CD"),
+        person(1, "Jan", "de Vries", "1985-03-22", "M", "1234AB"),
+        person(2, "Johannes", "de Vries", "1985-03-22", "M", "1234CD"),
         // Cluster 2: Anna Bakker, same postcode, address move
-        person(3,  "Anna",     "Bakker",   "1990-07-15", "V", "5678EF"),
-        person(4,  "Anna",     "Bakker",   "1990-07-15", "V", "5678GH"),
+        person(3, "Anna", "Bakker", "1990-07-15", "V", "5678EF"),
+        person(4, "Anna", "Bakker", "1990-07-15", "V", "5678GH"),
         // Unique: different persons, same postcode area (should not match)
-        person(5,  "Pieter",   "Smit",     "1978-11-01", "M", "1234ZZ"),
-        person(6,  "Maria",    "Janssen",  "1962-09-08", "V", "1234WW"),
+        person(5, "Pieter", "Smit", "1978-11-01", "M", "1234ZZ"),
+        person(6, "Maria", "Janssen", "1962-09-08", "V", "1234WW"),
         // Unique: completely different postcode area
-        person(7,  "Robert",   "Visser",   "1975-04-30", "M", "9999XX"),
-        person(8,  "Fatima",   "El-Amrani","2000-01-20", "V", "8888YY"),
+        person(7, "Robert", "Visser", "1975-04-30", "M", "9999XX"),
+        person(8, "Fatima", "El-Amrani", "2000-01-20", "V", "8888YY"),
     ]
 }
 
@@ -171,11 +185,11 @@ async fn main() {
     init_tracing();
 
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
-        .field("geslacht",      FieldKind::FreeText)
-        .field("postcode",      FieldKind::FreeText)
+        .field("geslacht", FieldKind::FreeText)
+        .field("postcode", FieldKind::FreeText)
         .build()
         .expect("build schema");
 
@@ -188,16 +202,19 @@ async fn main() {
     println!("Scorer  : SimpleLogOddsScorer (uniform log-odds sum)");
     println!("Judge   : ThresholdJudge (promotes ≥ 0.70, demotes < 0.30)");
 
-    let store  = ZalEntityStore::open_in_memory().expect("open entity store");
+    let store = ZalEntityStore::open_in_memory().expect("open entity store");
     let tmpdir = std::env::temp_dir();
-    let zsm    = tmpdir.join("demo_custom.zsm");
+    let zsm = tmpdir.join("demo_custom.zsm");
 
     let pipeline = Pipeline::builder()
         .schema(schema)
         .store(store)
         .blocker(PostcodeBlocker)
         .scorer(SimpleLogOddsScorer::new())
-        .judge(ThresholdJudge { high: 0.70, low: 0.30 })
+        .judge(ThresholdJudge {
+            high: 0.70,
+            low: 0.30,
+        })
         .config(PipelineConfig {
             registry_path: zsm,
             ..PipelineConfig::default()

@@ -10,4 +10,7 @@
 pub mod registry;
 
 #[allow(unused_imports)]
-pub use registry::{ScenarioSpec, SourceSpec, ALL_SCENARIOS, find_scenario, find_scenario_by_preset, datasets_for_scenario, throughput_scenarios, full_size_scenarios, full_size_throughput_scenarios};
+pub use registry::{
+    datasets_for_scenario, find_scenario, find_scenario_by_preset, full_size_scenarios,
+    full_size_throughput_scenarios, throughput_scenarios, ScenarioSpec, SourceSpec, ALL_SCENARIOS,
+};

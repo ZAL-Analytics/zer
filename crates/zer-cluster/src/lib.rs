@@ -3,8 +3,8 @@
 mod clusterer;
 mod graph;
 mod provenance;
-mod threshold;
 mod store;
+mod threshold;
 
 pub use clusterer::ConnectedComponentsClusterer;
 pub use graph::{ClusterConfig, ClusterGraph};

@@ -130,7 +130,13 @@ fn compute_field_stats(name: &str, kind: FieldKind, records: &[Record]) -> Field
     freq_vec.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     let top_k = freq_vec.into_iter().take(10).map(|(s, _)| s).collect();
 
-    FieldStats { name: name.to_string(), kind, null_rate, cardinality, top_k }
+    FieldStats {
+        name: name.to_string(),
+        kind,
+        null_rate,
+        cardinality,
+        top_k,
+    }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -160,7 +166,12 @@ impl SchemaFingerprint {
                 top_k: vec![],
             })
             .collect();
-        Self { schema_hash, field_stats, record_count: 0, created_at: unix_now() }
+        Self {
+            schema_hash,
+            field_stats,
+            record_count: 0,
+            created_at: unix_now(),
+        }
     }
 
     /// Build a full fingerprint from a schema and a sample of records.
@@ -174,8 +185,8 @@ impl SchemaFingerprint {
 
     /// Like [`Self::from_sample`] but includes cross-schema `mappings` in the hash.
     pub fn from_sample_with_mappings(
-        schema:   &Schema,
-        records:  &[Record],
+        schema: &Schema,
+        records: &[Record],
         mappings: &[FieldMapping],
     ) -> Self {
         let schema_hash = compute_schema_hash(schema, mappings);
@@ -188,7 +199,7 @@ impl SchemaFingerprint {
             schema_hash,
             field_stats,
             record_count: records.len() as u64,
-            created_at:   unix_now(),
+            created_at: unix_now(),
         }
     }
 }
@@ -294,17 +305,18 @@ mod tests {
             (stats.null_rate - 0.25).abs() < 1e-6,
             "1 out of 4 records is null"
         );
-        assert_eq!(stats.top_k[0], "Alice", "Alice appears twice, so it should be first");
+        assert_eq!(
+            stats.top_k[0], "Alice",
+            "Alice appears twice, so it should be first"
+        );
     }
 
     #[test]
     fn from_schema_and_from_sample_same_hash_for_same_schema() {
         let schema = make_schema_ab();
-        let records = vec![
-            Record::new(1)
-                .insert("alpha", FieldValue::Text("x".into()))
-                .insert("beta", FieldValue::Text("2024-01-01".into())),
-        ];
+        let records = vec![Record::new(1)
+            .insert("alpha", FieldValue::Text("x".into()))
+            .insert("beta", FieldValue::Text("2024-01-01".into()))];
         let fp_s = SchemaFingerprint::from_schema(&schema);
         let fp_r = SchemaFingerprint::from_sample(&schema, &records);
 

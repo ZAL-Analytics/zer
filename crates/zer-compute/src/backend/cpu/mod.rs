@@ -7,4 +7,4 @@
 pub mod device;
 pub mod launch;
 
-pub use device::{CpuDevice, CpuFallbackComparator, CpuFallbackScorer, cpu_estimate_params};
+pub use device::{cpu_estimate_params, CpuDevice, CpuFallbackComparator, CpuFallbackScorer};

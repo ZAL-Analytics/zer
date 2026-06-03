@@ -2,7 +2,6 @@
 ///
 /// These tests focus on structural and behavioural properties that do NOT
 /// require a real ONNX model file, model-loading tests live in test_inference.rs.
-
 use zer_core::traits::JudgeVerdict;
 use zer_judge::{
     judge::{DebertaJudge, DebertaJudgeConfig},
@@ -15,16 +14,19 @@ use zer_judge::{
 fn config_default_values() {
     let cfg = DebertaJudgeConfig::default();
     assert_eq!(cfg.promote_threshold, 0.6);
-    assert_eq!(cfg.demote_threshold,  0.35);
+    assert_eq!(cfg.demote_threshold, 0.35);
     assert!(cfg.audit_log.is_none());
 }
 
 #[test]
 fn config_clone_is_independent() {
-    let cfg    = DebertaJudgeConfig::default();
+    let cfg = DebertaJudgeConfig::default();
     let mut c2 = cfg.clone();
     c2.promote_threshold = 0.9;
-    assert_eq!(cfg.promote_threshold, 0.6, "original must not be affected by clone mutation");
+    assert_eq!(
+        cfg.promote_threshold, 0.6,
+        "original must not be affected by clone mutation"
+    );
 }
 
 #[test]
@@ -32,13 +34,13 @@ fn config_with_custom_calibration() {
     let cal = CalibrationTable::new(10.0, 0.01, 1.0);
     let cfg = DebertaJudgeConfig {
         promote_threshold: 0.7,
-        demote_threshold:  0.3,
-        calibration:       cal,
-        audit_log:         None,
-        batch_size:        64,
+        demote_threshold: 0.3,
+        calibration: cal,
+        audit_log: None,
+        batch_size: 64,
     };
     assert_eq!(cfg.promote_threshold, 0.7);
-    assert_eq!(cfg.demote_threshold,  0.3);
+    assert_eq!(cfg.demote_threshold, 0.3);
 }
 
 // ── Type properties ───────────────────────────────────────────────────────────
@@ -76,9 +78,18 @@ fn calibration_verdict_dispatching() {
     let after_decrease = table.update_probability(p, &JudgeVerdict::DecreaseConfidence);
     let after_nochange = table.update_probability(p, &JudgeVerdict::NoChange);
 
-    assert!(after_increase > p,   "IncreaseConfidence must raise probability");
-    assert!(after_decrease < p,   "DecreaseConfidence must lower probability");
-    assert!((after_nochange - p).abs() < 1e-4, "NoChange must leave probability unchanged");
+    assert!(
+        after_increase > p,
+        "IncreaseConfidence must raise probability"
+    );
+    assert!(
+        after_decrease < p,
+        "DecreaseConfidence must lower probability"
+    );
+    assert!(
+        (after_nochange - p).abs() < 1e-4,
+        "NoChange must leave probability unchanged"
+    );
 }
 
 // ── Clone behaviour ───────────────────────────────────────────────────────────

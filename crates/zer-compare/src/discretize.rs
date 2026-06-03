@@ -19,27 +19,70 @@ impl LevelThresholds {
     /// Default thresholds tuned per `FieldKind`.
     pub fn for_kind(kind: FieldKind) -> Self {
         match kind {
-            FieldKind::Name        => Self { exact: 0.92, close: 0.75, partial: 0.50 },
-            FieldKind::Date
-            | FieldKind::Timestamp => Self { exact: 0.99, close: 0.85, partial: 0.60 },
-            FieldKind::Phone       => Self { exact: 0.98, close: 0.90, partial: 0.70 },
-            FieldKind::Address     => Self { exact: 0.90, close: 0.70, partial: 0.40 },
-            FieldKind::Id          => Self { exact: 0.99, close: 0.90, partial: 0.75 },
-            FieldKind::LicensePlate => Self { exact: 0.99, close: 0.75, partial: 0.50 },
-            FieldKind::Numeric
-            | FieldKind::GpsCoordinate => Self { exact: 0.95, close: 0.80, partial: 0.50 },
-            FieldKind::Categorical => Self { exact: 1.00, close: 0.95, partial: 0.70 },
-            FieldKind::FreeText    => Self { exact: 0.90, close: 0.65, partial: 0.35 },
-            FieldKind::Alias       => Self { exact: 0.90, close: 0.65, partial: 0.35 },
+            FieldKind::Name => Self {
+                exact: 0.92,
+                close: 0.75,
+                partial: 0.50,
+            },
+            FieldKind::Date | FieldKind::Timestamp => Self {
+                exact: 0.99,
+                close: 0.85,
+                partial: 0.60,
+            },
+            FieldKind::Phone => Self {
+                exact: 0.98,
+                close: 0.90,
+                partial: 0.70,
+            },
+            FieldKind::Address => Self {
+                exact: 0.90,
+                close: 0.70,
+                partial: 0.40,
+            },
+            FieldKind::Id => Self {
+                exact: 0.99,
+                close: 0.90,
+                partial: 0.75,
+            },
+            FieldKind::LicensePlate => Self {
+                exact: 0.99,
+                close: 0.75,
+                partial: 0.50,
+            },
+            FieldKind::Numeric | FieldKind::GpsCoordinate => Self {
+                exact: 0.95,
+                close: 0.80,
+                partial: 0.50,
+            },
+            FieldKind::Categorical => Self {
+                exact: 1.00,
+                close: 0.95,
+                partial: 0.70,
+            },
+            FieldKind::FreeText => Self {
+                exact: 0.90,
+                close: 0.65,
+                partial: 0.35,
+            },
+            FieldKind::Alias => Self {
+                exact: 0.90,
+                close: 0.65,
+                partial: 0.35,
+            },
         }
     }
 
     /// Map a raw similarity score to a `ComparisonLevel`.
     pub fn apply(&self, sim: f32) -> ComparisonLevel {
-        if sim >= self.exact        { ComparisonLevel::Exact   }
-        else if sim >= self.close   { ComparisonLevel::Close   }
-        else if sim >= self.partial { ComparisonLevel::Partial }
-        else                        { ComparisonLevel::None    }
+        if sim >= self.exact {
+            ComparisonLevel::Exact
+        } else if sim >= self.close {
+            ComparisonLevel::Close
+        } else if sim >= self.partial {
+            ComparisonLevel::Partial
+        } else {
+            ComparisonLevel::None
+        }
     }
 }
 
@@ -68,20 +111,20 @@ mod tests {
     fn date_thresholds_tight_bands() {
         let t = LevelThresholds::for_kind(FieldKind::Date);
         // 1.0 → Exact (same day)
-        assert_eq!(t.apply(1.0),  ComparisonLevel::Exact);
+        assert_eq!(t.apply(1.0), ComparisonLevel::Exact);
         // 0.9 → Close (off by 1 day)
-        assert_eq!(t.apply(0.9),  ComparisonLevel::Close);
+        assert_eq!(t.apply(0.9), ComparisonLevel::Close);
         // 0.75 → Partial (same month)
         assert_eq!(t.apply(0.75), ComparisonLevel::Partial);
         // 0.3 → None (age-compatible only)
-        assert_eq!(t.apply(0.3),  ComparisonLevel::None);
+        assert_eq!(t.apply(0.3), ComparisonLevel::None);
     }
 
     #[test]
     fn boundary_values_are_exclusive_on_lower_bound() {
         let t = LevelThresholds::for_kind(FieldKind::Name);
         // Exactly at the exact threshold → Exact
-        assert_eq!(t.apply(t.exact),       ComparisonLevel::Exact);
+        assert_eq!(t.apply(t.exact), ComparisonLevel::Exact);
         // One epsilon below exact → Close
         assert_eq!(t.apply(t.exact - 0.01), ComparisonLevel::Close);
     }

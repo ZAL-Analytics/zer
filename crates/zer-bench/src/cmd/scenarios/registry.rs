@@ -17,8 +17,8 @@ use zer_pipeline::config::LinkMode;
 /// Use [`ScenarioSpec::to_field_mappings`] to convert to [`zer_core::field_mapping::FieldMapping`].
 #[derive(Debug, Clone)]
 pub struct FieldMappingDef {
-    pub a_field:     &'static str,
-    pub b_field:     &'static str,
+    pub a_field: &'static str,
+    pub b_field: &'static str,
     pub null_policy: NullPolicy,
 }
 
@@ -26,7 +26,7 @@ pub struct FieldMappingDef {
 #[derive(Debug, Clone)]
 pub struct SourceSpec {
     /// Workspace-relative path to the CSV file.
-    pub path:   &'static str,
+    pub path: &'static str,
     /// Source label assigned to every record loaded from this file.
     pub source: &'static str,
 }
@@ -35,77 +35,204 @@ pub struct SourceSpec {
 #[derive(Debug, Clone)]
 pub struct ScenarioSpec {
     /// Short slug used on the CLI: e.g. `"brp/dedupe"`, `"brp_sis/link"`.
-    pub name:           &'static str,
+    pub name: &'static str,
     /// Human-readable description shown by `--list-scenarios`.
-    pub description:    &'static str,
+    pub description: &'static str,
     /// Ordered list of source files.
-    pub sources:        &'static [SourceSpec],
+    pub sources: &'static [SourceSpec],
     /// Workspace-relative path to the ground-truth CSV.
-    pub ground_truth:   &'static str,
+    pub ground_truth: &'static str,
     /// Pipeline link mode.
-    pub mode:           LinkMode,
+    pub mode: LinkMode,
     /// Field mappings for cross-schema scenarios; empty for same-schema scenarios.
     pub field_mappings: &'static [FieldMappingDef],
     /// Short token used in output filenames / summary CSV `dataset` column.
-    pub dataset_name:   &'static str,
+    pub dataset_name: &'static str,
     /// Tags for filtering and preset-name lookup (e.g. `"dedupe"`, `"micro"`).
-    pub tags:           &'static [&'static str],
+    pub tags: &'static [&'static str],
 }
 
 impl ScenarioSpec {
     /// Convert the static field-mapping definitions to owned [`zer_core::field_mapping::FieldMapping`] values.
     pub fn to_field_mappings(&self) -> Vec<zer_core::field_mapping::FieldMapping> {
-        self.field_mappings.iter().map(|d| zer_core::field_mapping::FieldMapping {
-            a_field:     d.a_field.to_owned(),
-            b_field:     d.b_field.to_owned(),
-            null_policy: d.null_policy.clone(),
-        }).collect()
+        self.field_mappings
+            .iter()
+            .map(|d| zer_core::field_mapping::FieldMapping {
+                a_field: d.a_field.to_owned(),
+                b_field: d.b_field.to_owned(),
+                null_policy: d.null_policy.clone(),
+            })
+            .collect()
     }
 }
 
 // ── Cross-schema field mapping tables ─────────────────────────────────────────
 
 const BRP_KVK_MAPPINGS: &[FieldMappingDef] = &[
-    FieldMappingDef { a_field: "voornamen",     b_field: "voornamen",     null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "tussenvoegsel", b_field: "tussenvoegsel", null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "achternaam",    b_field: "achternaam",    null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboortedatum", b_field: "geboortedatum", null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "woonplaats",    b_field: "woonplaats",    null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "postcode",      b_field: "postcode",      null_policy: NullPolicy::Skip },
+    FieldMappingDef {
+        a_field: "voornamen",
+        b_field: "voornamen",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "tussenvoegsel",
+        b_field: "tussenvoegsel",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "achternaam",
+        b_field: "achternaam",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboortedatum",
+        b_field: "geboortedatum",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "woonplaats",
+        b_field: "woonplaats",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "postcode",
+        b_field: "postcode",
+        null_policy: NullPolicy::Skip,
+    },
 ];
 
 const BRP_SIS_MAPPINGS: &[FieldMappingDef] = &[
-    FieldMappingDef { a_field: "voornamen",      b_field: "voornamen",      null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "achternaam",     b_field: "achternaam",     null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboortedatum",  b_field: "geboortedatum",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboorteplaats", b_field: "geboorteplaats", null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboorteland",   b_field: "geboorteland",   null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "nationaliteit",  b_field: "nationaliteit",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geslacht",       b_field: "geslacht",       null_policy: NullPolicy::Skip },
+    FieldMappingDef {
+        a_field: "voornamen",
+        b_field: "voornamen",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "achternaam",
+        b_field: "achternaam",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboortedatum",
+        b_field: "geboortedatum",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboorteplaats",
+        b_field: "geboorteplaats",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboorteland",
+        b_field: "geboorteland",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "nationaliteit",
+        b_field: "nationaliteit",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geslacht",
+        b_field: "geslacht",
+        null_policy: NullPolicy::Skip,
+    },
 ];
 
 const BRP_HKS_MAPPINGS: &[FieldMappingDef] = &[
-    FieldMappingDef { a_field: "voornamen",      b_field: "voornamen",      null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "tussenvoegsel",  b_field: "tussenvoegsel",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "achternaam",     b_field: "achternaam",     null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboortedatum",  b_field: "geboortedatum",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboorteplaats", b_field: "geboorteplaats", null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboorteland",   b_field: "geboorteland",   null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "nationaliteit",  b_field: "nationaliteit",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geslacht",       b_field: "geslacht",       null_policy: NullPolicy::Skip },
+    FieldMappingDef {
+        a_field: "voornamen",
+        b_field: "voornamen",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "tussenvoegsel",
+        b_field: "tussenvoegsel",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "achternaam",
+        b_field: "achternaam",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboortedatum",
+        b_field: "geboortedatum",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboorteplaats",
+        b_field: "geboorteplaats",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboorteland",
+        b_field: "geboorteland",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "nationaliteit",
+        b_field: "nationaliteit",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geslacht",
+        b_field: "geslacht",
+        null_policy: NullPolicy::Skip,
+    },
 ];
 
 const BRP_KVK_HKS_MAPPINGS: &[FieldMappingDef] = &[
-    FieldMappingDef { a_field: "voornamen",      b_field: "voornamen",      null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "tussenvoegsel",  b_field: "tussenvoegsel",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "achternaam",     b_field: "achternaam",     null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboortedatum",  b_field: "geboortedatum",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboorteplaats", b_field: "geboorteplaats", null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geboorteland",   b_field: "geboorteland",   null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "nationaliteit",  b_field: "nationaliteit",  null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "geslacht",       b_field: "geslacht",       null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "woonplaats",     b_field: "woonplaats",     null_policy: NullPolicy::Skip },
-    FieldMappingDef { a_field: "postcode",       b_field: "postcode",       null_policy: NullPolicy::Skip },
+    FieldMappingDef {
+        a_field: "voornamen",
+        b_field: "voornamen",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "tussenvoegsel",
+        b_field: "tussenvoegsel",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "achternaam",
+        b_field: "achternaam",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboortedatum",
+        b_field: "geboortedatum",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboorteplaats",
+        b_field: "geboorteplaats",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geboorteland",
+        b_field: "geboorteland",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "nationaliteit",
+        b_field: "nationaliteit",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "geslacht",
+        b_field: "geslacht",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "woonplaats",
+        b_field: "woonplaats",
+        null_policy: NullPolicy::Skip,
+    },
+    FieldMappingDef {
+        a_field: "postcode",
+        b_field: "postcode",
+        null_policy: NullPolicy::Skip,
+    },
 ];
 
 // ── Full-size scenarios ───────────────────────────────────────────────────────
@@ -280,23 +407,31 @@ pub fn find_scenario(name: &str) -> Option<&'static ScenarioSpec> {
 /// Find a scenario by name or by tag (first match wins).
 /// Used to implement the `--preset` CLI alias.
 pub fn find_scenario_by_preset(tag: &str) -> Option<&'static ScenarioSpec> {
-    ALL_SCENARIOS.iter().find(|s| s.name == tag || s.tags.contains(&tag))
+    ALL_SCENARIOS
+        .iter()
+        .find(|s| s.name == tag || s.tags.contains(&tag))
 }
 
 /// Returns an iterator over scenarios eligible for throughput benchmarks
 /// (deduplicate-mode only; link modes are not applicable to throughput).
 pub fn throughput_scenarios() -> impl Iterator<Item = &'static ScenarioSpec> {
-    ALL_SCENARIOS.iter().filter(|s| s.mode.as_str() == "deduplicate")
+    ALL_SCENARIOS
+        .iter()
+        .filter(|s| s.mode.as_str() == "deduplicate")
 }
 
 /// Full-size (non-micro) scenarios the 8 production-scale scenarios used by `--scenario=all`.
 pub fn full_size_scenarios() -> impl Iterator<Item = &'static ScenarioSpec> {
-    ALL_SCENARIOS.iter().filter(|s| !s.name.starts_with("micro/"))
+    ALL_SCENARIOS
+        .iter()
+        .filter(|s| !s.name.starts_with("micro/"))
 }
 
 /// Full-size throughput-eligible scenarios: non-micro dedupe scenarios only.
 pub fn full_size_throughput_scenarios() -> impl Iterator<Item = &'static ScenarioSpec> {
-    ALL_SCENARIOS.iter().filter(|s| !s.name.starts_with("micro/") && s.mode.as_str() == "deduplicate")
+    ALL_SCENARIOS
+        .iter()
+        .filter(|s| !s.name.starts_with("micro/") && s.mode.as_str() == "deduplicate")
 }
 
 /// Returns `(dataset_paths, source_labels, ground_truth_path)` for a scenario,
@@ -305,12 +440,12 @@ pub fn datasets_for_scenario(
     spec: &ScenarioSpec,
     root: &std::path::Path,
 ) -> (Vec<String>, Vec<String>, String) {
-    let datasets: Vec<String> = spec.sources.iter()
+    let datasets: Vec<String> = spec
+        .sources
+        .iter()
         .map(|s| root.join(s.path).to_string_lossy().into_owned())
         .collect();
-    let sources: Vec<String> = spec.sources.iter()
-        .map(|s| s.source.to_owned())
-        .collect();
+    let sources: Vec<String> = spec.sources.iter().map(|s| s.source.to_owned()).collect();
     let gt = root.join(spec.ground_truth).to_string_lossy().into_owned();
     (datasets, sources, gt)
 }

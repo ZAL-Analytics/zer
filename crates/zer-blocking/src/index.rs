@@ -3,14 +3,14 @@ use zer_core::{record::RecordId, traits::BlockIndex};
 
 /// Inverted index mapping blocking keys to record IDs.
 pub struct InvertedIndex {
-    buckets:     HashMap<String, Vec<RecordId>>,
+    buckets: HashMap<String, Vec<RecordId>>,
     record_keys: HashMap<RecordId, Vec<String>>,
 }
 
 impl InvertedIndex {
     pub fn new() -> Self {
         Self {
-            buckets:     HashMap::new(),
+            buckets: HashMap::new(),
             record_keys: HashMap::new(),
         }
     }
@@ -80,13 +80,16 @@ impl InvertedIndex {
     /// Pass `max_bucket_size = 0` to disable the cap.
     pub fn all_pairs(
         &self,
-        id_to_idx:       &HashMap<RecordId, usize>,
+        id_to_idx: &HashMap<RecordId, usize>,
         max_bucket_size: usize,
     ) -> Vec<(usize, usize)> {
         let mut pairs: Vec<(usize, usize)> = Vec::new();
         for bucket in self.buckets.values() {
-            if max_bucket_size > 0 && bucket.len() > max_bucket_size { continue; }
-            let indices: Vec<usize> = bucket.iter()
+            if max_bucket_size > 0 && bucket.len() > max_bucket_size {
+                continue;
+            }
+            let indices: Vec<usize> = bucket
+                .iter()
                 .filter_map(|id| id_to_idx.get(id).copied())
                 .collect();
             for a in 0..indices.len() {

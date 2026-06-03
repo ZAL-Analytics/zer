@@ -2,8 +2,8 @@ use zer_core::scoring::{MatchBand, ModelParams, ScoredPair};
 
 /// Pairs partitioned by their match band.
 pub struct BandedPairs {
-    pub auto_match:  Vec<ScoredPair>,
-    pub borderline:  Vec<ScoredPair>,
+    pub auto_match: Vec<ScoredPair>,
+    pub borderline: Vec<ScoredPair>,
     pub auto_reject: Vec<ScoredPair>,
 }
 
@@ -16,19 +16,23 @@ pub struct BandedPairs {
 /// stored band disagrees with the thresholds (e.g., params were updated after
 /// scoring), the stored band takes precedence so that provenance is preserved.
 pub fn partition_by_band(pairs: Vec<ScoredPair>, _params: &ModelParams) -> BandedPairs {
-    let mut auto_match  = Vec::new();
-    let mut borderline  = Vec::new();
+    let mut auto_match = Vec::new();
+    let mut borderline = Vec::new();
     let mut auto_reject = Vec::new();
 
     for pair in pairs {
         match pair.band {
-            MatchBand::AutoMatch  => auto_match.push(pair),
+            MatchBand::AutoMatch => auto_match.push(pair),
             MatchBand::Borderline => borderline.push(pair),
             MatchBand::AutoReject => auto_reject.push(pair),
         }
     }
 
-    BandedPairs { auto_match, borderline, auto_reject }
+    BandedPairs {
+        auto_match,
+        borderline,
+        auto_reject,
+    }
 }
 
 // ── Unit tests ────────────────────────────────────────────────────────────────
@@ -50,11 +54,15 @@ mod tests {
 
     fn pair(a: u64, b: u64, prob: f32, band: MatchBand) -> ScoredPair {
         ScoredPair {
-            record_a:          a,
-            record_b:          b,
-            match_weight:      0.0,
+            record_a: a,
+            record_b: b,
+            match_weight: 0.0,
             match_probability: prob,
-            vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
+            vector: ComparisonVector {
+                record_a: a,
+                record_b: b,
+                levels: vec![],
+            },
             band,
         }
     }

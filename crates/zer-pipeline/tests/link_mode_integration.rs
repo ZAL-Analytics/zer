@@ -2,7 +2,6 @@
 ///
 /// These tests verify that the pair filter works correctly end-to-end and that
 /// the regression against `Deduplicate` mode is preserved.
-
 use std::sync::Arc;
 
 use tempfile::TempDir;
@@ -19,8 +18,8 @@ use zer_pipeline::{
 
 fn person_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()
         .unwrap()
@@ -41,8 +40,8 @@ fn make_pipeline(dir: &TempDir, mode: LinkMode) -> Arc<Pipeline> {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }
 
@@ -67,8 +66,14 @@ async fn link_only_cross_source_pairs_present() {
     let mut records = brp_records();
     records.extend(kvk_records());
     let report: BatchReport = pipeline.run_batch(records).await.unwrap();
-    assert!(report.cross_source_pairs > 0, "LinkOnly must produce cross-source pairs; got 0");
-    assert_eq!(report.within_source_pairs, 0, "LinkOnly must produce zero within-source pairs");
+    assert!(
+        report.cross_source_pairs > 0,
+        "LinkOnly must produce cross-source pairs; got 0"
+    );
+    assert_eq!(
+        report.within_source_pairs, 0,
+        "LinkOnly must produce zero within-source pairs"
+    );
     assert_eq!(report.link_mode, LinkMode::LinkOnly);
 }
 
@@ -78,9 +83,12 @@ async fn link_only_within_source_zero_single_source() {
     let pipeline = make_pipeline(&dir, LinkMode::LinkOnly);
     // All records come from a single source, no cross-source pairs possible.
     let report: BatchReport = pipeline.run_batch(brp_records()).await.unwrap();
-    assert_eq!(report.candidate_pairs,  0, "single source in LinkOnly must produce no pairs");
+    assert_eq!(
+        report.candidate_pairs, 0,
+        "single source in LinkOnly must produce no pairs"
+    );
     assert_eq!(report.within_source_pairs, 0);
-    assert_eq!(report.cross_source_pairs,  0);
+    assert_eq!(report.cross_source_pairs, 0);
 }
 
 #[tokio::test]
@@ -108,11 +116,18 @@ async fn deduplicate_pair_count_regression() {
     let report = pipeline.run_batch(brp_records()).await.unwrap();
     assert_eq!(report.link_mode, LinkMode::Deduplicate);
     // 5 identical records → 10 candidate pairs (C(5,2))
-    assert!(report.candidate_pairs > 0, "Deduplicate must not filter any pairs");
-    assert_eq!(report.cross_source_pairs, 0,
-               "Deduplicate on single-source records has no cross-source pairs");
-    assert_eq!(report.within_source_pairs, report.candidate_pairs,
-               "all pairs are within-source in single-source Deduplicate run");
+    assert!(
+        report.candidate_pairs > 0,
+        "Deduplicate must not filter any pairs"
+    );
+    assert_eq!(
+        report.cross_source_pairs, 0,
+        "Deduplicate on single-source records has no cross-source pairs"
+    );
+    assert_eq!(
+        report.within_source_pairs, report.candidate_pairs,
+        "all pairs are within-source in single-source Deduplicate run"
+    );
 }
 
 #[tokio::test]
@@ -124,8 +139,14 @@ async fn deduplicate_two_sources_all_pairs_included() {
     records.extend(kvk_records());
     let report = pipeline.run_batch(records).await.unwrap();
     assert_eq!(report.link_mode, LinkMode::Deduplicate);
-    assert!(report.within_source_pairs > 0, "Deduplicate must include within-source pairs");
-    assert!(report.cross_source_pairs  > 0, "Deduplicate must include cross-source pairs");
+    assert!(
+        report.within_source_pairs > 0,
+        "Deduplicate must include within-source pairs"
+    );
+    assert!(
+        report.cross_source_pairs > 0,
+        "Deduplicate must include cross-source pairs"
+    );
     assert_eq!(
         report.cross_source_pairs + report.within_source_pairs,
         report.candidate_pairs
@@ -142,8 +163,14 @@ async fn link_and_dedupe_includes_all_pairs() {
     records.extend(kvk_records());
     let report = pipeline.run_batch(records).await.unwrap();
     assert_eq!(report.link_mode, LinkMode::LinkAndDedupe);
-    assert!(report.within_source_pairs > 0, "LinkAndDedupe must include within-source pairs");
-    assert!(report.cross_source_pairs  > 0, "LinkAndDedupe must include cross-source pairs");
+    assert!(
+        report.within_source_pairs > 0,
+        "LinkAndDedupe must include within-source pairs"
+    );
+    assert!(
+        report.cross_source_pairs > 0,
+        "LinkAndDedupe must include cross-source pairs"
+    );
     assert_eq!(
         report.cross_source_pairs + report.within_source_pairs,
         report.candidate_pairs
@@ -157,7 +184,7 @@ async fn link_and_dedupe_same_total_as_deduplicate() {
     let dir1 = TempDir::new().unwrap();
     let dir2 = TempDir::new().unwrap();
     let p_dedup = make_pipeline(&dir1, LinkMode::Deduplicate);
-    let p_lad   = make_pipeline(&dir2, LinkMode::LinkAndDedupe);
+    let p_lad = make_pipeline(&dir2, LinkMode::LinkAndDedupe);
 
     let mut records1 = brp_records();
     records1.extend(kvk_records());
@@ -165,8 +192,10 @@ async fn link_and_dedupe_same_total_as_deduplicate() {
     records2.extend(kvk_records());
 
     let r_dedup = p_dedup.run_batch(records1).await.unwrap();
-    let r_lad   = p_lad.run_batch(records2).await.unwrap();
+    let r_lad = p_lad.run_batch(records2).await.unwrap();
 
-    assert_eq!(r_dedup.candidate_pairs, r_lad.candidate_pairs,
-               "Deduplicate and LinkAndDedupe must generate the same candidate pairs");
+    assert_eq!(
+        r_dedup.candidate_pairs, r_lad.candidate_pairs,
+        "Deduplicate and LinkAndDedupe must generate the same candidate pairs"
+    );
 }

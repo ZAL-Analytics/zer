@@ -14,9 +14,9 @@ fn make_entity(record_ids: &[RecordId]) -> Entity {
             .iter()
             .map(|&rid| EntityMember {
                 record_id: rid,
-                score:     0.95,
-                method:    ResolutionMethod::AutoMatch,
-                source:    None,
+                score: 0.95,
+                method: ResolutionMethod::AutoMatch,
+                source: None,
             })
             .collect(),
     }
@@ -100,16 +100,36 @@ fn resolution_method_round_trips_correctly() {
     let entity = Entity {
         id: 0,
         members: vec![
-            EntityMember { record_id: 1, score: 0.9, method: ResolutionMethod::JudgePromoted, source: None },
-            EntityMember { record_id: 2, score: 0.8, method: ResolutionMethod::JudgeDemoted,  source: None },
-            EntityMember { record_id: 3, score: 0.7, method: ResolutionMethod::Manual,        source: None },
+            EntityMember {
+                record_id: 1,
+                score: 0.9,
+                method: ResolutionMethod::JudgePromoted,
+                source: None,
+            },
+            EntityMember {
+                record_id: 2,
+                score: 0.8,
+                method: ResolutionMethod::JudgeDemoted,
+                source: None,
+            },
+            EntityMember {
+                record_id: 3,
+                score: 0.7,
+                method: ResolutionMethod::Manual,
+                source: None,
+            },
         ],
     };
     let eid = store.upsert_entity(&entity).unwrap();
     let loaded = store.get_entity(eid).unwrap();
 
     let find = |rid: RecordId| -> ResolutionMethod {
-        loaded.members.iter().find(|m| m.record_id == rid).unwrap().method
+        loaded
+            .members
+            .iter()
+            .find(|m| m.record_id == rid)
+            .unwrap()
+            .method
     };
     assert_eq!(find(1), ResolutionMethod::JudgePromoted);
     assert_eq!(find(2), ResolutionMethod::JudgeDemoted);
@@ -120,10 +140,7 @@ fn resolution_method_round_trips_correctly() {
 
 #[test]
 fn zes_file_persists_across_reopen() {
-    let tmp = tempfile::Builder::new()
-        .suffix(".zes")
-        .tempfile()
-        .unwrap();
+    let tmp = tempfile::Builder::new().suffix(".zes").tempfile().unwrap();
     let path = tmp.path().to_path_buf();
 
     let expected_count = 10_usize;

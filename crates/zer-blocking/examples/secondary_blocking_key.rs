@@ -21,8 +21,8 @@ use zer_core::{
 
 fn main() {
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()
         .expect("schema build failed");
@@ -34,11 +34,11 @@ fn main() {
     //  r4  "Pietersen" 1985-06-10 , completely different surname, same year-month → secondary key
     //  r5  "Jansen"    1990-12-01 , same surname, different year-month → NOT a candidate
     let records = vec![
-        make_record(1, "Jan",      "Jansen",    "1985-06-15"),
-        make_record(2, "Maria",    "Jansen",    "1985-06-22"),
-        make_record(3, "Pieter",   "Janssen",   "1985-06-03"),
+        make_record(1, "Jan", "Jansen", "1985-06-15"),
+        make_record(2, "Maria", "Jansen", "1985-06-22"),
+        make_record(3, "Pieter", "Janssen", "1985-06-03"),
         make_record(4, "Annelies", "Pietersen", "1985-06-10"),
-        make_record(5, "Kees",     "Jansen",    "1990-12-01"),
+        make_record(5, "Kees", "Jansen", "1990-12-01"),
     ];
 
     let blocker = BlockerFactory::from_schema(&schema);
@@ -89,10 +89,22 @@ fn main() {
 
     println!();
     // Verify the key findings.
-    assert!(sorted.contains(&2), "r2 same surname+year-month must be a candidate");
-    assert!(sorted.contains(&3), "r3 Janssen/1985-06 must be a candidate via secondary key");
-    assert!(sorted.contains(&4), "r4 Pietersen/1985-06 must be a candidate via secondary key");
-    assert!(!sorted.contains(&5), "r5 different year-month must NOT be a candidate");
+    assert!(
+        sorted.contains(&2),
+        "r2 same surname+year-month must be a candidate"
+    );
+    assert!(
+        sorted.contains(&3),
+        "r3 Janssen/1985-06 must be a candidate via secondary key"
+    );
+    assert!(
+        sorted.contains(&4),
+        "r4 Pietersen/1985-06 must be a candidate via secondary key"
+    );
+    assert!(
+        !sorted.contains(&5),
+        "r5 different year-month must NOT be a candidate"
+    );
 
     println!("All assertions passed.");
     println!();
@@ -103,8 +115,8 @@ fn main() {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }
 

@@ -2,8 +2,7 @@
 ///
 /// These exercise the public API from outside the crate, no access to private
 /// fields, no test helpers shared with the module.
-
-use zer_judge::{JudgeBackend, backend::JudgeTarget};
+use zer_judge::{backend::JudgeTarget, JudgeBackend};
 
 // ── JudgeBackend ──────────────────────────────────────────────────────────────
 
@@ -35,7 +34,10 @@ fn execution_providers_always_has_at_least_one_entry() {
     // CPU is always appended as the final fallback.
     let backend = JudgeBackend::cpu();
     let eps = backend.execution_providers();
-    assert!(!eps.is_empty(), "execution_providers must have at least the CPU fallback");
+    assert!(
+        !eps.is_empty(),
+        "execution_providers must have at least the CPU fallback"
+    );
 }
 
 #[test]
@@ -49,9 +51,9 @@ fn display_shows_judge_backend_and_name() {
 #[test]
 fn judge_target_from_name_accepts_all_valid_names() {
     let cases = [
-        ("cpu",      JudgeTarget::Cpu),
-        ("cuda",     JudgeTarget::Cuda),
-        ("rocm",     JudgeTarget::Rocm),
+        ("cpu", JudgeTarget::Cpu),
+        ("cuda", JudgeTarget::Cuda),
+        ("rocm", JudgeTarget::Rocm),
         ("directml", JudgeTarget::DirectMl),
         ("openvino", JudgeTarget::OpenVino),
     ];
@@ -83,8 +85,14 @@ fn judge_target_as_str_roundtrips_with_from_name() {
 fn judge_target_from_name_rejects_unknown_inputs() {
     assert!(JudgeTarget::from_name("").is_none());
     assert!(JudgeTarget::from_name("tpu").is_none());
-    assert!(JudgeTarget::from_name("CPU").is_none(),  "must be case-sensitive");
-    assert!(JudgeTarget::from_name("Cuda").is_none(), "must be case-sensitive");
+    assert!(
+        JudgeTarget::from_name("CPU").is_none(),
+        "must be case-sensitive"
+    );
+    assert!(
+        JudgeTarget::from_name("Cuda").is_none(),
+        "must be case-sensitive"
+    );
 }
 
 #[test]

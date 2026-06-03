@@ -15,19 +15,26 @@ use crate::{
 
 /// Pairwise field comparator that applies similarity functions to produce a field-major `ComparisonBatch`.
 pub struct FieldComparator {
-    field_fns:  Vec<Vec<Box<dyn SimilarityFn>>>,
+    field_fns: Vec<Vec<Box<dyn SimilarityFn>>>,
     thresholds: Vec<LevelThresholds>,
 }
 
 impl FieldComparator {
     pub fn from_schema(schema: &Schema) -> Self {
-        let field_fns = schema.fields.iter()
+        let field_fns = schema
+            .fields
+            .iter()
             .map(|f| default_fns_for(f.kind))
             .collect();
-        let thresholds = schema.fields.iter()
+        let thresholds = schema
+            .fields
+            .iter()
             .map(|f| LevelThresholds::for_kind(f.kind))
             .collect();
-        Self { field_fns, thresholds }
+        Self {
+            field_fns,
+            thresholds,
+        }
     }
 
     /// Build a comparator for cross-schema linkage from an explicit field-mapping list.
@@ -36,15 +43,24 @@ impl FieldComparator {
     /// Fields not found in `a_schema` default to `FieldKind::Categorical`.
     pub fn from_mapping(mappings: &[FieldMapping], a_schema: &Schema) -> Self {
         let kind_of = |name: &str| {
-            a_schema.fields.iter()
+            a_schema
+                .fields
+                .iter()
                 .find(|f| f.name == name)
                 .map(|f| f.kind)
                 .unwrap_or(FieldKind::Categorical)
         };
-        let (field_fns, thresholds): (Vec<_>, Vec<_>) = mappings.iter()
-            .map(|m| { let k = kind_of(&m.a_field); (default_fns_for(k), LevelThresholds::for_kind(k)) })
+        let (field_fns, thresholds): (Vec<_>, Vec<_>) = mappings
+            .iter()
+            .map(|m| {
+                let k = kind_of(&m.a_field);
+                (default_fns_for(k), LevelThresholds::for_kind(k))
+            })
             .unzip();
-        Self { field_fns, thresholds }
+        Self {
+            field_fns,
+            thresholds,
+        }
     }
 
     /// Compare a cross-schema pair using an explicit field-mapping list.
@@ -54,23 +70,26 @@ impl FieldComparator {
     /// `Skip` gives `Null` (EM ignores it), `PenaliseAbsence` gives `None` (hard fail).
     pub fn compare_pair_mapped(
         &self,
-        a:        &Record,
-        b:        &Record,
+        a: &Record,
+        b: &Record,
         mappings: &[FieldMapping],
     ) -> ComparisonVector {
-        let levels: Vec<ComparisonLevel> = mappings.iter().enumerate()
+        let levels: Vec<ComparisonLevel> = mappings
+            .iter()
+            .enumerate()
             .map(|(i, m)| {
                 let va = a.fields.get(&m.a_field);
                 let vb = b.fields.get(&m.b_field);
                 match (va, vb, &m.null_policy) {
                     (Some(va), Some(vb), _) => {
-                        let sim = self.field_fns[i].iter()
+                        let sim = self.field_fns[i]
+                            .iter()
                             .map(|f| f.similarity(va, vb))
                             .fold(0.0_f32, f32::max);
                         self.thresholds[i].apply(sim)
                     }
                     (_, _, NullPolicy::PenaliseAbsence) => ComparisonLevel::None,
-                    (_, _, NullPolicy::Skip)             => ComparisonLevel::Null,
+                    (_, _, NullPolicy::Skip) => ComparisonLevel::Null,
                 }
             })
             .collect();
@@ -87,7 +106,7 @@ impl FieldComparator {
         indices: &[(usize, usize)],
         mappings: &[FieldMapping],
     ) -> ComparisonBatch {
-        let n_pairs  = indices.len();
+        let n_pairs = indices.len();
         let n_fields = mappings.len();
 
         if n_pairs == 0 {
@@ -97,8 +116,8 @@ impl FieldComparator {
         let pair_ids_and_levels: Vec<((u64, u64), Vec<u8>)> = indices
             .par_iter()
             .map(|&(i, j)| {
-                let ids    = (records[i].id, records[j].id);
-                let cv     = self.compare_pair_mapped(&records[i], &records[j], mappings);
+                let ids = (records[i].id, records[j].id);
+                let cv = self.compare_pair_mapped(&records[i], &records[j], mappings);
                 let levels = cv.levels.iter().map(|&l| l as u8).collect();
                 (ids, levels)
             })
@@ -108,12 +127,11 @@ impl FieldComparator {
     }
 
     fn scatter_to_batch(
-        n_pairs:  usize,
+        n_pairs: usize,
         n_fields: usize,
         pair_ids_and_levels: Vec<((u64, u64), Vec<u8>)>,
     ) -> ComparisonBatch {
-        let pair_ids: Vec<(u64, u64)> =
-            pair_ids_and_levels.iter().map(|(ids, _)| *ids).collect();
+        let pair_ids: Vec<(u64, u64)> = pair_ids_and_levels.iter().map(|(ids, _)| *ids).collect();
         let mut levels = vec![0u8; n_fields * n_pairs];
         for f in 0..n_fields {
             let field_slice = &mut levels[f * n_pairs..(f + 1) * n_pairs];
@@ -121,7 +139,12 @@ impl FieldComparator {
                 field_slice[p] = pair_lvls[f];
             }
         }
-        ComparisonBatch { n_pairs, n_fields, pair_ids, levels }
+        ComparisonBatch {
+            n_pairs,
+            n_fields,
+            pair_ids,
+            levels,
+        }
     }
 
     pub fn with_thresholds(mut self, field_idx: usize, thresholds: LevelThresholds) -> Self {
@@ -135,13 +158,17 @@ impl FieldComparator {
     }
 
     fn compare_pair(&self, a: &Record, b: &Record, schema: &Schema) -> ComparisonVector {
-        let levels: Vec<ComparisonLevel> = schema.fields.iter().enumerate()
+        let levels: Vec<ComparisonLevel> = schema
+            .fields
+            .iter()
+            .enumerate()
             .map(|(i, field)| {
                 let va = a.fields.get(&field.name);
                 let vb = b.fields.get(&field.name);
                 match (va, vb) {
                     (Some(va), Some(vb)) => {
-                        let sim = self.field_fns[i].iter()
+                        let sim = self.field_fns[i]
+                            .iter()
                             .map(|f| f.similarity(va, vb))
                             .fold(0.0_f32, f32::max);
                         self.thresholds[i].apply(sim)
@@ -159,7 +186,8 @@ impl FieldComparator {
         if a_str.is_empty() || b_str.is_empty() {
             return ComparisonLevel::None as u8;
         }
-        let sim = self.field_fns[f].iter()
+        let sim = self.field_fns[f]
+            .iter()
             .map(|fn_| fn_.similarity_str(a_str, b_str))
             .fold(0.0_f32, f32::max);
         self.thresholds[f].apply(sim) as u8
@@ -174,11 +202,11 @@ impl FieldComparator {
     /// all GPU EM kernels (CUDA/Vulkan/AVX2): `levels[f * n_pairs + p]`.
     pub fn compare_batch_from_pool(
         &self,
-        pool:    &RecordPool,
+        pool: &RecordPool,
         indices: &[(usize, usize)],
-        schema:  &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
-        let n_pairs  = indices.len();
+        let n_pairs = indices.len();
         let n_fields = schema.fields.len();
 
         if n_pairs == 0 {
@@ -186,7 +214,8 @@ impl FieldComparator {
         }
 
         // Pre-compute pair IDs (cheap, serial).
-        let pair_ids: Vec<(u64, u64)> = indices.iter()
+        let pair_ids: Vec<(u64, u64)> = indices
+            .iter()
             .map(|&(i, j)| (pool.ids[i], pool.ids[j]))
             .collect();
 
@@ -198,8 +227,8 @@ impl FieldComparator {
             .par_chunks_mut(n_fields)
             .zip(indices.par_iter())
             .for_each(|(chunk, &(i, j))| {
-                for f in 0..n_fields {
-                    chunk[f] = self.compare_pool_field(f, pool.get(f, i), pool.get(f, j));
+                for (f, item) in chunk.iter_mut().enumerate() {
+                    *item = self.compare_pool_field(f, pool.get(f, i), pool.get(f, j));
                 }
             });
 
@@ -212,7 +241,12 @@ impl FieldComparator {
             }
         }
 
-        ComparisonBatch { n_pairs, n_fields, pair_ids, levels }
+        ComparisonBatch {
+            n_pairs,
+            n_fields,
+            pair_ids,
+            levels,
+        }
     }
 }
 
@@ -223,9 +257,9 @@ impl Comparator for FieldComparator {
 
     fn compare_batch_from_pool(
         &self,
-        pool:    &RecordPool,
+        pool: &RecordPool,
         indices: &[(usize, usize)],
-        schema:  &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
         self.compare_batch_from_pool(pool, indices, schema)
     }
@@ -244,84 +278,109 @@ mod tests {
 
     fn person_schema() -> Schema {
         SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
-            .field("postcode",      FieldKind::Id)
+            .field("postcode", FieldKind::Id)
             .build()
             .unwrap()
     }
 
-    fn make_record(id: u64, voornamen: &str, achternaam: &str, dob: &str, postcode: &str) -> Record {
+    fn make_record(
+        id: u64,
+        voornamen: &str,
+        achternaam: &str,
+        dob: &str,
+        postcode: &str,
+    ) -> Record {
         Record::new(id)
-            .insert("voornamen",     FieldValue::Text(voornamen.into()))
-            .insert("achternaam",    FieldValue::Text(achternaam.into()))
+            .insert("voornamen", FieldValue::Text(voornamen.into()))
+            .insert("achternaam", FieldValue::Text(achternaam.into()))
             .insert("geboortedatum", FieldValue::Text(dob.into()))
-            .insert("postcode",      FieldValue::Text(postcode.into()))
+            .insert("postcode", FieldValue::Text(postcode.into()))
     }
 
     #[test]
     fn compare_returns_correct_field_count() {
         let schema = person_schema();
-        let cmp    = FieldComparator::from_schema(&schema);
-        let a      = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
-        let b      = make_record(2, "Jan", "Jansen", "1990-06-15", "1011AB");
-        let cv     = cmp.compare(&a, &b, &schema);
+        let cmp = FieldComparator::from_schema(&schema);
+        let a = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
+        let b = make_record(2, "Jan", "Jansen", "1990-06-15", "1011AB");
+        let cv = cmp.compare(&a, &b, &schema);
         assert_eq!(cv.levels.len(), schema.len());
     }
 
     #[test]
     fn identical_records_score_exact_on_all_fields() {
         let schema = person_schema();
-        let cmp    = FieldComparator::from_schema(&schema);
-        let a      = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
-        let b      = make_record(2, "Jan", "Jansen", "1990-06-15", "1011AB");
-        let cv     = cmp.compare(&a, &b, &schema);
-        assert!(cv.levels.iter().all(|&l| l == ComparisonLevel::Exact),
-            "identical records should have all Exact levels: {:?}", cv.levels);
+        let cmp = FieldComparator::from_schema(&schema);
+        let a = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
+        let b = make_record(2, "Jan", "Jansen", "1990-06-15", "1011AB");
+        let cv = cmp.compare(&a, &b, &schema);
+        assert!(
+            cv.levels.iter().all(|&l| l == ComparisonLevel::Exact),
+            "identical records should have all Exact levels: {:?}",
+            cv.levels
+        );
     }
 
     #[test]
     fn completely_different_records_score_none_or_low() {
         let schema = person_schema();
-        let cmp    = FieldComparator::from_schema(&schema);
-        let a      = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
-        let b      = make_record(2, "Maria", "Bakker", "1955-12-01", "3001XY");
-        let cv     = cmp.compare(&a, &b, &schema);
-        let n_none = cv.levels.iter().filter(|&&l| l == ComparisonLevel::None).count();
-        assert!(n_none >= 2, "dissimilar records should have several None levels: {:?}", cv.levels);
+        let cmp = FieldComparator::from_schema(&schema);
+        let a = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
+        let b = make_record(2, "Maria", "Bakker", "1955-12-01", "3001XY");
+        let cv = cmp.compare(&a, &b, &schema);
+        let n_none = cv
+            .levels
+            .iter()
+            .filter(|&&l| l == ComparisonLevel::None)
+            .count();
+        assert!(
+            n_none >= 2,
+            "dissimilar records should have several None levels: {:?}",
+            cv.levels
+        );
     }
 
     #[test]
     fn missing_field_produces_none() {
         let schema = person_schema();
-        let cmp    = FieldComparator::from_schema(&schema);
+        let cmp = FieldComparator::from_schema(&schema);
         let a = make_record(1, "Jan", "Jansen", "1990-06-15", "1011AB");
         let b = Record::new(2)
-            .insert("voornamen",     FieldValue::Text("Jan".into()))
-            .insert("achternaam",    FieldValue::Text("Jansen".into()))
+            .insert("voornamen", FieldValue::Text("Jan".into()))
+            .insert("achternaam", FieldValue::Text("Jansen".into()))
             .insert("geboortedatum", FieldValue::Text("1990-06-15".into()));
         let cv = cmp.compare(&a, &b, &schema);
-        assert_eq!(cv.levels[3], ComparisonLevel::None,
-            "missing postcode should yield None, got {:?}", cv.levels[3]);
+        assert_eq!(
+            cv.levels[3],
+            ComparisonLevel::None,
+            "missing postcode should yield None, got {:?}",
+            cv.levels[3]
+        );
     }
 
     #[test]
     fn compare_batch_field_major_layout() {
-        let schema   = person_schema();
-        let cmp      = FieldComparator::from_schema(&schema);
+        let schema = person_schema();
+        let cmp = FieldComparator::from_schema(&schema);
         let n_fields = schema.len();
 
-        let records: Vec<Record> = (0..5).flat_map(|i| vec![
-            make_record(i * 2,     "Jan", "Jansen", "1990-06-15", "1011AB"),
-            make_record(i * 2 + 1, "Jan", "Jansen", "1990-06-15", "1011AB"),
-        ]).collect();
-        let pool    = RecordPool::from_records(&records, &schema);
+        let records: Vec<Record> = (0..5)
+            .flat_map(|i| {
+                vec![
+                    make_record(i * 2, "Jan", "Jansen", "1990-06-15", "1011AB"),
+                    make_record(i * 2 + 1, "Jan", "Jansen", "1990-06-15", "1011AB"),
+                ]
+            })
+            .collect();
+        let pool = RecordPool::from_records(&records, &schema);
         let indices: Vec<(usize, usize)> = (0..5).map(|i| (i * 2, i * 2 + 1)).collect();
 
         let batch = cmp.compare_batch_from_pool(&pool, &indices, &schema);
 
-        assert_eq!(batch.n_pairs,  5);
+        assert_eq!(batch.n_pairs, 5);
         assert_eq!(batch.n_fields, n_fields);
         assert_eq!(batch.levels.len(), n_fields * 5);
 
@@ -339,13 +398,17 @@ mod tests {
 
     #[test]
     fn compare_batch_from_pool_matches_individual_compare() {
-        let schema  = person_schema();
-        let cmp     = FieldComparator::from_schema(&schema);
-        let records: Vec<Record> = (0..20).flat_map(|i| vec![
-            make_record(i * 2,     "Jan", "Jansen", "1990-06-15", "1011AB"),
-            make_record(i * 2 + 1, "Jan", "Jansen", "1990-06-15", "1011AB"),
-        ]).collect();
-        let pool    = RecordPool::from_records(&records, &schema);
+        let schema = person_schema();
+        let cmp = FieldComparator::from_schema(&schema);
+        let records: Vec<Record> = (0..20)
+            .flat_map(|i| {
+                vec![
+                    make_record(i * 2, "Jan", "Jansen", "1990-06-15", "1011AB"),
+                    make_record(i * 2 + 1, "Jan", "Jansen", "1990-06-15", "1011AB"),
+                ]
+            })
+            .collect();
+        let pool = RecordPool::from_records(&records, &schema);
         let indices: Vec<(usize, usize)> = (0..20).map(|i| (i * 2, i * 2 + 1)).collect();
 
         let batch = cmp.compare_batch_from_pool(&pool, &indices, &schema);
@@ -353,7 +416,8 @@ mod tests {
             let single = cmp.compare(&records[i], &records[j], &schema);
             for (f, &expected) in single.levels.iter().enumerate() {
                 assert_eq!(
-                    batch.level(f, p), expected,
+                    batch.level(f, p),
+                    expected,
                     "batch and individual disagree at field {f} pair {p}"
                 );
             }
@@ -363,11 +427,10 @@ mod tests {
     #[test]
     fn empty_batch_is_valid() {
         let schema = person_schema();
-        let cmp    = FieldComparator::from_schema(&schema);
-        let pool   = RecordPool::new(schema.fields.len());
-        let batch  = cmp.compare_batch_from_pool(&pool, &[], &schema);
+        let cmp = FieldComparator::from_schema(&schema);
+        let pool = RecordPool::new(schema.fields.len());
+        let batch = cmp.compare_batch_from_pool(&pool, &[], &schema);
         assert_eq!(batch.n_pairs, 0);
         assert!(batch.levels.is_empty());
     }
-
 }

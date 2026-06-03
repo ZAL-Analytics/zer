@@ -26,7 +26,7 @@ fn parse_date(s: &str) -> Option<(i32, u32, u32)> {
             parts[1].parse::<u32>(),
             parts[2].parse::<u32>(),
         ) {
-            if m >= 1 && m <= 12 && d >= 1 && d <= 31 {
+            if (1..=12).contains(&m) && (1..=31).contains(&d) {
                 return Some((y, m, d));
             }
         }
@@ -43,7 +43,7 @@ fn parse_date(s: &str) -> Option<(i32, u32, u32)> {
 
 /// Convert a calendar date to a Julian Day Number for computing day differences.
 fn to_julian(y: i32, m: u32, d: u32) -> i32 {
-    let a  = (14_i32 - m as i32) / 12;
+    let a = (14_i32 - m as i32) / 12;
     let y2 = y + 4800 - a;
     let m2 = m as i32 + 12 * a - 3;
     d as i32 + (153 * m2 + 2) / 5 + 365 * y2 + y2 / 4 - y2 / 100 + y2 / 400 - 32045
@@ -54,18 +54,27 @@ fn days_between(a: (i32, u32, u32), b: (i32, u32, u32)) -> i32 {
 }
 
 fn date_score(sa: &str, sb: &str) -> f32 {
-    if sa == sb { return 1.0; }
+    if sa == sb {
+        return 1.0;
+    }
     let (da, db) = match (parse_date(sa), parse_date(sb)) {
         (Some(a), Some(b)) => (a, b),
         _ => return 0.0,
     };
     let diff = days_between(da, db);
-    if diff == 0 { 1.0 }
-    else if diff <= 1 { 0.9 }
-    else if da.0 == db.0 && da.1 == db.1 { 0.75 }
-    else if da.0 == db.0 { 0.5 }
-    else if (da.0 - db.0).abs() <= 1 { 0.3 }
-    else { 0.0 }
+    if diff == 0 {
+        1.0
+    } else if diff <= 1 {
+        0.9
+    } else if da.0 == db.0 && da.1 == db.1 {
+        0.75
+    } else if da.0 == db.0 {
+        0.5
+    } else if (da.0 - db.0).abs() <= 1 {
+        0.3
+    } else {
+        0.0
+    }
 }
 
 impl SimilarityFn for DateSimilarity {
@@ -76,15 +85,21 @@ impl SimilarityFn for DateSimilarity {
         };
         date_score(sa, sb)
     }
-    fn similarity_str(&self, a: &str, b: &str) -> f32 { date_score(a, b) }
-    fn field_kind(&self) -> FieldKind { FieldKind::Date }
+    fn similarity_str(&self, a: &str, b: &str) -> f32 {
+        date_score(a, b)
+    }
+    fn field_kind(&self) -> FieldKind {
+        FieldKind::Date
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn tv(s: &str) -> FieldValue { FieldValue::Text(s.into()) }
+    fn tv(s: &str) -> FieldValue {
+        FieldValue::Text(s.into())
+    }
 
     #[test]
     fn exact_date_match() {
@@ -135,6 +150,9 @@ mod tests {
     fn timestamp_date_part_comparison() {
         let sim = DateSimilarity;
         // T-prefixed ISO-8601 datetime, date parts should match
-        assert_eq!(sim.similarity(&tv("1990-06-15T08:30:00"), &tv("1990-06-15T14:00:00")), 1.0);
+        assert_eq!(
+            sim.similarity(&tv("1990-06-15T08:30:00"), &tv("1990-06-15T14:00:00")),
+            1.0
+        );
     }
 }

@@ -74,9 +74,12 @@ mod polars_e2e {
         .unwrap();
 
         let records = df.into_records(1);
-        assert_eq!(records[0].get("name"), Some(&FieldValue::Text("Alice".into())));
+        assert_eq!(
+            records[0].get("name"),
+            Some(&FieldValue::Text("Alice".into()))
+        );
         assert_eq!(records[1].get("name"), Some(&FieldValue::Null));
-        assert_eq!(records[1].get("age"),  Some(&FieldValue::Null));
+        assert_eq!(records[1].get("age"), Some(&FieldValue::Null));
     }
 
     #[test]
@@ -101,8 +104,8 @@ mod polars_e2e {
         let r = &records[0];
 
         // No parse() call, these are direct typed reads
-        assert_eq!(r.field_as::<f64>("lat"),    Some(52.37_f64));
-        assert_eq!(r.field_as::<u64>("count"),  Some(42_u64));
+        assert_eq!(r.field_as::<f64>("lat"), Some(52.37_f64));
+        assert_eq!(r.field_as::<u64>("count"), Some(42_u64));
         assert_eq!(r.field_as::<bool>("active"), Some(true));
     }
 
@@ -112,7 +115,10 @@ mod polars_e2e {
         let records = df.into_records(1);
         match records[0].get("score").unwrap() {
             FieldValue::Float(f) => {
-                assert!((*f - 0.95_f64).abs() < 1e-6, "f32→f64 widening must preserve value; got {f}");
+                assert!(
+                    (*f - 0.95_f64).abs() < 1e-6,
+                    "f32→f64 widening must preserve value; got {f}"
+                );
             }
             other => panic!("expected Float, got {other:?}"),
         }
@@ -122,11 +128,14 @@ mod polars_e2e {
 
     #[test]
     fn converted_records_work_with_record_pool() {
-        use zer_core::{record_pool::RecordPool, schema::{FieldKind, SchemaBuilder}};
+        use zer_core::{
+            record_pool::RecordPool,
+            schema::{FieldKind, SchemaBuilder},
+        };
 
         let schema = SchemaBuilder::new()
             .field("naam", FieldKind::Name)
-            .field("dob",  FieldKind::Date)
+            .field("dob", FieldKind::Date)
             .build()
             .unwrap();
 
@@ -146,7 +155,10 @@ mod polars_e2e {
 
     #[test]
     fn converted_float_fields_in_pool_serialize_to_string() {
-        use zer_core::{record_pool::RecordPool, schema::{FieldKind, SchemaBuilder}};
+        use zer_core::{
+            record_pool::RecordPool,
+            schema::{FieldKind, SchemaBuilder},
+        };
 
         // Pool always stores strings; float values must be stringified correctly.
         let schema = SchemaBuilder::new()
@@ -167,9 +179,7 @@ mod polars_e2e {
 
 #[cfg(feature = "arrow")]
 mod arrow_e2e {
-    use arrow_array::{
-        BooleanArray, Float64Array, Int64Array, StringArray, UInt64Array,
-    };
+    use arrow_array::{BooleanArray, Float64Array, Int64Array, StringArray, UInt64Array};
     use arrow_schema::{DataType, Field, Schema};
     use std::sync::Arc;
     use zer_adapters::ArrowIngest;
@@ -177,17 +187,20 @@ mod arrow_e2e {
 
     fn person_batch() -> arrow_array::RecordBatch {
         let schema = Arc::new(Schema::new(vec![
-            Field::new("naam",  DataType::Utf8,    true),
-            Field::new("age",   DataType::Int64,   true),
+            Field::new("naam", DataType::Utf8, true),
+            Field::new("age", DataType::Int64, true),
             Field::new("score", DataType::Float64, true),
             Field::new("valid", DataType::Boolean, true),
         ]));
-        arrow_array::RecordBatch::try_new(schema, vec![
-            Arc::new(StringArray::from(vec![Some("Alice"), Some("Bob"), None])),
-            Arc::new(Int64Array::from(vec![Some(30i64), Some(25i64), None])),
-            Arc::new(Float64Array::from(vec![Some(0.9f64), Some(0.7f64), None])),
-            Arc::new(BooleanArray::from(vec![Some(true), Some(false), None])),
-        ])
+        arrow_array::RecordBatch::try_new(
+            schema,
+            vec![
+                Arc::new(StringArray::from(vec![Some("Alice"), Some("Bob"), None])),
+                Arc::new(Int64Array::from(vec![Some(30i64), Some(25i64), None])),
+                Arc::new(Float64Array::from(vec![Some(0.9f64), Some(0.7f64), None])),
+                Arc::new(BooleanArray::from(vec![Some(true), Some(false), None])),
+            ],
+        )
         .unwrap()
     }
 
@@ -208,7 +221,10 @@ mod arrow_e2e {
     #[test]
     fn batch_string_column() {
         let records = person_batch().into_records(1);
-        assert_eq!(records[0].get("naam"), Some(&FieldValue::Text("Alice".into())));
+        assert_eq!(
+            records[0].get("naam"),
+            Some(&FieldValue::Text("Alice".into()))
+        );
         assert_eq!(records[2].get("naam"), Some(&FieldValue::Null));
     }
 
@@ -234,12 +250,11 @@ mod arrow_e2e {
 
     #[test]
     fn batch_uint64_no_precision_loss() {
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("id", DataType::UInt64, false),
-        ]));
-        let batch = arrow_array::RecordBatch::try_new(schema, vec![
-            Arc::new(UInt64Array::from(vec![u64::MAX])),
-        ])
+        let schema = Arc::new(Schema::new(vec![Field::new("id", DataType::UInt64, false)]));
+        let batch = arrow_array::RecordBatch::try_new(
+            schema,
+            vec![Arc::new(UInt64Array::from(vec![u64::MAX]))],
+        )
         .unwrap();
         let records = batch.into_records(1);
         assert_eq!(records[0].get("id"), Some(&FieldValue::UInt(u64::MAX)));
@@ -248,9 +263,12 @@ mod arrow_e2e {
     #[test]
     fn converted_records_field_as_typed() {
         let records = person_batch().into_records(1);
-        assert_eq!(records[0].field_as::<f64>("score"),  Some(0.9_f64));
-        assert_eq!(records[0].field_as::<i64>("age"),    Some(30_i64));
+        assert_eq!(records[0].field_as::<f64>("score"), Some(0.9_f64));
+        assert_eq!(records[0].field_as::<i64>("age"), Some(30_i64));
         assert_eq!(records[0].field_as::<bool>("valid"), Some(true));
-        assert_eq!(records[0].field_as::<String>("naam"), Some("Alice".to_string()));
+        assert_eq!(
+            records[0].field_as::<String>("naam"),
+            Some("Alice".to_string())
+        );
     }
 }

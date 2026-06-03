@@ -13,13 +13,22 @@ use zer_schema::{
 };
 
 fn brp_q1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q1/brp_persons.csv",
+    )
 }
 fn brp_q2_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q2/brp_persons.csv",
+    )
 }
 fn sim_snap1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/sim/sim_subscribers.csv",
+    )
 }
 
 fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
@@ -129,11 +138,18 @@ fn from_sample_populates_stats_for_brp() {
 
     assert_eq!(fp.field_stats.len(), schema.len());
     // Q1 has ~6 600 records.
-    assert!(fp.record_count > 1_000, "record_count should reflect CSV size");
+    assert!(
+        fp.record_count > 1_000,
+        "record_count should reflect CSV size"
+    );
 
     // geboortedatum should have exactly one value format (YYYY-MM-DD) →
     // cardinality should be high (many unique dates) and null_rate near 0.
-    let dob = fp.field_stats.iter().find(|f| f.name == "geboortedatum").unwrap();
+    let dob = fp
+        .field_stats
+        .iter()
+        .find(|f| f.name == "geboortedatum")
+        .unwrap();
     assert!(
         dob.null_rate < 0.1,
         "geboortedatum null_rate should be near 0, got {}",
@@ -152,7 +168,11 @@ fn from_sample_top_k_is_ordered_by_frequency() {
     let fp = SchemaFingerprint::from_sample(&schema, &records);
 
     // geslacht (gender) should have low cardinality (M/V/X) and a non-empty top_k.
-    let gender = fp.field_stats.iter().find(|f| f.name == "geslacht").unwrap();
+    let gender = fp
+        .field_stats
+        .iter()
+        .find(|f| f.name == "geslacht")
+        .unwrap();
     assert!(!gender.top_k.is_empty(), "geslacht top_k must not be empty");
     assert!(
         gender.cardinality <= 5,

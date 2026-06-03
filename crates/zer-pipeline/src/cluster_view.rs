@@ -10,13 +10,13 @@ use zer_core::{
 /// from source B within the same resolved entity.
 #[derive(Debug, Clone)]
 pub struct LinkedPair {
-    pub entity_id:   EntityId,
+    pub entity_id: EntityId,
     pub record_id_a: RecordId,
-    pub source_a:    Option<String>,
+    pub source_a: Option<String>,
     pub record_id_b: RecordId,
-    pub source_b:    Option<String>,
-    pub score:       f32,
-    pub method:      ResolutionMethod,
+    pub source_b: Option<String>,
+    pub score: f32,
+    pub method: ResolutionMethod,
 }
 
 /// A lazy view over resolved clusters: iterates `(Entity, Vec<Record>)` pairs
@@ -31,7 +31,10 @@ pub struct ClusterView {
 
 impl ClusterView {
     pub fn new(entity_store: Arc<dyn EntityStore>, record_store: Arc<dyn RecordStore>) -> Self {
-        Self { entity_store, record_store }
+        Self {
+            entity_store,
+            record_store,
+        }
     }
 
     /// Emit cross-source linked pairs from all resolved entities.
@@ -45,7 +48,7 @@ impl ClusterView {
     /// [`crate::config::LinkMode::LinkAndDedupe`] runs.
     pub fn linked_pairs(&self) -> Vec<LinkedPair> {
         let entities = self.entity_store.all_entities().unwrap_or_default();
-        let mut out  = Vec::new();
+        let mut out = Vec::new();
 
         for entity in entities {
             // Partition members by source label.
@@ -60,13 +63,13 @@ impl ClusterView {
                         continue;
                     }
                     out.push(LinkedPair {
-                        entity_id:   entity.id,
+                        entity_id: entity.id,
                         record_id_a: ma.record_id,
-                        source_a:    ma.source.clone(),
+                        source_a: ma.source.clone(),
                         record_id_b: mb.record_id,
-                        source_b:    mb.source.clone(),
-                        score:       ma.score.min(mb.score),
-                        method:      ma.method,
+                        source_b: mb.source.clone(),
+                        score: ma.score.min(mb.score),
+                        method: ma.method,
                     });
                 }
             }
@@ -86,7 +89,7 @@ impl ClusterView {
     /// pairs.
     pub fn all_member_pairs(&self) -> Vec<LinkedPair> {
         let entities = self.entity_store.all_entities().unwrap_or_default();
-        let mut out  = Vec::new();
+        let mut out = Vec::new();
 
         for entity in entities {
             let n = entity.members.len();
@@ -95,13 +98,13 @@ impl ClusterView {
                     let ma = &entity.members[i];
                     let mb = &entity.members[j];
                     out.push(LinkedPair {
-                        entity_id:   entity.id,
+                        entity_id: entity.id,
                         record_id_a: ma.record_id,
-                        source_a:    ma.source.clone(),
+                        source_a: ma.source.clone(),
                         record_id_b: mb.record_id,
-                        source_b:    mb.source.clone(),
-                        score:       ma.score.min(mb.score),
-                        method:      ma.method,
+                        source_b: mb.source.clone(),
+                        score: ma.score.min(mb.score),
+                        method: ma.method,
                     });
                 }
             }
@@ -112,17 +115,20 @@ impl ClusterView {
 }
 
 impl<'a> IntoIterator for &'a ClusterView {
-    type Item     = (Entity, Vec<Record>);
+    type Item = (Entity, Vec<Record>);
     type IntoIter = ClusterIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         let entities = self.entity_store.all_entities().unwrap_or_default();
-        ClusterIter { view: self, entities: entities.into_iter() }
+        ClusterIter {
+            view: self,
+            entities: entities.into_iter(),
+        }
     }
 }
 
 pub struct ClusterIter<'a> {
-    view:     &'a ClusterView,
+    view: &'a ClusterView,
     entities: std::vec::IntoIter<Entity>,
 }
 
@@ -149,8 +155,8 @@ impl<'a> Iterator for ClusterIter<'a> {
 mod tests {
     use super::*;
     use std::borrow::Cow;
-    use std::sync::RwLock;
     use std::collections::HashMap;
+    use std::sync::RwLock;
     use zer_core::{
         entity::{EntityId, EntityMember, ResolutionMethod},
         error::ZerError,
@@ -165,7 +171,9 @@ mod tests {
 
     impl TestEntityStore {
         fn new() -> Self {
-            Self { entities: RwLock::new(Vec::new()) }
+            Self {
+                entities: RwLock::new(Vec::new()),
+            }
         }
     }
 
@@ -182,7 +190,8 @@ mod tests {
 
         fn get_entity(&self, id: EntityId) -> Result<Entity, ZerError> {
             let guard = self.entities.read().unwrap();
-            guard.iter()
+            guard
+                .iter()
                 .find(|e| e.id == id)
                 .cloned()
                 .ok_or_else(|| ZerError::Store(format!("entity {id} not found")))
@@ -190,7 +199,8 @@ mod tests {
 
         fn record_to_entity(&self, record_id: RecordId) -> Result<Option<EntityId>, ZerError> {
             let guard = self.entities.read().unwrap();
-            Ok(guard.iter()
+            Ok(guard
+                .iter()
                 .find(|e| e.members.iter().any(|m| m.record_id == record_id))
                 .map(|e| e.id))
         }
@@ -207,7 +217,9 @@ mod tests {
 
     impl TestRecordStore {
         fn new() -> Self {
-            Self { inner: RwLock::new(HashMap::new()) }
+            Self {
+                inner: RwLock::new(HashMap::new()),
+            }
         }
     }
 
@@ -234,12 +246,12 @@ mod tests {
         record_store.insert(rec);
 
         let entity = Entity {
-            id:      1,
+            id: 1,
             members: vec![EntityMember {
                 record_id: 1,
-                score:     1.0,
-                method:    ResolutionMethod::Manual,
-                source:    None,
+                score: 1.0,
+                method: ResolutionMethod::Manual,
+                source: None,
             }],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -264,12 +276,12 @@ mod tests {
 
         // Entity member points to record 99 which doesn't exist in the store
         let entity = Entity {
-            id:      1,
+            id: 1,
             members: vec![EntityMember {
                 record_id: 99,
-                score:     1.0,
-                method:    ResolutionMethod::Manual,
-                source:    None,
+                score: 1.0,
+                method: ResolutionMethod::Manual,
+                source: None,
             }],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -306,10 +318,20 @@ mod tests {
 
         // Entity with two members, both from "brp"
         let entity = Entity {
-            id:      1,
+            id: 1,
             members: vec![
-                EntityMember { record_id: 1, score: 0.95, method: ResolutionMethod::AutoMatch, source: Some("brp".into()) },
-                EntityMember { record_id: 2, score: 0.90, method: ResolutionMethod::AutoMatch, source: Some("brp".into()) },
+                EntityMember {
+                    record_id: 1,
+                    score: 0.95,
+                    method: ResolutionMethod::AutoMatch,
+                    source: Some("brp".into()),
+                },
+                EntityMember {
+                    record_id: 2,
+                    score: 0.90,
+                    method: ResolutionMethod::AutoMatch,
+                    source: Some("brp".into()),
+                },
             ],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -320,7 +342,10 @@ mod tests {
         );
 
         let pairs = view.linked_pairs();
-        assert!(pairs.is_empty(), "single-source entity must produce no LinkedPairs");
+        assert!(
+            pairs.is_empty(),
+            "single-source entity must produce no LinkedPairs"
+        );
     }
 
     #[test]
@@ -330,10 +355,20 @@ mod tests {
 
         // Entity with one brp member and one kvk member
         let entity = Entity {
-            id:      1,
+            id: 1,
             members: vec![
-                EntityMember { record_id: 10, score: 0.95, method: ResolutionMethod::AutoMatch, source: Some("brp".into()) },
-                EntityMember { record_id: 20, score: 0.88, method: ResolutionMethod::AutoMatch, source: Some("kvk".into()) },
+                EntityMember {
+                    record_id: 10,
+                    score: 0.95,
+                    method: ResolutionMethod::AutoMatch,
+                    source: Some("brp".into()),
+                },
+                EntityMember {
+                    record_id: 20,
+                    score: 0.88,
+                    method: ResolutionMethod::AutoMatch,
+                    source: Some("kvk".into()),
+                },
             ],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -349,7 +384,7 @@ mod tests {
         assert_eq!(lp.entity_id, 1);
         assert!(
             (lp.record_id_a == 10 && lp.record_id_b == 20)
-            || (lp.record_id_a == 20 && lp.record_id_b == 10)
+                || (lp.record_id_a == 20 && lp.record_id_b == 10)
         );
         assert_ne!(lp.source_a, lp.source_b);
     }
@@ -361,10 +396,20 @@ mod tests {
 
         // Members with no source labels, treated as same source
         let entity = Entity {
-            id:      1,
+            id: 1,
             members: vec![
-                EntityMember { record_id: 1, score: 0.95, method: ResolutionMethod::AutoMatch, source: None },
-                EntityMember { record_id: 2, score: 0.90, method: ResolutionMethod::AutoMatch, source: None },
+                EntityMember {
+                    record_id: 1,
+                    score: 0.95,
+                    method: ResolutionMethod::AutoMatch,
+                    source: None,
+                },
+                EntityMember {
+                    record_id: 2,
+                    score: 0.90,
+                    method: ResolutionMethod::AutoMatch,
+                    source: None,
+                },
             ],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -375,6 +420,9 @@ mod tests {
         );
 
         let pairs = view.linked_pairs();
-        assert!(pairs.is_empty(), "members without source labels must not produce LinkedPairs");
+        assert!(
+            pairs.is_empty(),
+            "members without source labels must not produce LinkedPairs"
+        );
     }
 }

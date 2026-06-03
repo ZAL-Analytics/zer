@@ -38,10 +38,7 @@ use zer_core::{
 pub struct DummyJudge;
 
 impl Judge for DummyJudge {
-    fn adjudicate(
-        &self,
-        pairs: &[ScoredPair],
-    ) -> zer_core::traits::Result<Vec<JudgeVerdict>> {
+    fn adjudicate(&self, pairs: &[ScoredPair]) -> zer_core::traits::Result<Vec<JudgeVerdict>> {
         Ok(vec![JudgeVerdict::IncreaseConfidence; pairs.len()])
     }
 }
@@ -79,7 +76,9 @@ mod tests {
         ];
         let verdicts = DummyJudge.adjudicate(&pairs).unwrap();
         assert_eq!(verdicts.len(), 2);
-        assert!(verdicts.iter().all(|v| matches!(v, JudgeVerdict::IncreaseConfidence)));
+        assert!(verdicts
+            .iter()
+            .all(|v| matches!(v, JudgeVerdict::IncreaseConfidence)));
     }
 
     #[test]

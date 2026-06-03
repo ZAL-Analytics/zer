@@ -19,21 +19,28 @@ pub struct NumericBucketedSimilarity;
 fn extract_numeric(v: &FieldValue) -> Option<f64> {
     match v {
         FieldValue::Float(f) => Some(*f),
-        FieldValue::Int(i)   => Some(*i as f64),
-        FieldValue::Text(s)  => s.trim().parse::<f64>().ok(),
-        _                    => None,
+        FieldValue::Int(i) => Some(*i as f64),
+        FieldValue::Text(s) => s.trim().parse::<f64>().ok(),
+        _ => None,
     }
 }
 
 fn numeric_score(va: f64, vb: f64) -> f32 {
     let diff = (va - vb).abs();
-    if diff == 0.0 { return 1.0; }
-    let denom    = va.abs().max(vb.abs()).max(1.0);
+    if diff == 0.0 {
+        return 1.0;
+    }
+    let denom = va.abs().max(vb.abs()).max(1.0);
     let rel_diff = diff / denom;
-    if rel_diff <= 0.05 { 0.85 }
-    else if rel_diff <= 0.20 { 0.6 }
-    else if rel_diff <= 0.50 { 0.3 }
-    else { 0.0 }
+    if rel_diff <= 0.05 {
+        0.85
+    } else if rel_diff <= 0.20 {
+        0.6
+    } else if rel_diff <= 0.50 {
+        0.3
+    } else {
+        0.0
+    }
 }
 
 impl SimilarityFn for NumericBucketedSimilarity {
@@ -49,16 +56,24 @@ impl SimilarityFn for NumericBucketedSimilarity {
             _ => 0.0,
         }
     }
-    fn field_kind(&self) -> FieldKind { FieldKind::Numeric }
+    fn field_kind(&self) -> FieldKind {
+        FieldKind::Numeric
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn ti(n: i64)  -> FieldValue { FieldValue::Int(n) }
-    fn tf(f: f64)  -> FieldValue { FieldValue::Float(f) }
-    fn tv(s: &str) -> FieldValue { FieldValue::Text(s.into()) }
+    fn ti(n: i64) -> FieldValue {
+        FieldValue::Int(n)
+    }
+    fn tf(f: f64) -> FieldValue {
+        FieldValue::Float(f)
+    }
+    fn tv(s: &str) -> FieldValue {
+        FieldValue::Text(s.into())
+    }
 
     #[test]
     fn exact_int_match() {

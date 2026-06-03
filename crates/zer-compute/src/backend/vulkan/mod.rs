@@ -5,4 +5,3 @@ pub mod device;
 pub mod launch;
 
 pub use device::VulkanDevice;
-

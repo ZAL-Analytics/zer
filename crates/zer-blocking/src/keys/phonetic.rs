@@ -1,8 +1,8 @@
 use rphonetic::{DoubleMetaphone, Encoder, Soundex};
 use zer_core::{record::Record, schema::Schema};
 
-use crate::normalize::{extract_surname_token, normalize_text};
 use super::BlockingKey;
+use crate::normalize::{extract_surname_token, normalize_text};
 
 /// Phonetic encoding algorithm.
 #[derive(Debug, Clone, Copy)]
@@ -13,17 +13,17 @@ pub enum PhoneticAlgo {
 
 /// Blocking key that encodes the surname phonetically combined with the birth year.
 pub struct PhoneticNameDobKey {
-    algo:       PhoneticAlgo,
+    algo: PhoneticAlgo,
     name_field: String,
-    dob_field:  String,
+    dob_field: String,
 }
 
 impl PhoneticNameDobKey {
     pub fn new(name_field: &str, dob_field: &str) -> Self {
         Self {
-            algo:       PhoneticAlgo::DoubleMetaphone,
+            algo: PhoneticAlgo::DoubleMetaphone,
             name_field: name_field.into(),
-            dob_field:  dob_field.into(),
+            dob_field: dob_field.into(),
         }
     }
 
@@ -35,7 +35,7 @@ impl PhoneticNameDobKey {
     fn encode(&self, s: &str) -> String {
         match self.algo {
             PhoneticAlgo::DoubleMetaphone => DoubleMetaphone::default().encode(s),
-            PhoneticAlgo::Soundex        => Soundex::default().encode(s),
+            PhoneticAlgo::Soundex => Soundex::default().encode(s),
         }
     }
 }
@@ -49,16 +49,16 @@ impl BlockingKey for PhoneticNameDobKey {
         let surname_cow = record.field_as_str(&self.name_field);
         let surname_raw = match surname_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         let dob_cow = record.field_as_str(&self.dob_field);
         let dob_raw = match dob_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
 
         let normalized = normalize_text(surname_raw);
-        let surname    = extract_surname_token(&normalized);
+        let surname = extract_surname_token(&normalized);
         if surname.is_empty() {
             return vec![];
         }
@@ -80,12 +80,12 @@ impl BlockingKey for PhoneticNameDobKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::SchemaBuilder, schema::FieldKind};
+    use zer_core::{record::FieldValue, schema::FieldKind, schema::SchemaBuilder};
 
     fn make_schema() -> Schema {
         SchemaBuilder::new()
             .field("last_name", FieldKind::Name)
-            .field("dob",       FieldKind::Date)
+            .field("dob", FieldKind::Date)
             .build()
             .unwrap()
     }
@@ -93,13 +93,13 @@ mod tests {
     fn make_record(id: u64, last_name: &str, dob: &str) -> Record {
         Record::new(id)
             .insert("last_name", FieldValue::Text(last_name.into()))
-            .insert("dob",       FieldValue::Text(dob.into()))
+            .insert("dob", FieldValue::Text(dob.into()))
     }
 
     #[test]
     fn phonetic_key_same_surname_variants_collide() {
         let schema = make_schema();
-        let key    = PhoneticNameDobKey::new("last_name", "dob");
+        let key = PhoneticNameDobKey::new("last_name", "dob");
 
         let r1 = make_record(1, "Smith", "1985-03-01");
         let r2 = make_record(2, "Smyth", "1985-03-01");
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn phonetic_key_different_dob_year_no_collision() {
         let schema = make_schema();
-        let key    = PhoneticNameDobKey::new("last_name", "dob");
+        let key = PhoneticNameDobKey::new("last_name", "dob");
 
         let r1 = make_record(1, "Berg", "1970-01-01");
         let r2 = make_record(2, "Berg", "1985-01-01");
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn phonetic_key_missing_field_returns_empty() {
         let schema = make_schema();
-        let key    = PhoneticNameDobKey::new("last_name", "dob");
+        let key = PhoneticNameDobKey::new("last_name", "dob");
 
         let r = Record::new(1).insert("last_name", FieldValue::Text("Berg".into()));
         assert!(key.extract(&r, &schema).is_empty());
@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn phonetic_key_tussenvoegsel_stripped() {
         let schema = make_schema();
-        let key    = PhoneticNameDobKey::new("last_name", "dob");
+        let key = PhoneticNameDobKey::new("last_name", "dob");
 
         let r1 = make_record(1, "van den Berg", "1990-06-15");
         let r2 = make_record(2, "Berg", "1990-06-15");
@@ -147,6 +147,9 @@ mod tests {
         let k1 = key.extract(&r1, &schema);
         let k2 = key.extract(&r2, &schema);
         assert!(!k1.is_empty());
-        assert_eq!(k1, k2, "van den Berg and Berg should collide after prefix stripping");
+        assert_eq!(
+            k1, k2,
+            "van den Berg and Berg should collide after prefix stripping"
+        );
     }
 }

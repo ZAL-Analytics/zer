@@ -16,7 +16,9 @@ pub struct NvtxGuard {
 impl NvtxGuard {
     /// Start a named NVTX range (no prefix).
     pub fn new(name: &str) -> Self {
-        Self { _range: nvtx::range!("{}", name) }
+        Self {
+            _range: nvtx::range!("{}", name),
+        }
     }
 
     /// Start an NVTX range prefixed with `"CUDA: "`.
@@ -24,7 +26,9 @@ impl NvtxGuard {
     /// Used by [`trace_cuda!`](crate::trace_cuda) so that Nsight Compute's
     /// `--nvtx-include "regex:^CUDA:.*"` filter selects only CUDA kernel regions.
     pub fn new_cuda(name: &str) -> Self {
-        Self { _range: nvtx::range!("CUDA: {}", name) }
+        Self {
+            _range: nvtx::range!("CUDA: {}", name),
+        }
     }
 
     /// Start an NVTX range prefixed with `"VULKAN: "` for a Vulkan shader region.
@@ -33,7 +37,9 @@ impl NvtxGuard {
     /// Used by [`trace_vulkan!`](crate::trace_vulkan) so that Nsight Compute's
     /// `--nvtx-include "regex:^GPU:.*"` filter selects only Vulkan shader regions.
     pub fn new_vulkan(shader: &str) -> Self {
-        Self { _range: nvtx::range!("VULKAN: {}", shader) }
+        Self {
+            _range: nvtx::range!("VULKAN: {}", shader),
+        }
     }
 }
 // nvtx::RangeGuard::drop() calls ffi_range_end automatically.

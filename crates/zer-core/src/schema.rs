@@ -37,7 +37,8 @@ pub struct Schema {
 impl Schema {
     /// Iterate over field names that match a given kind.
     pub fn fields_of_kind(&self, kind: FieldKind) -> impl Iterator<Item = &str> {
-        self.fields.iter()
+        self.fields
+            .iter()
             .filter(move |f| f.kind == kind)
             .map(|f| f.name.as_str())
     }
@@ -68,7 +69,10 @@ impl SchemaBuilder {
     }
 
     pub fn field(mut self, name: &str, kind: FieldKind) -> Self {
-        self.fields.push(FieldDef { name: name.into(), kind });
+        self.fields.push(FieldDef {
+            name: name.into(),
+            kind,
+        });
         self
     }
 
@@ -76,7 +80,9 @@ impl SchemaBuilder {
         if self.fields.is_empty() {
             return Err(ZerError::EmptySchema);
         }
-        Ok(Schema { fields: self.fields })
+        Ok(Schema {
+            fields: self.fields,
+        })
     }
 }
 

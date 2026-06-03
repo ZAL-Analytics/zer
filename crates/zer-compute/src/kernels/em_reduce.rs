@@ -13,7 +13,7 @@ pub struct EmReduceInput<'a> {
     pub match_probs: &'a [f32],
     /// Field-major comparison levels: `levels[field * n_pairs + pair]`, values 0–3.
     pub comparison_levels: &'a [u32],
-    pub n_pairs:  usize,
+    pub n_pairs: usize,
     pub n_fields: usize,
 }
 
@@ -39,5 +39,5 @@ pub struct EmReduceOutput {
 
 impl Kernel for EmReduce {
     type Input<'a> = EmReduceInput<'a>;
-    type Output    = EmReduceOutput;
+    type Output = EmReduceOutput;
 }

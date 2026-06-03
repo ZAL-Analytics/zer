@@ -11,7 +11,7 @@ use crate::error::GpuError;
 /// Upload a host slice to a newly allocated device buffer.
 pub fn upload<T: DeviceRepr>(
     stream: &Arc<CudaStream>,
-    data:   &[T],
+    data: &[T],
 ) -> Result<CudaSlice<T>, GpuError> {
     stream
         .clone_htod(data)
@@ -21,7 +21,7 @@ pub fn upload<T: DeviceRepr>(
 /// Download a device slice or view to a host `Vec`.
 pub fn download<T: DeviceRepr, Src: DevicePtr<T>>(
     stream: &Arc<CudaStream>,
-    d:      &Src,
+    d: &Src,
 ) -> Result<Vec<T>, GpuError> {
     stream
         .clone_dtoh(d)
@@ -31,10 +31,12 @@ pub fn download<T: DeviceRepr, Src: DevicePtr<T>>(
 /// Allocate a zero-initialised device buffer of `n` elements.
 pub fn alloc_zeros<T: DeviceRepr + ValidAsZeroBits>(
     stream: &Arc<CudaStream>,
-    n:      usize,
+    n: usize,
 ) -> Result<CudaSlice<T>, GpuError> {
-    stream.alloc_zeros::<T>(n).map_err(|e| GpuError::AllocationFailed {
-        requested_bytes: (n * std::mem::size_of::<T>()) as u64,
-        detail:          e.to_string(),
-    })
+    stream
+        .alloc_zeros::<T>(n)
+        .map_err(|e| GpuError::AllocationFailed {
+            requested_bytes: (n * std::mem::size_of::<T>()) as u64,
+            detail: e.to_string(),
+        })
 }

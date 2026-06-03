@@ -2,7 +2,8 @@
 name    = "custom-components"
 version     = "1.0.0"
 edition = "2021"
-publish = false
+publish  = false
+license  = "Apache-2.0"
 description = "Shows how to plug custom Judge, Blocker, and Scorer implementations into the zer pipeline"
 
 [dependencies]

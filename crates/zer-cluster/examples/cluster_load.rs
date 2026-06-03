@@ -56,7 +56,12 @@ fn main() {
     for entity in &all {
         let mut member_ids: Vec<_> = entity.members.iter().map(|m| m.record_id).collect();
         member_ids.sort();
-        println!("  Entity #{}: {} members {:?}", entity.id, entity.members.len(), member_ids);
+        println!(
+            "  Entity #{}: {} members {:?}",
+            entity.id,
+            entity.members.len(),
+            member_ids
+        );
     }
 
     // ── Step 2: record-to-entity spot checks ─────────────────────────────────
@@ -78,11 +83,12 @@ fn main() {
         let first = eids[0];
         let all_same = eids.iter().all(|&e| e == first);
         let status = if all_same { "✓" } else { "✗ MISMATCH" };
-        println!(
-            "  group {:?} → entity #{first}  {status}",
+        println!("  group {:?} → entity #{first}  {status}", group);
+        assert!(
+            all_same,
+            "records in group {:?} must all map to the same entity",
             group
         );
-        assert!(all_same, "records in group {:?} must all map to the same entity", group);
     }
 
     // ── Step 3: verify no cross-group contamination ───────────────────────────

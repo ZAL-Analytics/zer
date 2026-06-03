@@ -2,7 +2,8 @@
 name    = "person-deduplication"
 version     = "1.0.0"
 edition = "2021"
-publish = false
+publish  = false
+license  = "Apache-2.0"
 description = "Deduplication of a Dutch BRP person registry using the full zer pipeline"
 
 [dependencies]

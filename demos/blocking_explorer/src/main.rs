@@ -9,7 +9,7 @@ use std::{collections::HashMap, path::Path};
 use demo_common::{init_tracing, print_block_histogram, section};
 use zer_blocking::keys::{
     BlockingKey, DateFragmentKey, DateGranularity, ExactFieldKey, PhoneticAlgo,
-    PhoneticNameDobKey, PhoneticNameDobInitialKey,
+    PhoneticNameDobInitialKey, PhoneticNameDobKey,
 };
 use zer_core::{
     record::Record,
@@ -21,18 +21,21 @@ const DATA_DIR: &str = "data/demos/persons";
 #[derive(Debug, serde::Deserialize)]
 #[allow(dead_code)]
 struct PersonRow {
-    record_id:     u64,
-    voornamen:     String,
-    #[serde(default)] tussenvoegsel: String,
-    achternaam:    String,
+    record_id: u64,
+    voornamen: String,
+    #[serde(default)]
+    tussenvoegsel: String,
+    achternaam: String,
     geboortedatum: String,
-    geslacht:      String,
-    straatnaam:    String,
-    huisnummer:    String,
-    postcode:      String,
-    woonplaats:    String,
-    #[serde(default)] bsn: String,
-    #[serde(default)] geboorteplaats: String,
+    geslacht: String,
+    straatnaam: String,
+    huisnummer: String,
+    postcode: String,
+    woonplaats: String,
+    #[serde(default)]
+    bsn: String,
+    #[serde(default)]
+    geboorteplaats: String,
 }
 
 fn load_records(path: &Path) -> Vec<Record> {
@@ -41,15 +44,15 @@ fn load_records(path: &Path) -> Vec<Record> {
         .map(|r| {
             let row = r.expect("parse record row");
             Record::new(row.record_id)
-                .insert("voornamen",     row.voornamen)
+                .insert("voornamen", row.voornamen)
                 .insert("tussenvoegsel", row.tussenvoegsel)
-                .insert("achternaam",    row.achternaam)
+                .insert("achternaam", row.achternaam)
                 .insert("geboortedatum", row.geboortedatum)
-                .insert("geslacht",      row.geslacht)
-                .insert("straatnaam",    row.straatnaam)
-                .insert("huisnummer",    row.huisnummer)
-                .insert("postcode",      row.postcode)
-                .insert("woonplaats",    row.woonplaats)
+                .insert("geslacht", row.geslacht)
+                .insert("straatnaam", row.straatnaam)
+                .insert("huisnummer", row.huisnummer)
+                .insert("postcode", row.postcode)
+                .insert("woonplaats", row.woonplaats)
         })
         .collect()
 }
@@ -122,12 +125,12 @@ fn main() {
     println!("{} records loaded", records.len());
 
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
-        .field("geslacht",      FieldKind::FreeText)
-        .field("straatnaam",    FieldKind::FreeText)
-        .field("postcode",      FieldKind::FreeText)
+        .field("geslacht", FieldKind::FreeText)
+        .field("straatnaam", FieldKind::FreeText)
+        .field("postcode", FieldKind::FreeText)
         .build()
         .expect("build schema");
 
@@ -163,8 +166,7 @@ fn main() {
     );
     report_key(
         "phonetic surname + DOB (soundex)",
-        &PhoneticNameDobKey::new("achternaam", "geboortedatum")
-            .with_algo(PhoneticAlgo::Soundex),
+        &PhoneticNameDobKey::new("achternaam", "geboortedatum").with_algo(PhoneticAlgo::Soundex),
         &records,
         &schema,
     );

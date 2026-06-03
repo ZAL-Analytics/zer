@@ -34,7 +34,10 @@ pub fn default_models_dir() -> PathBuf {
         return PathBuf::from(dir);
     }
     if let Some(home) = std::env::var_os("HOME") {
-        let cache = PathBuf::from(home).join(".cache").join("zer").join("models");
+        let cache = PathBuf::from(home)
+            .join(".cache")
+            .join("zer")
+            .join("models");
         if cache.exists() {
             return cache;
         }
@@ -116,8 +119,8 @@ pub enum ModelPrecision {
 impl ModelPrecision {
     pub fn subfolder(self) -> &'static str {
         match self {
-            Self::Base     => "base",
-            Self::Fp16     => "fp16",
+            Self::Base => "base",
+            Self::Fp16 => "fp16",
             Self::Fp16Fused => "fp16_fused",
         }
     }
@@ -127,14 +130,14 @@ impl ModelPrecision {
 
 /// MiniLM-L6-v2 NLI cross-encoder (~23 MB ONNX, fits in 256 MB VRAM).
 pub struct MiniLmSpec {
-    model_path:       PathBuf,
+    model_path: PathBuf,
     tokenizer_source: TokenizerSource,
 }
 
 impl MiniLmSpec {
     pub fn new(model_path: impl AsRef<Path>, tokenizer_source: TokenizerSource) -> Self {
         Self {
-            model_path:       model_path.as_ref().to_owned(),
+            model_path: model_path.as_ref().to_owned(),
             tokenizer_source,
         }
     }
@@ -144,7 +147,7 @@ impl MiniLmSpec {
     pub fn from_dir(dir: impl AsRef<Path>) -> Self {
         let dir = dir.as_ref();
         Self {
-            model_path:       dir.join("model.onnx"),
+            model_path: dir.join("model.onnx"),
             tokenizer_source: TokenizerSource::file(dir.join("tokenizer.json")),
         }
     }
@@ -164,26 +167,38 @@ impl MiniLmSpec {
 }
 
 impl JudgeModelSpec for MiniLmSpec {
-    fn name(&self)            -> &str  { "cross-encoder/nli-MiniLM2-L6-H768" }
-    fn model_path(&self)      -> &Path { &self.model_path }
-    fn tokenizer_source(&self) -> &TokenizerSource { &self.tokenizer_source }
-    fn max_length(&self)      -> usize { 512 }
-    fn entailment_idx(&self)  -> usize { 1 }
-    fn vram_bytes(&self)      -> u64   { 256 * 1024 * 1024 } // 256 MB
+    fn name(&self) -> &str {
+        "cross-encoder/nli-MiniLM2-L6-H768"
+    }
+    fn model_path(&self) -> &Path {
+        &self.model_path
+    }
+    fn tokenizer_source(&self) -> &TokenizerSource {
+        &self.tokenizer_source
+    }
+    fn max_length(&self) -> usize {
+        512
+    }
+    fn entailment_idx(&self) -> usize {
+        1
+    }
+    fn vram_bytes(&self) -> u64 {
+        256 * 1024 * 1024
+    } // 256 MB
 }
 
 // ── DebertaBaseSpec ───────────────────────────────────────────────────────────
 
 /// DeBERTa-v3-base NLI (~185 MB ONNX, fits in 2 GB VRAM).
 pub struct DebertaBaseSpec {
-    model_path:       PathBuf,
+    model_path: PathBuf,
     tokenizer_source: TokenizerSource,
 }
 
 impl DebertaBaseSpec {
     pub fn new(model_path: impl AsRef<Path>, tokenizer_source: TokenizerSource) -> Self {
         Self {
-            model_path:       model_path.as_ref().to_owned(),
+            model_path: model_path.as_ref().to_owned(),
             tokenizer_source,
         }
     }
@@ -191,7 +206,7 @@ impl DebertaBaseSpec {
     pub fn from_dir(dir: impl AsRef<Path>) -> Self {
         let dir = dir.as_ref();
         Self {
-            model_path:       dir.join("model.onnx"),
+            model_path: dir.join("model.onnx"),
             tokenizer_source: TokenizerSource::file(dir.join("tokenizer.json")),
         }
     }
@@ -210,12 +225,24 @@ impl DebertaBaseSpec {
 }
 
 impl JudgeModelSpec for DebertaBaseSpec {
-    fn name(&self)            -> &str  { "cross-encoder/nli-deberta-v3-base" }
-    fn model_path(&self)      -> &Path { &self.model_path }
-    fn tokenizer_source(&self) -> &TokenizerSource { &self.tokenizer_source }
-    fn max_length(&self)      -> usize { 512 }
-    fn entailment_idx(&self)  -> usize { 1 }
-    fn vram_bytes(&self)      -> u64   { 2 * 1024 * 1024 * 1024 } // 2 GB
+    fn name(&self) -> &str {
+        "cross-encoder/nli-deberta-v3-base"
+    }
+    fn model_path(&self) -> &Path {
+        &self.model_path
+    }
+    fn tokenizer_source(&self) -> &TokenizerSource {
+        &self.tokenizer_source
+    }
+    fn max_length(&self) -> usize {
+        512
+    }
+    fn entailment_idx(&self) -> usize {
+        1
+    }
+    fn vram_bytes(&self) -> u64 {
+        2 * 1024 * 1024 * 1024
+    } // 2 GB
 }
 
 // ── spec_from_env / spec_from_vram ───────────────────────────────────────────
@@ -226,8 +253,13 @@ impl JudgeModelSpec for DebertaBaseSpec {
 /// This is the easiest entry-point for end users: run `scripts/download_models.sh`
 /// (or set `ZER_MODEL_DIR`), then call `spec_from_env` and let zer pick the best
 /// model for the available hardware.
-pub fn spec_from_env(precision: ModelPrecision, available_vram_bytes: u64) -> Box<dyn JudgeModelSpec> {
-    let models_dir = default_models_dir().join("nli-base").join(precision.subfolder());
+pub fn spec_from_env(
+    precision: ModelPrecision,
+    available_vram_bytes: u64,
+) -> Box<dyn JudgeModelSpec> {
+    let models_dir = default_models_dir()
+        .join("nli-base")
+        .join(precision.subfolder());
     spec_from_vram(&models_dir, available_vram_bytes)
 }
 
@@ -248,12 +280,14 @@ pub fn spec_from_env(precision: ModelPrecision, available_vram_bytes: u64) -> Bo
 ///   nli-minilm-onnx/model.onnx
 /// ```
 pub fn spec_from_vram(models_dir: &Path, available_vram_bytes: u64) -> Box<dyn JudgeModelSpec> {
-    let base  = models_dir.join("nli-deberta-v3-base-onnx");
-    let mini  = models_dir.join("nli-minilm-onnx");
+    let base = models_dir.join("nli-deberta-v3-base-onnx");
+    let mini = models_dir.join("nli-minilm-onnx");
 
     if available_vram_bytes >= 2 * 1024 * 1024 * 1024 && base.exists() {
-        tracing::info!("judge: selecting DeBERTa-v3-base ({:.1} GB VRAM available)",
-            available_vram_bytes as f64 / 1e9);
+        tracing::info!(
+            "judge: selecting DeBERTa-v3-base ({:.1} GB VRAM available)",
+            available_vram_bytes as f64 / 1e9
+        );
         return Box::new(DebertaBaseSpec::from_dir(&base));
     }
 
@@ -276,7 +310,9 @@ mod tests {
     fn minilm_from_dir_sets_expected_paths() {
         let spec = MiniLmSpec::from_dir("/some/dir");
         assert_eq!(spec.model_path(), Path::new("/some/dir/model.onnx"));
-        assert!(matches!(spec.tokenizer_source(), TokenizerSource::File(p) if p == Path::new("/some/dir/tokenizer.json")));
+        assert!(
+            matches!(spec.tokenizer_source(), TokenizerSource::File(p) if p == Path::new("/some/dir/tokenizer.json"))
+        );
     }
 
     #[test]
@@ -294,7 +330,9 @@ mod tests {
     fn deberta_base_from_dir_sets_expected_paths() {
         let spec = DebertaBaseSpec::from_dir("/fp16_fused/dir");
         assert_eq!(spec.model_path(), Path::new("/fp16_fused/dir/model.onnx"));
-        assert!(matches!(spec.tokenizer_source(), TokenizerSource::File(p) if p == Path::new("/fp16_fused/dir/tokenizer.json")));
+        assert!(
+            matches!(spec.tokenizer_source(), TokenizerSource::File(p) if p == Path::new("/fp16_fused/dir/tokenizer.json"))
+        );
     }
 
     #[test]
@@ -343,7 +381,9 @@ mod tests {
     #[test]
     fn token_source_hub_convenience() {
         let ts = TokenizerSource::hub("cross-encoder/nli-deberta-v3-base");
-        assert!(matches!(ts, TokenizerSource::HuggingFace(s) if s == "cross-encoder/nli-deberta-v3-base"));
+        assert!(
+            matches!(ts, TokenizerSource::HuggingFace(s) if s == "cross-encoder/nli-deberta-v3-base")
+        );
     }
 
     #[test]

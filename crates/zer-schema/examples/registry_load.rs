@@ -21,10 +21,16 @@ use zer_schema::{
 };
 
 fn brp_q1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q1/brp_persons.csv",
+    )
 }
 fn brp_q2_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q2/brp_persons.csv",
+    )
 }
 
 const REGISTRY_PATH: &str = concat!(
@@ -34,39 +40,39 @@ const REGISTRY_PATH: &str = concat!(
 
 fn brp_q1_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("bsn",            FieldKind::Id)
-        .field("voornamen",      FieldKind::Name)
-        .field("tussenvoegsel",  FieldKind::Categorical)
-        .field("achternaam",     FieldKind::Name)
-        .field("geboortedatum",  FieldKind::Date)
+        .field("bsn", FieldKind::Id)
+        .field("voornamen", FieldKind::Name)
+        .field("tussenvoegsel", FieldKind::Categorical)
+        .field("achternaam", FieldKind::Name)
+        .field("geboortedatum", FieldKind::Date)
         .field("geboorteplaats", FieldKind::Categorical)
-        .field("geboorteland",   FieldKind::Categorical)
-        .field("nationaliteit",  FieldKind::Categorical)
-        .field("geslacht",       FieldKind::Categorical)
-        .field("straatnaam",     FieldKind::Address)
-        .field("huisnummer",     FieldKind::Address)
-        .field("postcode",       FieldKind::Id)
-        .field("woonplaats",     FieldKind::Address)
+        .field("geboorteland", FieldKind::Categorical)
+        .field("nationaliteit", FieldKind::Categorical)
+        .field("geslacht", FieldKind::Categorical)
+        .field("straatnaam", FieldKind::Address)
+        .field("huisnummer", FieldKind::Address)
+        .field("postcode", FieldKind::Id)
+        .field("woonplaats", FieldKind::Address)
         .build()
         .unwrap()
 }
 
 fn brp_q2_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("bsn",             FieldKind::Id)
-        .field("voornamen",       FieldKind::Name)
-        .field("tussenvoegsel",   FieldKind::Categorical)
-        .field("achternaam",      FieldKind::Name)
-        .field("geboortedatum",   FieldKind::Date)
-        .field("geboorteplaats",  FieldKind::Categorical)
-        .field("geboorteland",    FieldKind::Categorical)
-        .field("nationaliteit",   FieldKind::Categorical)
-        .field("geslacht",        FieldKind::Categorical)
-        .field("straatnaam",      FieldKind::Address)
-        .field("huisnummer",      FieldKind::Address)
-        .field("postcode",        FieldKind::Id)
-        .field("woonplaats",      FieldKind::Address)
-        .field("verblijfstitel",  FieldKind::Categorical)
+        .field("bsn", FieldKind::Id)
+        .field("voornamen", FieldKind::Name)
+        .field("tussenvoegsel", FieldKind::Categorical)
+        .field("achternaam", FieldKind::Name)
+        .field("geboortedatum", FieldKind::Date)
+        .field("geboorteplaats", FieldKind::Categorical)
+        .field("geboorteland", FieldKind::Categorical)
+        .field("nationaliteit", FieldKind::Categorical)
+        .field("geslacht", FieldKind::Categorical)
+        .field("straatnaam", FieldKind::Address)
+        .field("huisnummer", FieldKind::Address)
+        .field("postcode", FieldKind::Id)
+        .field("woonplaats", FieldKind::Address)
+        .field("verblijfstitel", FieldKind::Categorical)
         .build()
         .unwrap()
 }
@@ -85,7 +91,11 @@ fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
             let v = row.get(i).unwrap_or("").trim();
             r = r.insert(
                 header,
-                if v.is_empty() { FieldValue::Null } else { FieldValue::Text(v.into()) },
+                if v.is_empty() {
+                    FieldValue::Null
+                } else {
+                    FieldValue::Text(v.into())
+                },
             );
         }
         records.push(r);
@@ -127,16 +137,22 @@ fn main() {
 
     println!("\nLoading BRP Q1 data for fingerprint…");
     let q1_records = load_records(brp_q1_csv());
-    let q1_schema  = brp_q1_schema();
-    let q1_fp      = SchemaFingerprint::from_sample(&q1_schema, &q1_records);
+    let q1_schema = brp_q1_schema();
+    let q1_fp = SchemaFingerprint::from_sample(&q1_schema, &q1_records);
 
     println!("  Q1 schema hash: {}", hex_short(&q1_fp.schema_hash));
     match registry.lookup_startup_mode(&q1_fp).unwrap() {
         StartupMode::WarmLoad(art) => {
-            println!("  → WarmLoad ✓  (tag={:?}, no EM needed)", art.tag.as_deref());
+            println!(
+                "  → WarmLoad ✓  (tag={:?}, no EM needed)",
+                art.tag.as_deref()
+            );
         }
         StartupMode::WarmStart { artifact, distance } => {
-            println!("  → WarmStart  distance={distance:.4}  (tag={:?})", artifact.tag.as_deref());
+            println!(
+                "  → WarmStart  distance={distance:.4}  (tag={:?})",
+                artifact.tag.as_deref()
+            );
             println!("  WARNING: expected WarmLoad for exact Q1 fingerprint");
         }
         StartupMode::ColdStart => {
@@ -148,8 +164,8 @@ fn main() {
 
     println!("\nLoading BRP Q2 data for fingerprint…");
     let q2_records = load_records(brp_q2_csv());
-    let q2_schema  = brp_q2_schema();
-    let q2_fp      = SchemaFingerprint::from_sample(&q2_schema, &q2_records);
+    let q2_schema = brp_q2_schema();
+    let q2_fp = SchemaFingerprint::from_sample(&q2_schema, &q2_records);
 
     println!("  Q2 schema hash: {}", hex_short(&q2_fp.schema_hash));
     println!(
@@ -177,5 +193,10 @@ fn main() {
 }
 
 fn hex_short(bytes: &[u8]) -> String {
-    bytes.iter().take(8).map(|b| format!("{b:02x}")).collect::<String>() + "…"
+    bytes
+        .iter()
+        .take(8)
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>()
+        + "…"
 }

@@ -22,8 +22,8 @@ use zer_pipeline::{batch::BatchReport, config::PipelineConfig, pipeline::Pipelin
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()?;
 
@@ -32,11 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // ── Default thresholds (EM-estimated) ────────────────────────────────────
-    let default_report = run_with_config(
-        records.clone(),
-        &schema,
-        PipelineConfig::default(),
-    ).await?;
+    let default_report =
+        run_with_config(records.clone(), &schema, PipelineConfig::default()).await?;
 
     // ── Tightened thresholds ──────────────────────────────────────────────────
     let tightened_report = run_with_config(
@@ -47,7 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             lower_threshold: Some(0.05),
             ..PipelineConfig::default()
         },
-    ).await?;
+    )
+    .await?;
 
     // ── Wide thresholds (for aggressive matching) ─────────────────────────────
     let wide_report = run_with_config(
@@ -58,7 +56,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             lower_threshold: Some(0.30),
             ..PipelineConfig::default()
         },
-    ).await?;
+    )
+    .await?;
 
     println!(
         "{:<20}  {:>10}  {:>10}  {:>10}  {:>10}",
@@ -66,17 +65,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     println!("{}", "─".repeat(70));
     for (label, r) in [
-        ("default (EM)",       &default_report),
+        ("default (EM)", &default_report),
         ("tightened (0.95/0.05)", &tightened_report),
-        ("wide (0.70/0.30)",   &wide_report),
+        ("wide (0.70/0.30)", &wide_report),
     ] {
         println!(
             "{:<20}  {:>10}  {:>10}  {:>10}  {:>10}",
-            label,
-            r.auto_matched,
-            r.borderline,
-            r.auto_rejected,
-            r.elapsed_ms,
+            label, r.auto_matched, r.borderline, r.auto_rejected, r.elapsed_ms,
         );
     }
 
@@ -89,8 +84,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn run_with_config(
     records: Vec<Record>,
-    schema:  &zer_core::schema::Schema,
-    config:  PipelineConfig,
+    schema: &zer_core::schema::Schema,
+    config: PipelineConfig,
 ) -> Result<BatchReport, Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
     let pipeline = Arc::new(
@@ -115,33 +110,33 @@ fn synthetic_records(n: usize) -> Vec<Record> {
     // With a tightened upper_threshold=0.95 these pairs score below 0.95 and
     // land in the borderline band rather than being auto-matched.
     let canonical: &[(&str, &str, &str)] = &[
-        ("Jan",    "Jansen",   "1980-01-15"),
-        ("Maria",  "de Vries", "1985-06-15"),
-        ("Pieter", "Bakker",   "1990-03-22"),
-        ("Anna",   "Smit",     "1975-11-08"),
-        ("Kees",   "Visser",   "1992-09-30"),
+        ("Jan", "Jansen", "1980-01-15"),
+        ("Maria", "de Vries", "1985-06-15"),
+        ("Pieter", "Bakker", "1990-03-22"),
+        ("Anna", "Smit", "1975-11-08"),
+        ("Kees", "Visser", "1992-09-30"),
     ];
     let near_dupes: &[(&str, &str, &str)] = &[
-        ("Jan",    "Jansen",   "1980-08-03"),
-        ("Maria",  "de Vries", "1985-02-20"),
-        ("Pieter", "Bakker",   "1990-10-07"),
-        ("Anna",   "Smit",     "1975-04-14"),
-        ("Kees",   "Visser",   "1992-03-19"),
+        ("Jan", "Jansen", "1980-08-03"),
+        ("Maria", "de Vries", "1985-02-20"),
+        ("Pieter", "Bakker", "1990-10-07"),
+        ("Anna", "Smit", "1975-04-14"),
+        ("Kees", "Visser", "1992-03-19"),
     ];
 
     let nc = canonical.len();
     (0..n)
         .map(|i| {
             let group = i / 4;
-            let idx   = group % nc;
+            let idx = group % nc;
             let (first, last, dob) = if i % 4 == 3 {
                 near_dupes[idx]
             } else {
                 canonical[idx]
             };
             Record::new(i as u64 + 1)
-                .insert("voornamen",     FieldValue::Text(first.into()))
-                .insert("achternaam",    FieldValue::Text(last.into()))
+                .insert("voornamen", FieldValue::Text(first.into()))
+                .insert("achternaam", FieldValue::Text(last.into()))
                 .insert("geboortedatum", FieldValue::Text(dob.into()))
         })
         .collect()

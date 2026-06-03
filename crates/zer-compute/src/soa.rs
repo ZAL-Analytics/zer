@@ -25,9 +25,9 @@ mod tests {
     fn weight_table_log_ratios_are_finite() {
         use zer_core::scoring::ModelParams;
         let params = ModelParams {
-            m:               vec![vec![0.05, 0.10, 0.15, 0.70]; 3],
-            u:               vec![vec![0.70, 0.15, 0.10, 0.05]; 3],
-            log_prior_odds:  0.0,
+            m: vec![vec![0.05, 0.10, 0.15, 0.70]; 3],
+            u: vec![vec![0.70, 0.15, 0.10, 0.05]; 3],
+            log_prior_odds: 0.0,
             upper_threshold: 0.9,
             lower_threshold: 0.1,
         };
@@ -36,7 +36,13 @@ mod tests {
         for v in &table {
             assert!(v.is_finite(), "weight table must not contain NaN/Inf: {v}");
         }
-        assert!(table[0 * 4 + 3] > 0.0, "exact match should have positive weight");
-        assert!(table[0 * 4 + 0] < 0.0, "none match should have negative weight");
+        assert!(
+            table[0 * 4 + 3] > 0.0,
+            "exact match should have positive weight"
+        );
+        assert!(
+            table[0 * 4 + 0] < 0.0,
+            "none match should have negative weight"
+        );
     }
 }

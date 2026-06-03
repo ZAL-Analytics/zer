@@ -1,7 +1,6 @@
 /// Shared time utilities for benchmark output.
 ///
 /// Avoids pulling in `chrono` while still producing sortable ISO-8601 timestamps.
-
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Returns the current UTC time as an ISO-8601 string: `YYYY-MM-DDTHH:MM:SSZ`.
@@ -19,25 +18,25 @@ pub fn unix_secs_now() -> u64 {
 
 /// Format a UNIX timestamp (seconds since epoch) as `YYYY-MM-DDTHH:MM:SSZ`.
 pub fn fmt_unix_secs(s: u64) -> String {
-    let sec  = s % 60;
-    let min  = (s / 60) % 60;
+    let sec = s % 60;
+    let min = (s / 60) % 60;
     let hour = (s / 3600) % 24;
     let days = s / 86400;
     let year_400 = days / 146097;
-    let rem      = days % 146097;
+    let rem = days % 146097;
     let year_100 = rem / 36524;
-    let rem      = rem % 36524;
-    let year_4   = rem / 1461;
-    let rem      = rem % 1461;
-    let year_1   = rem / 365;
-    let year     = 1970 + year_400 * 400 + year_100 * 100 + year_4 * 4 + year_1;
-    let doy      = rem % 365;
+    let rem = rem % 36524;
+    let year_4 = rem / 1461;
+    let rem = rem % 1461;
+    let year_1 = rem / 365;
+    let year = 1970 + year_400 * 400 + year_100 * 100 + year_4 * 4 + year_1;
+    let doy = rem % 365;
     let (month, day) = doy_to_md(doy, is_leap(year));
     format!("{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}Z")
 }
 
 fn is_leap(y: u64) -> bool {
-    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
+    (y.is_multiple_of(4) && !y.is_multiple_of(100)) || y.is_multiple_of(400)
 }
 
 fn doy_to_md(doy: u64, leap: bool) -> (u64, u64) {

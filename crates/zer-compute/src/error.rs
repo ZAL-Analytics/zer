@@ -18,7 +18,10 @@ pub enum GpuError {
     LaunchFailed(String),
 
     #[error("device memory allocation failed: requested {requested_bytes} bytes, {detail}")]
-    AllocationFailed { requested_bytes: u64, detail: String },
+    AllocationFailed {
+        requested_bytes: u64,
+        detail: String,
+    },
 
     #[error("host↔device transfer failed: {0}")]
     TransferFailed(String),

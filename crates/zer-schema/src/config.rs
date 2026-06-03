@@ -124,13 +124,14 @@ impl ValuePatterns {
     fn from_raw(raw: RawValuePatterns) -> Result<Self, ZerError> {
         let mut patterns = Vec::with_capacity(raw.patterns.len());
         for p in raw.patterns {
-            let regex = if p.regex.is_empty() {
-                None
-            } else {
-                Some(Regex::new(&p.regex).map_err(|e| {
-                    ZerError::Config(format!("invalid regex {:?}: {e}", p.regex))
-                })?)
-            };
+            let regex =
+                if p.regex.is_empty() {
+                    None
+                } else {
+                    Some(Regex::new(&p.regex).map_err(|e| {
+                        ZerError::Config(format!("invalid regex {:?}: {e}", p.regex))
+                    })?)
+                };
             patterns.push(CompiledValuePattern {
                 kind: p.kind,
                 regex,
@@ -141,7 +142,10 @@ impl ValuePatterns {
                 avg_len_max: p.avg_len_max,
             });
         }
-        Ok(Self { patterns, fallback_kind: raw.fallback.default_kind })
+        Ok(Self {
+            patterns,
+            fallback_kind: raw.fallback.default_kind,
+        })
     }
 
     /// Parse from a TOML string. Returns `Err` if any regex is invalid.
@@ -192,10 +196,10 @@ impl ValuePatterns {
                 None => 1.0,
             };
             if match_frac >= pat.threshold
-                && pat.unique_rate_min.map_or(true, |min| unique_rate >= min)
-                && pat.unique_rate_max.map_or(true, |max| unique_rate <= max)
-                && pat.avg_len_max.map_or(true, |max| avg_len <= max)
-                && pat.avg_len_min.map_or(true, |min| avg_len >= min)
+                && pat.unique_rate_min.is_none_or(|min| unique_rate >= min)
+                && pat.unique_rate_max.is_none_or(|max| unique_rate <= max)
+                && pat.avg_len_max.is_none_or(|max| avg_len <= max)
+                && pat.avg_len_min.is_none_or(|min| avg_len >= min)
             {
                 return pat.kind;
             }

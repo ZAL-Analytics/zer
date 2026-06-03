@@ -1,17 +1,20 @@
 use zer_core::{record::Record, schema::Schema};
 
-use crate::normalize::normalize_digits_only;
 use super::BlockingKey;
+use crate::normalize::normalize_digits_only;
 
 /// Blocking key that extracts the last N digits from a field value.
 pub struct SuffixKey {
     field: String,
-    n:     usize,
+    n: usize,
 }
 
 impl SuffixKey {
     pub fn new(field: &str, n: usize) -> Self {
-        Self { field: field.into(), n }
+        Self {
+            field: field.into(),
+            n,
+        }
     }
 }
 
@@ -24,7 +27,7 @@ impl BlockingKey for SuffixKey {
         let cow = record.field_as_str(&self.field);
         let raw = match cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
 
         let digits = normalize_digits_only(raw);
@@ -40,10 +43,16 @@ impl BlockingKey for SuffixKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::{SchemaBuilder, FieldKind}};
+    use zer_core::{
+        record::FieldValue,
+        schema::{FieldKind, SchemaBuilder},
+    };
 
     fn schema() -> Schema {
-        SchemaBuilder::new().field("phone", FieldKind::Phone).build().unwrap()
+        SchemaBuilder::new()
+            .field("phone", FieldKind::Phone)
+            .build()
+            .unwrap()
     }
 
     #[test]
@@ -62,8 +71,8 @@ mod tests {
 
     #[test]
     fn same_last_digits_collide() {
-        let k  = SuffixKey::new("phone", 4);
-        let s  = schema();
+        let k = SuffixKey::new("phone", 4);
+        let s = schema();
         let r1 = Record::new(1).insert("phone", FieldValue::Text("06-1234".into()));
         let r2 = Record::new(2).insert("phone", FieldValue::Text("+31-20-001234".into()));
         assert_eq!(k.extract(&r1, &s), k.extract(&r2, &s));

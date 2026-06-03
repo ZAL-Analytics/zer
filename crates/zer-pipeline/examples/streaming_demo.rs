@@ -4,7 +4,6 @@
 /// resolution results (entity assignment, match band) are printed immediately.
 ///
 /// Run with:  cargo run --example streaming_demo -p zer-pipeline
-
 use std::sync::Arc;
 
 use tempfile::TempDir;
@@ -21,8 +20,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
 
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()?;
 
@@ -41,32 +40,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Send a mix of duplicates and unique individuals
     let stream: Vec<Record> = vec![
-        make_record(1,  "Jan",    "de Vries", "1985-03-15"), // first occurrence
-        make_record(2,  "Alice",  "Smith",    "1990-01-01"), // unique
-        make_record(3,  "Jan",    "de Vries", "1985-03-15"), // dup of #1
-        make_record(4,  "Bob",    "Brown",    "1978-07-12"), // unique
-        make_record(5,  "Jan",    "de Vries", "1985-03-15"), // dup of #1 & #3
-        make_record(6,  "Alice",  "Smith",    "1990-01-01"), // dup of #2
-        make_record(7,  "Carlos", "Ramirez",  "1969-04-22"), // unique
-        make_record(8,  "Maria",  "Jansen",   "1992-07-04"), // unique
-        make_record(9,  "Maria",  "Jansen",   "1992-07-04"), // dup of #8
-        make_record(10, "Diana",  "Muller",   "2003-11-19"), // unique
+        make_record(1, "Jan", "de Vries", "1985-03-15"), // first occurrence
+        make_record(2, "Alice", "Smith", "1990-01-01"),  // unique
+        make_record(3, "Jan", "de Vries", "1985-03-15"), // dup of #1
+        make_record(4, "Bob", "Brown", "1978-07-12"),    // unique
+        make_record(5, "Jan", "de Vries", "1985-03-15"), // dup of #1 & #3
+        make_record(6, "Alice", "Smith", "1990-01-01"),  // dup of #2
+        make_record(7, "Carlos", "Ramirez", "1969-04-22"), // unique
+        make_record(8, "Maria", "Jansen", "1992-07-04"), // unique
+        make_record(9, "Maria", "Jansen", "1992-07-04"), // dup of #8
+        make_record(10, "Diana", "Muller", "2003-11-19"), // unique
     ];
 
-    let mut auto_matched  = 0usize;
-    let mut borderline    = 0usize;
+    let mut auto_matched = 0usize;
+    let mut borderline = 0usize;
     let mut auto_rejected = 0usize;
 
     for record in stream {
-        let id     = record.id;
+        let id = record.id;
         let result = ingester.send(record).await?;
 
         let band_str = match result.band {
-            MatchBand::AutoMatch  => { auto_matched  += 1; "AutoMatch " }
-            MatchBand::Borderline => { borderline    += 1; "Borderline" }
-            MatchBand::AutoReject => { auto_rejected += 1; "AutoReject" }
+            MatchBand::AutoMatch => {
+                auto_matched += 1;
+                "AutoMatch "
+            }
+            MatchBand::Borderline => {
+                borderline += 1;
+                "Borderline"
+            }
+            MatchBand::AutoReject => {
+                auto_rejected += 1;
+                "AutoReject"
+            }
         };
-        let entity_str = result.entity_id
+        let entity_str = result
+            .entity_id
             .map(|e| format!("entity={e}"))
             .unwrap_or_else(|| "pending".into());
 
@@ -85,7 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }

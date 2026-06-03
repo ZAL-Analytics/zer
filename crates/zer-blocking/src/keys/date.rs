@@ -1,5 +1,5 @@
-use zer_core::{record::Record, schema::Schema};
 use super::BlockingKey;
+use zer_core::{record::Record, schema::Schema};
 
 /// Controls how much of an ISO 8601 date is used as a blocking key.
 #[derive(Debug, Clone, Copy)]
@@ -11,19 +11,22 @@ pub enum DateGranularity {
 
 /// Blocking key that extracts the leading date fragment at a given granularity.
 pub struct DateFragmentKey {
-    dob_field:   String,
+    dob_field: String,
     granularity: DateGranularity,
 }
 
 impl DateFragmentKey {
     pub fn new(dob_field: &str, granularity: DateGranularity) -> Self {
-        Self { dob_field: dob_field.into(), granularity }
+        Self {
+            dob_field: dob_field.into(),
+            granularity,
+        }
     }
 
     fn fragment_len(granularity: DateGranularity) -> usize {
         match granularity {
-            DateGranularity::Year        => 4,
-            DateGranularity::YearMonth   => 7,
+            DateGranularity::Year => 4,
+            DateGranularity::YearMonth => 7,
             DateGranularity::YearMonthDay => 10,
         }
     }
@@ -38,7 +41,7 @@ impl BlockingKey for DateFragmentKey {
         let cow = record.field_as_str(&self.dob_field);
         let raw = match cow.as_deref() {
             Some(s) => s.trim(),
-            None    => return vec![],
+            None => return vec![],
         };
 
         let len = Self::fragment_len(self.granularity);
@@ -47,7 +50,12 @@ impl BlockingKey for DateFragmentKey {
         }
 
         let fragment = &raw[..len];
-        if !fragment.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+        if !fragment
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false)
+        {
             return vec![];
         }
 
@@ -58,10 +66,16 @@ impl BlockingKey for DateFragmentKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::{SchemaBuilder, FieldKind}};
+    use zer_core::{
+        record::FieldValue,
+        schema::{FieldKind, SchemaBuilder},
+    };
 
     fn schema() -> Schema {
-        SchemaBuilder::new().field("dob", FieldKind::Date).build().unwrap()
+        SchemaBuilder::new()
+            .field("dob", FieldKind::Date)
+            .build()
+            .unwrap()
     }
 
     #[test]

@@ -18,14 +18,9 @@ use crate::{
 /// 3. Remove edges below `config.within_cluster_min` (chain-breaking).
 /// 4. Split oversized components via star pruning.
 /// 5. Emit one `Entity` per non-trivial component (≥ 2 members).
+#[derive(Default)]
 pub struct ConnectedComponentsClusterer {
     pub config: ClusterConfig,
-}
-
-impl Default for ConnectedComponentsClusterer {
-    fn default() -> Self {
-        Self { config: ClusterConfig::default() }
-    }
 }
 
 impl Clusterer for ConnectedComponentsClusterer {
@@ -45,16 +40,16 @@ impl Clusterer for ConnectedComponentsClusterer {
                     .iter()
                     .map(|&rid| EntityMember {
                         record_id: rid,
-                        score:     best_score_in_cluster(rid, &banded.auto_match),
-                        method:    ResolutionMethod::AutoMatch,
-                        source:    None,
+                        score: best_score_in_cluster(rid, &banded.auto_match),
+                        method: ResolutionMethod::AutoMatch,
+                        source: None,
                     })
                     .collect();
 
                 Entity {
                     // Temporary sequential ids, caller should persist through
                     // EntityStore.upsert_entity() to get stable database ids.
-                    id:      idx as EntityId + 1,
+                    id: idx as EntityId + 1,
                     members: entity_members,
                 }
             })
@@ -91,11 +86,15 @@ mod tests {
 
     fn pair(a: u64, b: u64, prob: f32, band: MatchBand) -> ScoredPair {
         ScoredPair {
-            record_a:          a,
-            record_b:          b,
-            match_weight:      0.0,
+            record_a: a,
+            record_b: b,
+            match_weight: 0.0,
             match_probability: prob,
-            vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
+            vector: ComparisonVector {
+                record_a: a,
+                record_b: b,
+                levels: vec![],
+            },
             band,
         }
     }
@@ -145,7 +144,14 @@ mod tests {
         let entities = clusterer.cluster(&pairs, &params());
         assert_eq!(entities.len(), 1);
 
-        let member_1 = entities[0].members.iter().find(|m| m.record_id == 1).unwrap();
-        assert!((member_1.score - 0.92).abs() < 1e-5, "record 1 best score is 0.92");
+        let member_1 = entities[0]
+            .members
+            .iter()
+            .find(|m| m.record_id == 1)
+            .unwrap();
+        assert!(
+            (member_1.score - 0.92).abs() < 1e-5,
+            "record 1 best score is 0.92"
+        );
     }
 }

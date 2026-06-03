@@ -11,23 +11,26 @@ pub enum PipelineEvent {
     /// Blocking is complete; the candidate-pair count is known.
     CandidatesReady {
         candidate_pairs: usize,
-        cross_source:    usize,
-        within_source:   usize,
+        cross_source: usize,
+        within_source: usize,
     },
 
     /// Pairwise field comparison is about to begin.
     ComparingPairs { candidate_pairs: usize },
 
     /// EM parameter estimation has started.
-    EmStarted { startup_mode: String, max_iterations: usize },
+    EmStarted {
+        startup_mode: String,
+        max_iterations: usize,
+    },
 
     /// EM estimation finished.
     EmComplete { iterations: usize },
 
     /// Scoring finished; counts reflect the state *before* any judge pass.
     ScoringComplete {
-        auto_matched:  usize,
-        borderline:    usize,
+        auto_matched: usize,
+        borderline: usize,
         auto_rejected: usize,
     },
 

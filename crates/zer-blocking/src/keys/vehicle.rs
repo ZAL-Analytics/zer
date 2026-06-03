@@ -1,7 +1,7 @@
 use zer_core::{record::Record, schema::Schema};
 
-use crate::normalize::normalize_plate;
 use super::BlockingKey;
+use crate::normalize::normalize_plate;
 
 // ── LicensePlateNormKey ───────────────────────────────────────────────────────
 
@@ -15,21 +15,27 @@ pub struct LicensePlateNormKey {
 
 impl LicensePlateNormKey {
     pub fn new(plate_field: &str) -> Self {
-        Self { plate_field: plate_field.into() }
+        Self {
+            plate_field: plate_field.into(),
+        }
     }
 }
 
 impl BlockingKey for LicensePlateNormKey {
-    fn name(&self) -> &str { "plate_norm" }
+    fn name(&self) -> &str {
+        "plate_norm"
+    }
 
     fn extract(&self, record: &Record, _schema: &Schema) -> Vec<String> {
         let cow = record.field_as_str(&self.plate_field);
         let plate = match cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         let norm = normalize_plate(plate);
-        if norm.is_empty() { return vec![]; }
+        if norm.is_empty() {
+            return vec![];
+        }
         vec![norm]
     }
 }
@@ -53,21 +59,27 @@ pub struct PlateOCRFuzzyKey {
 
 impl PlateOCRFuzzyKey {
     pub fn new(plate_field: &str) -> Self {
-        Self { plate_field: plate_field.into() }
+        Self {
+            plate_field: plate_field.into(),
+        }
     }
 }
 
 impl BlockingKey for PlateOCRFuzzyKey {
-    fn name(&self) -> &str { "plate_ocr" }
+    fn name(&self) -> &str {
+        "plate_ocr"
+    }
 
     fn extract(&self, record: &Record, _schema: &Schema) -> Vec<String> {
         let cow = record.field_as_str(&self.plate_field);
         let plate = match cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         let norm = normalize_plate(plate);
-        if norm.is_empty() { return vec![]; }
+        if norm.is_empty() {
+            return vec![];
+        }
 
         let chars: Vec<char> = norm.chars().collect();
         let n = chars.len();
@@ -78,7 +90,9 @@ impl BlockingKey for PlateOCRFuzzyKey {
         // Two plates differing by one substitution at position i share the
         // deletion key produced by removing position i from both.
         for i in 0..n {
-            let variant: String = chars.iter().enumerate()
+            let variant: String = chars
+                .iter()
+                .enumerate()
                 .filter(|&(j, _)| j != i)
                 .map(|(_, &c)| c)
                 .collect();
@@ -100,47 +114,49 @@ impl BlockingKey for PlateOCRFuzzyKey {
 /// camera location within a short interval.
 pub struct CameraTimeWindowKey {
     camera_field: String,
-    time_field:   String,
-    window_mins:  u32,
+    time_field: String,
+    window_mins: u32,
 }
 
 impl CameraTimeWindowKey {
     pub fn new(camera_field: &str, time_field: &str, window_mins: u32) -> Self {
         Self {
             camera_field: camera_field.into(),
-            time_field:   time_field.into(),
+            time_field: time_field.into(),
             window_mins,
         }
     }
 }
 
 fn time_to_slot(datetime: &str, window: u32) -> Option<u32> {
-    let t_idx     = datetime.find('T')?;
+    let t_idx = datetime.find('T')?;
     let time_part = &datetime[t_idx + 1..];
     let mut parts = time_part.splitn(3, ':');
-    let hour:   u32 = parts.next()?.parse().ok()?;
+    let hour: u32 = parts.next()?.parse().ok()?;
     let minute: u32 = parts.next()?.parse().ok()?;
     Some((hour * 60 + minute) / window)
 }
 
 impl BlockingKey for CameraTimeWindowKey {
-    fn name(&self) -> &str { "cam_time_window" }
+    fn name(&self) -> &str {
+        "cam_time_window"
+    }
 
     fn extract(&self, record: &Record, _schema: &Schema) -> Vec<String> {
         let cam_cow = record.field_as_str(&self.camera_field);
         let cam = match cam_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         let ts_cow = record.field_as_str(&self.time_field);
         let ts = match ts_cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         let date = ts.get(..10).unwrap_or("");
         let slot = match time_to_slot(ts, self.window_mins) {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
         vec![format!("{}:{}:{}", cam, date, slot)]
     }
@@ -169,16 +185,18 @@ impl GeoGridKey {
 }
 
 impl BlockingKey for GeoGridKey {
-    fn name(&self) -> &str { "geo_grid" }
+    fn name(&self) -> &str {
+        "geo_grid"
+    }
 
     fn extract(&self, record: &Record, _schema: &Schema) -> Vec<String> {
         let lat = match record.field_as::<f64>(&self.lat_field) {
             Some(v) => v,
-            None    => return vec![],
+            None => return vec![],
         };
         let lon = match record.field_as::<f64>(&self.lon_field) {
             Some(v) => v,
-            None    => return vec![],
+            None => return vec![],
         };
         let lat_cell = (lat / self.grid_size).floor() as i64;
         let lon_cell = (lon / self.grid_size).floor() as i64;
@@ -191,26 +209,29 @@ impl BlockingKey for GeoGridKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::{FieldKind, SchemaBuilder}};
+    use zer_core::{
+        record::FieldValue,
+        schema::{FieldKind, SchemaBuilder},
+    };
 
     fn schema() -> Schema {
         SchemaBuilder::new()
-            .field("kenteken",  FieldKind::LicensePlate)
+            .field("kenteken", FieldKind::LicensePlate)
             .field("camera_id", FieldKind::Categorical)
-            .field("tijdstip",  FieldKind::Timestamp)
-            .field("lat",       FieldKind::GpsCoordinate)
-            .field("lon",       FieldKind::GpsCoordinate)
+            .field("tijdstip", FieldKind::Timestamp)
+            .field("lat", FieldKind::GpsCoordinate)
+            .field("lon", FieldKind::GpsCoordinate)
             .build()
             .unwrap()
     }
 
     fn rec(id: u64, kenteken: &str, camera: &str, ts: &str, lat: &str, lon: &str) -> Record {
         Record::new(id)
-            .insert("kenteken",  FieldValue::Text(kenteken.into()))
+            .insert("kenteken", FieldValue::Text(kenteken.into()))
             .insert("camera_id", FieldValue::Text(camera.into()))
-            .insert("tijdstip",  FieldValue::Text(ts.into()))
-            .insert("lat",       FieldValue::Text(lat.into()))
-            .insert("lon",       FieldValue::Text(lon.into()))
+            .insert("tijdstip", FieldValue::Text(ts.into()))
+            .insert("lat", FieldValue::Text(lat.into()))
+            .insert("lon", FieldValue::Text(lon.into()))
     }
 
     // ── LicensePlateNormKey
@@ -218,17 +239,24 @@ mod tests {
     #[test]
     fn plate_norm_strips_hyphens() {
         let schema = schema();
-        let key    = LicensePlateNormKey::new("kenteken");
-        let r      = rec(1, "25-XKL-9", "CAM-A1-001", "2025-01-01T10:00:00", "52.3", "4.9");
-        let keys   = key.extract(&r, &schema);
+        let key = LicensePlateNormKey::new("kenteken");
+        let r = rec(
+            1,
+            "25-XKL-9",
+            "CAM-A1-001",
+            "2025-01-01T10:00:00",
+            "52.3",
+            "4.9",
+        );
+        let keys = key.extract(&r, &schema);
         assert_eq!(keys, vec!["25XKL9"]);
     }
 
     #[test]
     fn plate_norm_empty_field_returns_empty() {
         let schema = schema();
-        let key    = LicensePlateNormKey::new("kenteken");
-        let r      = Record::new(1);
+        let key = LicensePlateNormKey::new("kenteken");
+        let r = Record::new(1);
         assert!(key.extract(&r, &schema).is_empty());
     }
 
@@ -236,13 +264,27 @@ mod tests {
 
     #[test]
     fn ocr_fuzzy_original_and_confused_share_key() {
-        let schema   = schema();
-        let key      = PlateOCRFuzzyKey::new("kenteken");
+        let schema = schema();
+        let key = PlateOCRFuzzyKey::new("kenteken");
 
         // True plate "CX-180-W" → normalized "CX180W"
-        let true_r   = rec(1, "CX-180-W", "CAM-A1-001", "2025-01-01T10:00:00", "52.3", "4.9");
+        let true_r = rec(
+            1,
+            "CX-180-W",
+            "CAM-A1-001",
+            "2025-01-01T10:00:00",
+            "52.3",
+            "4.9",
+        );
         // OCR plate  "CX-I80-W" (1→I confusion) → normalized "CXI80W"
-        let ocr_r    = rec(2, "CX-I80-W", "CAM-A1-001", "2025-01-01T10:00:00", "52.3", "4.9");
+        let ocr_r = rec(
+            2,
+            "CX-I80-W",
+            "CAM-A1-001",
+            "2025-01-01T10:00:00",
+            "52.3",
+            "4.9",
+        );
 
         let true_keys: std::collections::HashSet<String> =
             key.extract(&true_r, &schema).into_iter().collect();
@@ -259,15 +301,27 @@ mod tests {
     #[test]
     fn ocr_fuzzy_emits_multiple_variants() {
         let schema = schema();
-        let key    = PlateOCRFuzzyKey::new("kenteken");
+        let key = PlateOCRFuzzyKey::new("kenteken");
         // "L01A4" has 5 chars → original + 5 deletion keys = 6 distinct keys
-        let r      = rec(1, "L01A4", "CAM", "2025-01-01T08:00:00", "52.0", "4.0");
-        let keys   = key.extract(&r, &schema);
-        assert!(keys.len() >= 4, "should emit original + deletion variants; got {keys:?}");
-        assert!(keys.contains(&"L01A4".to_string()), "original key must be present");
+        let r = rec(1, "L01A4", "CAM", "2025-01-01T08:00:00", "52.0", "4.0");
+        let keys = key.extract(&r, &schema);
+        assert!(
+            keys.len() >= 4,
+            "should emit original + deletion variants; got {keys:?}"
+        );
+        assert!(
+            keys.contains(&"L01A4".to_string()),
+            "original key must be present"
+        );
         // Deletion-neighbourhood keys: each char removed once
-        assert!(keys.contains(&"01A4".to_string()),  "deletion at pos 0 (L) expected");
-        assert!(keys.contains(&"L0A4".to_string()),  "deletion at pos 2 (1) expected");
+        assert!(
+            keys.contains(&"01A4".to_string()),
+            "deletion at pos 0 (L) expected"
+        );
+        assert!(
+            keys.contains(&"L0A4".to_string()),
+            "deletion at pos 2 (1) expected"
+        );
     }
 
     // ── CameraTimeWindowKey
@@ -275,7 +329,7 @@ mod tests {
     #[test]
     fn camera_time_window_same_slot() {
         let schema = schema();
-        let key    = CameraTimeWindowKey::new("camera_id", "tijdstip", 10);
+        let key = CameraTimeWindowKey::new("camera_id", "tijdstip", 10);
 
         let r1 = rec(1, "X", "CAM-A1-001", "2025-06-01T14:02:00", "52.0", "4.0");
         let r2 = rec(2, "Y", "CAM-A1-001", "2025-06-01T14:08:00", "52.0", "4.0");
@@ -286,7 +340,7 @@ mod tests {
     #[test]
     fn camera_time_window_different_slot() {
         let schema = schema();
-        let key    = CameraTimeWindowKey::new("camera_id", "tijdstip", 10);
+        let key = CameraTimeWindowKey::new("camera_id", "tijdstip", 10);
 
         let r1 = rec(1, "X", "CAM-A1-001", "2025-06-01T14:02:00", "52.0", "4.0");
         let r2 = rec(2, "Y", "CAM-A1-001", "2025-06-01T14:12:00", "52.0", "4.0");
@@ -299,10 +353,10 @@ mod tests {
     #[test]
     fn geo_grid_nearby_records_share_key() {
         let schema = schema();
-        let key    = GeoGridKey::new("lat", "lon", 0.01);
+        let key = GeoGridKey::new("lat", "lon", 0.01);
 
-        let r1 = rec(1, "X", "CAM", "2025-01-01T10:00:00", "52.345",  "4.901");
-        let r2 = rec(2, "Y", "CAM", "2025-01-01T10:00:00", "52.349",  "4.907");
+        let r1 = rec(1, "X", "CAM", "2025-01-01T10:00:00", "52.345", "4.901");
+        let r2 = rec(2, "Y", "CAM", "2025-01-01T10:00:00", "52.349", "4.907");
         // Both land in the same 0.01° cell (lat 5234, lon 490)
         assert_eq!(key.extract(&r1, &schema), key.extract(&r2, &schema));
     }
@@ -310,7 +364,7 @@ mod tests {
     #[test]
     fn geo_grid_distant_records_differ() {
         let schema = schema();
-        let key    = GeoGridKey::new("lat", "lon", 0.01);
+        let key = GeoGridKey::new("lat", "lon", 0.01);
 
         let r1 = rec(1, "X", "CAM", "2025-01-01T10:00:00", "52.345", "4.901");
         let r2 = rec(2, "Y", "CAM", "2025-01-01T10:00:00", "51.922", "4.479");

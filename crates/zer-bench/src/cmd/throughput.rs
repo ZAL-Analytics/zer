@@ -16,8 +16,8 @@ use zer::prelude::*;
 use zer_adapters::time::{fmt_unix_secs, unix_secs_now};
 use zer_judge::{DebertaJudge, DebertaJudgeConfig, JudgeBackend, MiniLmSpec};
 
-use super::util::{log_trt_cache_status, resolve_out_dir};
 use super::scenarios::{find_scenario, full_size_throughput_scenarios, throughput_scenarios};
+use super::util::{log_trt_cache_status, resolve_out_dir};
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -109,13 +109,13 @@ pub fn run(args: ThroughputArgs) -> anyhow::Result<()> {
         }
     }
 
-    let run_start    = std::time::SystemTime::now();
+    let run_start = std::time::SystemTime::now();
     let judge_target = args.judge_target.clone();
-    let has_judge    = judge_target.is_some();
-    let has_libs     = !args.compare_libs.is_empty();
-    let n_zer        = if has_judge { 2 } else { 1 };
-    let total        = n_zer + args.compare_libs.len();
-    let idx          = |i: usize| if total > 1 { Some((i, total)) } else { None };
+    let has_judge = judge_target.is_some();
+    let has_libs = !args.compare_libs.is_empty();
+    let n_zer = if has_judge { 2 } else { 1 };
+    let total = n_zer + args.compare_libs.len();
+    let idx = |i: usize| if total > 1 { Some((i, total)) } else { None };
 
     if args.scenario.as_deref() == Some("all") {
         let base_out = args.out.clone();
@@ -125,10 +125,25 @@ pub fn run(args: ThroughputArgs) -> anyhow::Result<()> {
             let path = resolve_dataset_path(&args, Some(spec.name));
             run_pass(&args, Some(spec.name), &path, &s_out, None, idx(1))?;
             if has_judge {
-                run_pass(&args, Some(spec.name), &path, &s_out, judge_target.as_deref(), idx(2))?;
+                run_pass(
+                    &args,
+                    Some(spec.name),
+                    &path,
+                    &s_out,
+                    judge_target.as_deref(),
+                    idx(2),
+                )?;
             }
             if has_libs {
-                run_compare_libs(&args, Some(spec.name), &path, &s_out, &args.compare_libs, n_zer + 1, total)?;
+                run_compare_libs(
+                    &args,
+                    Some(spec.name),
+                    &path,
+                    &s_out,
+                    &args.compare_libs,
+                    n_zer + 1,
+                    total,
+                )?;
             }
             if has_judge || has_libs {
                 super::compare::print_comparison_for_dir(&s_out, run_start)?;
@@ -140,12 +155,34 @@ pub fn run(args: ThroughputArgs) -> anyhow::Result<()> {
 
     std::fs::create_dir_all(&args.out)?;
     let path = resolve_dataset_path(&args, args.scenario.as_deref());
-    run_pass(&args, args.scenario.as_deref(), &path, &args.out, None, idx(1))?;
+    run_pass(
+        &args,
+        args.scenario.as_deref(),
+        &path,
+        &args.out,
+        None,
+        idx(1),
+    )?;
     if has_judge {
-        run_pass(&args, args.scenario.as_deref(), &path, &args.out, judge_target.as_deref(), idx(2))?;
+        run_pass(
+            &args,
+            args.scenario.as_deref(),
+            &path,
+            &args.out,
+            judge_target.as_deref(),
+            idx(2),
+        )?;
     }
     if has_libs {
-        run_compare_libs(&args, args.scenario.as_deref(), &path, &args.out, &args.compare_libs, n_zer + 1, total)?;
+        run_compare_libs(
+            &args,
+            args.scenario.as_deref(),
+            &path,
+            &args.out,
+            &args.compare_libs,
+            n_zer + 1,
+            total,
+        )?;
     }
     if has_judge || has_libs {
         super::compare::print_comparison_for_dir(&args.out, run_start)?;
@@ -170,12 +207,12 @@ fn resolve_dataset_path(args: &ThroughputArgs, scenario: Option<&str>) -> String
 }
 
 fn run_pass(
-    args:         &ThroughputArgs,
-    scenario:     Option<&str>,
-    path:         &str,
-    out:          &str,
+    args: &ThroughputArgs,
+    scenario: Option<&str>,
+    path: &str,
+    out: &str,
     judge_target: Option<&str>,
-    run_index:    Option<(usize, usize)>,
+    run_index: Option<(usize, usize)>,
 ) -> anyhow::Result<()> {
     let label = scenario
         .map(|s| s.replace('/', "_"))
@@ -188,9 +225,14 @@ fn run_pass(
     };
     let header_label = match run_index {
         Some((i, n)) => format!("[{i}/{n}] {library_name}"),
-        None         => library_name,
+        None => library_name,
     };
-    super::util::print_bench_header(&[&header_label, "throughput", scenario.unwrap_or("brp/dedupe"), &args.target]);
+    super::util::print_bench_header(&[
+        &header_label,
+        "throughput",
+        scenario.unwrap_or("brp/dedupe"),
+        &args.target,
+    ]);
 
     if label.starts_with("kvk") {
         run_kvk(path, &label, args, out, judge_target)?;
@@ -201,27 +243,37 @@ fn run_pass(
 }
 
 fn run_compare_libs(
-    args:         &ThroughputArgs,
-    scenario:     Option<&str>,
-    path:         &str,
-    out:          &str,
+    args: &ThroughputArgs,
+    scenario: Option<&str>,
+    path: &str,
+    out: &str,
     compare_libs: &[String],
-    start_index:  usize,
-    total:        usize,
+    start_index: usize,
+    total: usize,
 ) -> anyhow::Result<()> {
-    let bench_root = super::library::resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
+    let bench_root =
+        super::library::resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
     let datasets = [path];
     let scenario_disp = scenario.unwrap_or("brp/dedupe");
     let mut errors: Vec<String> = Vec::new();
     for (i, lib) in compare_libs.iter().enumerate() {
         let idx = start_index + i;
-        super::util::print_bench_header(&[&format!("[{idx}/{total}] {lib}"), "throughput", scenario_disp]);
+        super::util::print_bench_header(&[
+            &format!("[{idx}/{total}] {lib}"),
+            "throughput",
+            scenario_disp,
+        ]);
         println!("running library  library={lib}  mode=throughput");
         if let Err(e) = super::library::run_library(
-            &bench_root, lib, "throughput",
+            &bench_root,
+            lib,
+            "throughput",
             scenario,
-            &datasets, None, out,
-            None, args.force_setup,
+            &datasets,
+            None,
+            out,
+            None,
+            args.force_setup,
         ) {
             eprintln!("warning: library failed  library={lib}  error={e}");
             errors.push(format!("{lib}: {e}"));
@@ -237,20 +289,20 @@ fn run_compare_libs(
 
 fn brp_schema() -> Schema {
     SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
-        .field("straatnaam",    FieldKind::Address)
+        .field("straatnaam", FieldKind::Address)
         .build()
         .expect("BRP schema must not be empty")
 }
 
 fn kvk_schema() -> Schema {
     SchemaBuilder::new()
-        .field("handelsnaam",   FieldKind::Name)
-        .field("voornamen",     FieldKind::Name)
+        .field("handelsnaam", FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
-        .field("straatnaam",    FieldKind::Address)
+        .field("straatnaam", FieldKind::Address)
         .build()
         .expect("KVK schema must not be empty")
 }
@@ -263,27 +315,32 @@ fn load_brp(path: &str) -> anyhow::Result<(Vec<Record>, Schema)> {
     for (i, result) in rdr.records().enumerate() {
         let row = result?;
         let id: u64 = row.get(0).and_then(|s| s.parse().ok()).unwrap_or(i as u64);
-        records.push(Record::new(id)
-            .insert("voornamen",     text_col(&row, 1))
-            .insert("achternaam",    text_col(&row, 3))
-            .insert("geboortedatum", text_col(&row, 4))
-            .insert("straatnaam",    text_col(&row, 9)));
+        records.push(
+            Record::new(id)
+                .insert("voornamen", text_col(&row, 1))
+                .insert("achternaam", text_col(&row, 3))
+                .insert("geboortedatum", text_col(&row, 4))
+                .insert("straatnaam", text_col(&row, 9)),
+        );
     }
     Ok((records, schema))
 }
 
 /// Load a CSV by matching field names from the schema to column headers.
 /// Used for datasets (like KVK) whose column order differs from BRP.
-fn load_by_headers(path: &str, schema: Schema, fields: &[&str]) -> anyhow::Result<(Vec<Record>, Schema)> {
+fn load_by_headers(
+    path: &str,
+    schema: Schema,
+    fields: &[&str],
+) -> anyhow::Result<(Vec<Record>, Schema)> {
     let mut rdr = csv::Reader::from_path(path)?;
     let headers = rdr.headers()?.clone();
-    let col_idx: std::collections::HashMap<&str, usize> = headers.iter()
-        .enumerate()
-        .map(|(i, h)| (h, i))
-        .collect();
+    let col_idx: std::collections::HashMap<&str, usize> =
+        headers.iter().enumerate().map(|(i, h)| (h, i)).collect();
 
     let id_col = col_idx.get("record_id").copied();
-    let field_cols: Vec<(&str, Option<usize>)> = fields.iter()
+    let field_cols: Vec<(&str, Option<usize>)> = fields
+        .iter()
         .map(|&f| (f, col_idx.get(f).copied()))
         .collect();
 
@@ -296,9 +353,10 @@ fn load_by_headers(path: &str, schema: Schema, fields: &[&str]) -> anyhow::Resul
             .unwrap_or(i as u64);
         let mut rec = Record::new(id);
         for &(name, col) in &field_cols {
-            rec = rec.insert(name, FieldValue::Text(
-                col.and_then(|c| row.get(c)).unwrap_or("").to_string()
-            ));
+            rec = rec.insert(
+                name,
+                FieldValue::Text(col.and_then(|c| row.get(c)).unwrap_or("").to_string()),
+            );
         }
         records.push(rec);
     }
@@ -306,12 +364,26 @@ fn load_by_headers(path: &str, schema: Schema, fields: &[&str]) -> anyhow::Resul
 }
 
 fn load_kvk(path: &str) -> anyhow::Result<(Vec<Record>, Schema)> {
-    load_by_headers(path, kvk_schema(), &[
-        "handelsnaam", "voornamen", "geboortedatum", "straatnaam", "achternaam",
-    ])
+    load_by_headers(
+        path,
+        kvk_schema(),
+        &[
+            "handelsnaam",
+            "voornamen",
+            "geboortedatum",
+            "straatnaam",
+            "achternaam",
+        ],
+    )
 }
 
-fn run_brp(path: &str, label: &str, args: &ThroughputArgs, out: &str, judge_target: Option<&str>) -> anyhow::Result<()> {
+fn run_brp(
+    path: &str,
+    label: &str,
+    args: &ThroughputArgs,
+    out: &str,
+    judge_target: Option<&str>,
+) -> anyhow::Result<()> {
     println!("loading records  path={path}");
     let (records, schema) = load_brp(path)?;
     let blocker = CompositeBlocker::new()
@@ -321,7 +393,13 @@ fn run_brp(path: &str, label: &str, args: &ThroughputArgs, out: &str, judge_targ
     Ok(())
 }
 
-fn run_kvk(path: &str, label: &str, args: &ThroughputArgs, out: &str, judge_target: Option<&str>) -> anyhow::Result<()> {
+fn run_kvk(
+    path: &str,
+    label: &str,
+    args: &ThroughputArgs,
+    out: &str,
+    judge_target: Option<&str>,
+) -> anyhow::Result<()> {
     println!("loading records  path={path}");
     let (records, schema) = load_kvk(path)?;
     let blocker = CompositeBlocker::new()
@@ -332,45 +410,71 @@ fn run_kvk(path: &str, label: &str, args: &ThroughputArgs, out: &str, judge_targ
 }
 
 fn run_scenario(
-    records:      Vec<Record>,
-    schema:       Schema,
-    blocker:      CompositeBlocker,
-    label:        &str,
-    args:         &ThroughputArgs,
-    out:          &str,
+    records: Vec<Record>,
+    schema: Schema,
+    blocker: CompositeBlocker,
+    label: &str,
+    args: &ThroughputArgs,
+    out: &str,
     judge_target: Option<&str>,
 ) -> anyhow::Result<()> {
     println!("records loaded  count={}", records.len());
 
     let t = Instant::now();
-    let mut index     = InvertedIndex::new();
+    let mut index = InvertedIndex::new();
     let mut id_to_idx = HashMap::with_capacity(records.len());
     for (pos, record) in records.iter().enumerate() {
         id_to_idx.insert(record.id, pos);
         blocker.index_record(record, &schema, &mut index);
     }
-    let pairs    = index.all_pairs(&id_to_idx, 0);
+    let pairs = index.all_pairs(&id_to_idx, 0);
     let block_ms = t.elapsed().as_millis();
-    println!("blocking complete  pairs={}  block_ms={block_ms}", pairs.len());
+    println!(
+        "blocking complete  pairs={}  block_ms={block_ms}",
+        pairs.len()
+    );
 
     let backend = resolve_backend(&args.target);
     println!("backend={}", backend.name());
 
     // Build judge outside the pipeline timer, init is not counted.
-    let judge = build_judge(judge_target, args.judge_models_dir.as_deref(), &records, &schema)?;
+    let judge = build_judge(
+        judge_target,
+        args.judge_models_dir.as_deref(),
+        &records,
+        &schema,
+    )?;
 
-    let metrics = run_pipeline_timed(&backend, &records, &pairs, &schema, args.em_iter, block_ms, judge.as_ref());
-    print_metrics(label, &records, &pairs, &backend, &metrics, out, judge_target);
+    let metrics = run_pipeline_timed(
+        &backend,
+        &records,
+        &pairs,
+        &schema,
+        args.em_iter,
+        block_ms,
+        judge.as_ref(),
+    );
+    print_metrics(
+        label,
+        &records,
+        &pairs,
+        &backend,
+        &metrics,
+        out,
+        judge_target,
+    );
     Ok(())
 }
 
 fn build_judge(
-    judge_target:    Option<&str>,
+    judge_target: Option<&str>,
     judge_models_dir: Option<&str>,
-    records:         &[Record],
-    schema:          &Schema,
+    records: &[Record],
+    schema: &Schema,
 ) -> anyhow::Result<Option<DebertaJudge>> {
-    let Some(jt) = judge_target else { return Ok(None) };
+    let Some(jt) = judge_target else {
+        return Ok(None);
+    };
 
     if jt == "tensorrt" {
         log_trt_cache_status();
@@ -382,16 +486,22 @@ fn build_judge(
     }
 
     let judge_backend = JudgeBackend::from_target(jt);
-    let models_base = judge_models_dir
-        .map(PathBuf::from)
-        .unwrap_or_else(|| judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base")));
+    let models_base = judge_models_dir.map(PathBuf::from).unwrap_or_else(|| {
+        judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base"))
+    });
     let minilm_dir = models_base.join("nli-minilm-onnx");
     let spec = MiniLmSpec::from_dir(&minilm_dir);
 
     println!("loading judge  target={jt}  path={}", minilm_dir.display());
     let t_load = Instant::now();
-    let judge = DebertaJudge::new(&spec, &judge_backend, record_store, schema.clone(), DebertaJudgeConfig::default())
-        .map_err(|e| anyhow::anyhow!("failed to load judge: {e}"))?;
+    let judge = DebertaJudge::new(
+        &spec,
+        &judge_backend,
+        record_store,
+        schema.clone(),
+        DebertaJudgeConfig::default(),
+    )
+    .map_err(|e| anyhow::anyhow!("failed to load judge: {e}"))?;
     println!("judge ready  load_ms={}", t_load.elapsed().as_millis());
 
     Ok(Some(judge))
@@ -400,20 +510,20 @@ fn build_judge(
 // ── Shared pipeline runner ────────────────────────────────────────────────────
 
 struct PipelineMetrics {
-    block_ms:   u128,
-    setup_ms:   u128,
+    block_ms: u128,
+    setup_ms: u128,
     compare_ms: u128,
-    em_ms:      u128,
-    score_ms:   u128,
-    judge_ms:   Option<u128>,
-    auto_match:  usize,
-    borderline:  usize,
+    em_ms: u128,
+    score_ms: u128,
+    judge_ms: Option<u128>,
+    auto_match: usize,
+    borderline: usize,
     auto_reject: usize,
-    lambda:      f32,
+    lambda: f32,
     // RSS snapshots in MB after each stage (cross-platform via sysinfo).
     rss_after_compare_mb: Option<f64>,
-    rss_after_em_mb:      Option<f64>,
-    rss_after_score_mb:   Option<f64>,
+    rss_after_em_mb: Option<f64>,
+    rss_after_score_mb: Option<f64>,
 }
 
 /// Read current RSS (resident set size) in MB for this process using sysinfo.
@@ -428,20 +538,21 @@ fn read_rss_mb() -> Option<f64> {
         true,
         ProcessRefreshKind::new().with_memory(),
     );
-    sys.process(pid).map(|p| p.memory() as f64 / (1024.0 * 1024.0))
+    sys.process(pid)
+        .map(|p| p.memory() as f64 / (1024.0 * 1024.0))
 }
 
 fn run_pipeline_timed(
-    backend:  &Backend,
-    records:  &[Record],
-    pairs:    &[(usize, usize)],
-    schema:   &Schema,
-    em_iter:  usize,
+    backend: &Backend,
+    records: &[Record],
+    pairs: &[(usize, usize)],
+    schema: &Schema,
+    em_iter: usize,
     block_ms: u128,
-    judge:    Option<&DebertaJudge>,
+    judge: Option<&DebertaJudge>,
 ) -> PipelineMetrics {
     let comparator = Comparator::new(schema, backend);
-    let scorer     = Scorer::new(backend);
+    let scorer = Scorer::new(backend);
 
     let t = Instant::now();
     let pool = RecordPool::from_records(records, schema);
@@ -465,43 +576,72 @@ fn run_pipeline_timed(
     let rss_after_score_mb = read_rss_mb();
 
     let judge_ms = if let Some(j) = judge {
-        let borderlines: Vec<ScoredPair> = scored.iter()
+        let borderlines: Vec<ScoredPair> = scored
+            .iter()
             .filter(|s| matches!(s.band, MatchBand::Borderline))
             .cloned()
             .collect();
         let t = Instant::now();
         if !borderlines.is_empty() {
-            j.adjudicate(&borderlines).expect("judge adjudication failed");
+            j.adjudicate(&borderlines)
+                .expect("judge adjudication failed");
         }
         Some(t.elapsed().as_millis())
     } else {
         None
     };
 
-    let auto_match  = scored.iter().filter(|s| matches!(s.band, MatchBand::AutoMatch)).count();
-    let borderline  = scored.iter().filter(|s| matches!(s.band, MatchBand::Borderline)).count();
-    let auto_reject = scored.iter().filter(|s| matches!(s.band, MatchBand::AutoReject)).count();
+    let auto_match = scored
+        .iter()
+        .filter(|s| matches!(s.band, MatchBand::AutoMatch))
+        .count();
+    let borderline = scored
+        .iter()
+        .filter(|s| matches!(s.band, MatchBand::Borderline))
+        .count();
+    let auto_reject = scored
+        .iter()
+        .filter(|s| matches!(s.band, MatchBand::AutoReject))
+        .count();
     let lambda = params.log_prior_odds.exp() / (1.0 + params.log_prior_odds.exp());
 
     PipelineMetrics {
-        block_ms, setup_ms, compare_ms, em_ms, score_ms, judge_ms,
-        auto_match, borderline, auto_reject, lambda,
-        rss_after_compare_mb, rss_after_em_mb, rss_after_score_mb,
+        block_ms,
+        setup_ms,
+        compare_ms,
+        em_ms,
+        score_ms,
+        judge_ms,
+        auto_match,
+        borderline,
+        auto_reject,
+        lambda,
+        rss_after_compare_mb,
+        rss_after_em_mb,
+        rss_after_score_mb,
     }
 }
 
 fn print_metrics(
-    label:        &str,
-    records:      &[Record],
-    pairs:        &[(usize, usize)],
-    backend:      &Backend,
-    m:            &PipelineMetrics,
-    out:          &str,
+    label: &str,
+    records: &[Record],
+    pairs: &[(usize, usize)],
+    backend: &Backend,
+    m: &PipelineMetrics,
+    out: &str,
     judge_target: Option<&str>,
 ) {
     let n = pairs.len();
-    let compare_pairs_s = if m.compare_ms > 0 { n as u64 * 1_000 / m.compare_ms as u64 } else { u64::MAX };
-    let em_vectors_s    = if m.em_ms > 0      { n as u64 * 1_000 / m.em_ms      as u64 } else { u64::MAX };
+    let compare_pairs_s = if m.compare_ms > 0 {
+        n as u64 * 1_000 / m.compare_ms as u64
+    } else {
+        u64::MAX
+    };
+    let em_vectors_s = if m.em_ms > 0 {
+        n as u64 * 1_000 / m.em_ms as u64
+    } else {
+        u64::MAX
+    };
 
     println!("preset\t\t{label}");
     println!("backend\t\t{}", backend.name());
@@ -512,29 +652,45 @@ fn print_metrics(
     println!("compare_ms\t{}", m.compare_ms);
     println!("em_ms\t\t{}", m.em_ms);
     println!("score_ms\t{}", m.score_ms);
-    if let Some(ms) = m.judge_ms { println!("judge_ms\t{ms}"); }
+    if let Some(ms) = m.judge_ms {
+        println!("judge_ms\t{ms}");
+    }
     println!("compare_pairs_s\t{compare_pairs_s}");
     println!("em_vectors_s\t{em_vectors_s}");
     println!("auto_match\t{}", m.auto_match);
     println!("borderline\t{}", m.borderline);
     println!("auto_reject\t{}", m.auto_reject);
     println!("lambda_est\t{:.4}", m.lambda);
-    if let Some(mb) = m.rss_after_compare_mb { println!("rss_compare_mb\t{mb:.1}"); }
-    if let Some(mb) = m.rss_after_em_mb      { println!("rss_em_mb\t{mb:.1}"); }
-    if let Some(mb) = m.rss_after_score_mb   { println!("rss_score_mb\t{mb:.1}"); }
+    if let Some(mb) = m.rss_after_compare_mb {
+        println!("rss_compare_mb\t{mb:.1}");
+    }
+    if let Some(mb) = m.rss_after_em_mb {
+        println!("rss_em_mb\t{mb:.1}");
+    }
+    if let Some(mb) = m.rss_after_score_mb {
+        println!("rss_score_mb\t{mb:.1}");
+    }
 
-    if let Err(e) = write_summary(label, records.len(), pairs.len(), backend.name(), m, out, judge_target) {
+    if let Err(e) = write_summary(
+        label,
+        records.len(),
+        pairs.len(),
+        backend.name(),
+        m,
+        out,
+        judge_target,
+    ) {
         eprintln!("warning: failed to write summary CSV: {e}");
     }
 }
 
 fn write_summary(
-    dataset:      &str,
-    n_records:    usize,
-    n_pairs:      usize,
-    backend:      &str,
-    m:            &PipelineMetrics,
-    out_dir:      &str,
+    dataset: &str,
+    n_records: usize,
+    n_pairs: usize,
+    backend: &str,
+    m: &PipelineMetrics,
+    out_dir: &str,
     judge_target: Option<&str>,
 ) -> anyhow::Result<()> {
     let out_path = resolve_out_dir(out_dir);
@@ -544,13 +700,14 @@ fn write_summary(
     // elapsed_ms = full pipeline including blocking, matching splink's pipeline_ms definition
     // (splink's predict() call covers blocking+compare+score as a single DuckDB stage, so
     // their elapsed_ms always includes blocking; zer must match for a fair comparison).
-    let elapsed_ms = m.block_ms + m.setup_ms + m.compare_ms + m.em_ms + m.score_ms + m.judge_ms.unwrap_or(0);
-    let ts        = unix_secs_now();
-    let run_id    = format!("{ts}");
+    let elapsed_ms =
+        m.block_ms + m.setup_ms + m.compare_ms + m.em_ms + m.score_ms + m.judge_ms.unwrap_or(0);
+    let ts = unix_secs_now();
+    let run_id = format!("{ts}");
     let timestamp = fmt_unix_secs(ts);
     let library = match judge_target {
         Some(jt) => format!("zer_{backend}+judge_{jt}"),
-        None     => format!("zer_{backend}"),
+        None => format!("zer_{backend}"),
     };
 
     let stem = format!("zer_throughput_{dataset}_{ts}");
@@ -561,28 +718,67 @@ fn write_summary(
         .map_err(|e| anyhow::anyhow!("cannot create {}: {e}", csv_path.display()))?;
     let mut wtr = csv::Writer::from_writer(csv_file);
     wtr.write_record(&[
-        "library","mode","dataset","run_id","timestamp",
-        "total_records","candidate_pairs","auto_matched","borderline","auto_rejected",
-        "elapsed_ms","true_pos","false_pos","false_neg","precision","recall","f1",
+        "library",
+        "mode",
+        "dataset",
+        "run_id",
+        "timestamp",
+        "total_records",
+        "candidate_pairs",
+        "auto_matched",
+        "borderline",
+        "auto_rejected",
+        "elapsed_ms",
+        "true_pos",
+        "false_pos",
+        "false_neg",
+        "precision",
+        "recall",
+        "f1",
     ])?;
     wtr.write_record(&[
-        &library, "throughput", dataset, &run_id, &timestamp,
-        &n_records.to_string(), &n_pairs.to_string(),
-        &m.auto_match.to_string(), &m.borderline.to_string(), &m.auto_reject.to_string(),
-        &elapsed_ms.to_string(), "", "", "", "", "", "",
+        &library,
+        "throughput",
+        dataset,
+        &run_id,
+        &timestamp,
+        &n_records.to_string(),
+        &n_pairs.to_string(),
+        &m.auto_match.to_string(),
+        &m.borderline.to_string(),
+        &m.auto_reject.to_string(),
+        &elapsed_ms.to_string(),
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
     ])?;
     wtr.flush()?;
     println!("csv written  path={}", csv_path.display());
 
     // ── JSON (full stage breakdown, human-readable) ───────────────────────────
-    let pipeline_pairs_s = if elapsed_ms > 0   { n_pairs as u64 * 1_000 / elapsed_ms   as u64 } else { 0 };
-    let compare_pairs_s  = if m.compare_ms > 0 { n_pairs as u64 * 1_000 / m.compare_ms as u64 } else { 0 };
-    let em_vectors_s     = if m.em_ms > 0      { n_pairs as u64 * 1_000 / m.em_ms      as u64 } else { 0 };
+    let pipeline_pairs_s = if elapsed_ms > 0 {
+        n_pairs as u64 * 1_000 / elapsed_ms as u64
+    } else {
+        0
+    };
+    let compare_pairs_s = if m.compare_ms > 0 {
+        n_pairs as u64 * 1_000 / m.compare_ms as u64
+    } else {
+        0
+    };
+    let em_vectors_s = if m.em_ms > 0 {
+        n_pairs as u64 * 1_000 / m.em_ms as u64
+    } else {
+        0
+    };
 
     let round1 = |mb: f64| (mb * 10.0).round() / 10.0;
     let mem_after_compare = m.rss_after_compare_mb.map(round1);
-    let mem_after_em      = m.rss_after_em_mb.map(round1);
-    let mem_after_score   = m.rss_after_score_mb.map(round1);
+    let mem_after_em = m.rss_after_em_mb.map(round1);
+    let mem_after_score = m.rss_after_score_mb.map(round1);
 
     let json = serde_json::json!({
         "library":          library,

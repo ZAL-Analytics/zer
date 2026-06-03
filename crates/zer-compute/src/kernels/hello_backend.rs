@@ -31,5 +31,5 @@ pub struct HelloBackendOutput {
 
 impl Kernel for HelloBackend {
     type Input<'a> = HelloBackendInput;
-    type Output    = HelloBackendOutput;
+    type Output = HelloBackendOutput;
 }

@@ -23,7 +23,7 @@ impl std::fmt::Display for BatchStartupMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ColdStart => write!(f, "ColdStart"),
-            Self::WarmLoad  => write!(f, "WarmLoad"),
+            Self::WarmLoad => write!(f, "WarmLoad"),
             Self::WarmStart => write!(f, "WarmStart"),
         }
     }
@@ -52,8 +52,8 @@ pub enum LinkMode {
 impl LinkMode {
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::Deduplicate   => "deduplicate",
-            Self::LinkOnly      => "link-only",
+            Self::Deduplicate => "deduplicate",
+            Self::LinkOnly => "link-only",
             Self::LinkAndDedupe => "link-and-dedupe",
         }
     }
@@ -73,8 +73,8 @@ pub struct RateConfig {
 impl Default for RateConfig {
     fn default() -> Self {
         Self {
-            slow_threshold:            1.0,
-            fast_threshold:          100.0,
+            slow_threshold: 1.0,
+            fast_threshold: 100.0,
             bulk_threshold_multiplier: 1.05,
         }
     }
@@ -145,27 +145,28 @@ pub struct PipelineConfig {
     /// schema path.  Leave empty (default) for same-schema dedupe/link runs.
     #[serde(default)]
     pub field_mappings: Vec<FieldMapping>,
-
 }
 
 const DEFAULT_MAX_BUCKET_SIZE: usize = 300;
 
-fn default_max_bucket_size() -> usize { DEFAULT_MAX_BUCKET_SIZE }
+fn default_max_bucket_size() -> usize {
+    DEFAULT_MAX_BUCKET_SIZE
+}
 
 impl Default for PipelineConfig {
     fn default() -> Self {
         Self {
-            registry_path:    PathBuf::from("schema.zsm"),
+            registry_path: PathBuf::from("schema.zsm"),
             em_max_iter_cold: 25,
             em_max_iter_warm: 3,
-            cluster_config:   ClusterConfig::default(),
-            gpu_min_batch:    1_000,
-            rate_config:      RateConfig::default(),
-            upper_threshold:  None,
-            lower_threshold:  None,
-            link_mode:        LinkMode::Deduplicate,
-            max_bucket_size:  DEFAULT_MAX_BUCKET_SIZE,
-            field_mappings:   Vec::new(),
+            cluster_config: ClusterConfig::default(),
+            gpu_min_batch: 1_000,
+            rate_config: RateConfig::default(),
+            upper_threshold: None,
+            lower_threshold: None,
+            link_mode: LinkMode::Deduplicate,
+            max_bucket_size: DEFAULT_MAX_BUCKET_SIZE,
+            field_mappings: Vec::new(),
         }
     }
 }
@@ -187,8 +188,14 @@ mod tests {
     #[test]
     fn default_threshold_overrides_are_none() {
         let cfg = PipelineConfig::default();
-        assert!(cfg.upper_threshold.is_none(), "upper_threshold must default to None");
-        assert!(cfg.lower_threshold.is_none(), "lower_threshold must default to None");
+        assert!(
+            cfg.upper_threshold.is_none(),
+            "upper_threshold must default to None"
+        );
+        assert!(
+            cfg.lower_threshold.is_none(),
+            "lower_threshold must default to None"
+        );
     }
 
     #[test]

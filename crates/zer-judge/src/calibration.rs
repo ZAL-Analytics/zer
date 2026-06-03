@@ -8,25 +8,24 @@
 /// posterior_odds = prior_odds  times  lr
 /// ```
 /// where `prior_odds = p / (1 - p)` and `p = match_probability`.
-
 use zer_core::traits::JudgeVerdict;
 
 /// Per-decision likelihood ratios applied by the judge.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CalibrationTable {
     /// LR applied when the judge says `IncreaseConfidence` (match).
-    pub lr_increase:   f64,
+    pub lr_increase: f64,
     /// LR applied when the judge says `DecreaseConfidence` (non-match).
-    pub lr_decrease:   f64,
+    pub lr_decrease: f64,
     /// LR applied when the judge says `NoChange`.
-    pub lr_no_change:  f64,
+    pub lr_no_change: f64,
 }
 
 impl Default for CalibrationTable {
     fn default() -> Self {
         Self {
-            lr_increase:  4.5,
-            lr_decrease:  0.12,
+            lr_increase: 4.5,
+            lr_decrease: 0.12,
             lr_no_change: 1.0,
         }
     }
@@ -34,7 +33,11 @@ impl Default for CalibrationTable {
 
 impl CalibrationTable {
     pub fn new(lr_increase: f64, lr_decrease: f64, lr_no_change: f64) -> Self {
-        Self { lr_increase, lr_decrease, lr_no_change }
+        Self {
+            lr_increase,
+            lr_decrease,
+            lr_no_change,
+        }
     }
 
     /// Apply `IncreaseConfidence` update to a raw probability.
@@ -57,15 +60,15 @@ impl CalibrationTable {
         match verdict {
             JudgeVerdict::IncreaseConfidence => self.update_increase(prior_prob),
             JudgeVerdict::DecreaseConfidence => self.update_decrease(prior_prob),
-            JudgeVerdict::NoChange           => self.update_no_change(prior_prob),
+            JudgeVerdict::NoChange => self.update_no_change(prior_prob),
         }
     }
 
     fn apply(&self, p: f32, lr: f64) -> f32 {
         let p = p.clamp(1e-6, 1.0 - 1e-6) as f64;
-        let prior_odds  = p / (1.0 - p);
-        let post_odds   = prior_odds * lr;
-        let post_p      = post_odds / (1.0 + post_odds);
+        let prior_odds = p / (1.0 - p);
+        let post_odds = prior_odds * lr;
+        let post_p = post_odds / (1.0 + post_odds);
         post_p.clamp(0.0, 1.0) as f32
     }
 }
@@ -78,8 +81,11 @@ mod tests {
     fn increase_moves_probability_up() {
         let cal = CalibrationTable::default();
         let p_before = 0.60_f32;
-        let p_after  = cal.update_increase(p_before);
-        assert!(p_after > p_before, "increase should raise probability: {p_after} <= {p_before}");
+        let p_after = cal.update_increase(p_before);
+        assert!(
+            p_after > p_before,
+            "increase should raise probability: {p_after} <= {p_before}"
+        );
         assert!(p_after <= 1.0);
     }
 
@@ -87,8 +93,11 @@ mod tests {
     fn decrease_moves_probability_down() {
         let cal = CalibrationTable::default();
         let p_before = 0.60_f32;
-        let p_after  = cal.update_decrease(p_before);
-        assert!(p_after < p_before, "decrease should lower probability: {p_after} >= {p_before}");
+        let p_after = cal.update_decrease(p_before);
+        assert!(
+            p_after < p_before,
+            "decrease should lower probability: {p_after} >= {p_before}"
+        );
         assert!(p_after >= 0.0);
     }
 
@@ -97,7 +106,10 @@ mod tests {
         let cal = CalibrationTable::default();
         let p = 0.75_f32;
         let p_after = cal.update_no_change(p);
-        assert!((p_after - p).abs() < 1e-4, "no_change should be near-identity: {p_after} != {p}");
+        assert!(
+            (p_after - p).abs() < 1e-4,
+            "no_change should be near-identity: {p_after} != {p}"
+        );
     }
 
     #[test]
@@ -115,9 +127,18 @@ mod tests {
     fn update_probability_dispatches_correctly() {
         let cal = CalibrationTable::default();
         let p = 0.6_f32;
-        assert_eq!(cal.update_probability(p, &JudgeVerdict::IncreaseConfidence), cal.update_increase(p));
-        assert_eq!(cal.update_probability(p, &JudgeVerdict::DecreaseConfidence), cal.update_decrease(p));
-        assert_eq!(cal.update_probability(p, &JudgeVerdict::NoChange),           cal.update_no_change(p));
+        assert_eq!(
+            cal.update_probability(p, &JudgeVerdict::IncreaseConfidence),
+            cal.update_increase(p)
+        );
+        assert_eq!(
+            cal.update_probability(p, &JudgeVerdict::DecreaseConfidence),
+            cal.update_decrease(p)
+        );
+        assert_eq!(
+            cal.update_probability(p, &JudgeVerdict::NoChange),
+            cal.update_no_change(p)
+        );
     }
 
     #[test]

@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Crates excluded from all CI jobs:
+  #   zer-judge  -- requires ORT binary download (~300 MB) and ONNX model files not in the repo
+  #   zer-bench  -- standalone benchmarking CLI, not a unit-testable library
+  #   demos/*    -- integration demos that require runtime data files
+  CI_EXCLUDE: >-
+    --exclude zer-judge
+    --exclude zer-bench
+    --exclude blocking-explorer
+    --exclude demo-common
+    --exclude cross-source-linkage
+    --exclude custom-components
+    --exclude hello-backend
+    --exclude multi-source-linkage
+    --exclude person-deduplication
+    --exclude scoring-walkthrough
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace ${{ env.CI_EXCLUDE }} --features cpu --release -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Cache test datasets
+        id: cache-datasets
+        uses: actions/cache@v4
+        with:
+          path: data/tests
+          key: test-datasets-v1-${{ hashFiles('data_generator/generate_examples_tests.py', 'data_generator/_common.py') }}
+
+      - name: Download test datasets
+        id: download-datasets
+        if: steps.cache-datasets.outputs.cache-hit != 'true'
+        continue-on-error: true
+        env:
+          HF_TOKEN: ${{ secrets.HF_API_KEY }}
+        run: |
+          pip install 'huggingface_hub' --quiet
+          bash scripts/download_dataset.sh
+
+      - name: Generate test datasets (fallback)
+        if: steps.cache-datasets.outputs.cache-hit != 'true' && steps.download-datasets.outcome == 'failure'
+        run: bash scripts/generate_data.sh --tests
+
+      - run: cargo test --workspace ${{ env.CI_EXCLUDE }} --features cpu --release
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cargo-audit
+      - run: cargo audit --ignore RUSTSEC-2025-0141 --ignore RUSTSEC-2024-0436
+
+  deny:
+    name: Deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v1

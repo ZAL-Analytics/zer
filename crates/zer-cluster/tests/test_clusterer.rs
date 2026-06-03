@@ -19,11 +19,17 @@ use zer_core::{
 };
 
 fn cdr_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/cdr/ground_truth_clusters.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "tests/cdr/ground_truth_clusters.csv",
+    )
 }
 
 fn fiu_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/fiu/ground_truth_clusters.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "tests/fiu/ground_truth_clusters.csv",
+    )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -40,11 +46,15 @@ fn params() -> ModelParams {
 
 fn scored_pair(a: RecordId, b: RecordId, prob: f32, band: MatchBand) -> ScoredPair {
     ScoredPair {
-        record_a:          a,
-        record_b:          b,
-        match_weight:      0.0,
+        record_a: a,
+        record_b: b,
+        match_weight: 0.0,
         match_probability: prob,
-        vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
+        vector: ComparisonVector {
+            record_a: a,
+            record_b: b,
+            levels: vec![],
+        },
         band,
     }
 }
@@ -61,9 +71,13 @@ fn load_clusters(
         .unwrap_or_else(|_| panic!("CSV not found: {}", csv_path.display()));
     let headers = rdr.headers().unwrap().clone();
 
-    let key_idx = headers.iter().position(|h| h == key_col)
+    let key_idx = headers
+        .iter()
+        .position(|h| h == key_col)
         .unwrap_or_else(|| panic!("column '{key_col}' not found"));
-    let clu_idx = headers.iter().position(|h| h == cluster_col)
+    let clu_idx = headers
+        .iter()
+        .position(|h| h == cluster_col)
         .unwrap_or_else(|| panic!("column '{cluster_col}' not found"));
 
     let mut id_map: HashMap<String, RecordId> = HashMap::new();
@@ -93,7 +107,12 @@ fn intra_cluster_pairs(groups: &HashMap<String, Vec<RecordId>>) -> Vec<ScoredPai
     for members in groups.values() {
         for i in 0..members.len() {
             for j in (i + 1)..members.len() {
-                pairs.push(scored_pair(members[i], members[j], 0.95, MatchBand::AutoMatch));
+                pairs.push(scored_pair(
+                    members[i],
+                    members[j],
+                    0.95,
+                    MatchBand::AutoMatch,
+                ));
             }
         }
     }
@@ -134,7 +153,11 @@ fn compute_recall(
         }
     }
 
-    if total == 0 { 1.0 } else { correct as f64 / total as f64 }
+    if total == 0 {
+        1.0
+    } else {
+        correct as f64 / total as f64
+    }
 }
 
 // ── CDR integration test ───────────────────────────────────────────────────────
@@ -212,5 +235,9 @@ fn weak_bridge_breaks_chain_in_clusterer() {
     let clusterer = ConnectedComponentsClusterer::default();
     let entities = clusterer.cluster(&pairs, &params());
 
-    assert_eq!(entities.len(), 2, "weak bridge should split into 2 entities");
+    assert_eq!(
+        entities.len(),
+        2,
+        "weak bridge should split into 2 entities"
+    );
 }

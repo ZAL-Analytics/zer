@@ -10,7 +10,6 @@
 /// to 0.0 rather than producing misleading fractional scores for unrelated strings.
 ///
 /// Run with:  cargo run --example levenshtein -p zer-compare
-
 use zer_compare::similarity::name::LevenshteinSimilarity;
 use zer_compare::similarity::SimilarityFn;
 use zer_core::record::FieldValue;
@@ -23,14 +22,14 @@ fn main() {
     let sim = LevenshteinSimilarity { max_distance: 3 };
 
     let pairs = vec![
-        ("Jansen",  "Jansen",  "exact match (dist=0)"),
-        ("Jansen",  "Jansem",  "one typo  (dist=1)"),
-        ("Jansen",  "Jansen",  "same again"),
-        ("Janssen", "Jansen",  "double-s → single-s (dist=1)"),
-        ("Peterson","Petersen","Americanised spelling (dist=1)"),
-        ("Smith",   "Smyth",   "variant spelling (dist=1)"),
-        ("hello",   "world",   "unrelated (dist=4 > max)"),
-        ("Alice",   "Alicia",  "suffix difference (dist=2)"),
+        ("Jansen", "Jansen", "exact match (dist=0)"),
+        ("Jansen", "Jansem", "one typo  (dist=1)"),
+        ("Jansen", "Jansen", "same again"),
+        ("Janssen", "Jansen", "double-s → single-s (dist=1)"),
+        ("Peterson", "Petersen", "Americanised spelling (dist=1)"),
+        ("Smith", "Smyth", "variant spelling (dist=1)"),
+        ("hello", "world", "unrelated (dist=4 > max)"),
+        ("Alice", "Alicia", "suffix difference (dist=2)"),
     ];
 
     println!("{:<15} {:<15} {:<6}  {}", "a", "b", "score", "notes");
@@ -74,19 +73,30 @@ fn main() {
 
     let sim3 = LevenshteinSimilarity { max_distance: 3 };
     assert_eq!(
-        sim3.similarity(&FieldValue::Text("abc".into()), &FieldValue::Text("abc".into())),
-        1.0, "exact match must yield 1.0"
+        sim3.similarity(
+            &FieldValue::Text("abc".into()),
+            &FieldValue::Text("abc".into())
+        ),
+        1.0,
+        "exact match must yield 1.0"
     );
     assert_eq!(
-        sim3.similarity(&FieldValue::Text("hello".into()), &FieldValue::Text("world".into())),
-        0.0, "dist > max must yield 0.0"
+        sim3.similarity(
+            &FieldValue::Text("hello".into()),
+            &FieldValue::Text("world".into())
+        ),
+        0.0,
+        "dist > max must yield 0.0"
     );
 
     let partial = sim3.similarity(
         &FieldValue::Text("Jansen".into()),
         &FieldValue::Text("Jansem".into()),
     );
-    assert!(partial > 0.0 && partial < 1.0, "dist=1 within max must yield (0,1)");
+    assert!(
+        partial > 0.0 && partial < 1.0,
+        "dist=1 within max must yield (0,1)"
+    );
 
     println!("\nAll assertions passed.");
 }

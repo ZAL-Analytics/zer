@@ -41,7 +41,7 @@ pub trait RecordStore: Send + Sync {
 // ── VecRecordStore (default in-memory impl) ───────────────────────────────────
 
 struct VecRecordStoreInner {
-    records:   Vec<Record>,
+    records: Vec<Record>,
     id_to_idx: HashMap<RecordId, usize>,
 }
 
@@ -54,7 +54,7 @@ impl VecRecordStore {
     pub fn new() -> Self {
         Self {
             inner: RwLock::new(VecRecordStoreInner {
-                records:   Vec::new(),
+                records: Vec::new(),
                 id_to_idx: HashMap::new(),
             }),
         }
@@ -111,7 +111,8 @@ pub trait BlockIndex: Send + Sync {
 pub trait Blocker: Send + Sync {
     fn blocking_keys(&self, record: &Record, schema: &Schema) -> Vec<String>;
     fn index_record(&self, record: &Record, schema: &Schema, index: &mut dyn BlockIndex);
-    fn candidates(&self, record: &Record, schema: &Schema, index: &dyn BlockIndex) -> Vec<RecordId>;
+    fn candidates(&self, record: &Record, schema: &Schema, index: &dyn BlockIndex)
+        -> Vec<RecordId>;
 }
 
 pub trait Comparator: Send + Sync {
@@ -126,16 +127,17 @@ pub trait Comparator: Send + Sync {
     /// slower than a native pool implementation.
     fn compare_batch_from_pool(
         &self,
-        pool:    &RecordPool,
+        pool: &RecordPool,
         indices: &[(usize, usize)],
-        schema:  &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
-        let n_pairs  = indices.len();
+        let n_pairs = indices.len();
         let n_fields = schema.fields.len();
         if n_pairs == 0 {
             return ComparisonBatch::new(0, n_fields, vec![]);
         }
-        let pair_ids: Vec<(u64, u64)> = indices.iter()
+        let pair_ids: Vec<(u64, u64)> = indices
+            .iter()
             .map(|&(i, j)| (pool.ids[i], pool.ids[j]))
             .collect();
         let mut batch = ComparisonBatch::new(n_pairs, n_fields, pair_ids);
@@ -160,7 +162,6 @@ pub trait Comparator: Send + Sync {
         }
         batch
     }
-
 }
 
 pub trait Scorer: Send + Sync {
@@ -176,8 +177,8 @@ pub trait Scorer: Send + Sync {
 
     fn estimate_params(
         &self,
-        batch:    &ComparisonBatch,
-        init:     Option<ModelParams>,
+        batch: &ComparisonBatch,
+        init: Option<ModelParams>,
         max_iter: usize,
     ) -> Result<ModelParams>;
 }

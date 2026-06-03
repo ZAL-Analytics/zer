@@ -8,12 +8,16 @@ use crate::config::RateConfig;
 pub struct RateAdapter {
     window_start: Instant,
     record_count: usize,
-    config:       RateConfig,
+    config: RateConfig,
 }
 
 impl RateAdapter {
     pub fn new(config: RateConfig) -> Self {
-        Self { window_start: Instant::now(), record_count: 0, config }
+        Self {
+            window_start: Instant::now(),
+            record_count: 0,
+            config,
+        }
     }
 
     /// Increment the record counter by one.
@@ -24,7 +28,11 @@ impl RateAdapter {
     /// Records per second since the adapter was created.
     pub fn current_rate(&self) -> f32 {
         let elapsed = self.window_start.elapsed().as_secs_f32();
-        if elapsed < 1e-9 { 0.0 } else { self.record_count as f32 / elapsed }
+        if elapsed < 1e-9 {
+            0.0
+        } else {
+            self.record_count as f32 / elapsed
+        }
     }
 
     /// Return a (possibly widened) copy of `base` for the current ingestion rate.
@@ -55,9 +63,9 @@ mod tests {
 
     fn base_params() -> ModelParams {
         ModelParams {
-            m:               vec![vec![0.01, 0.09, 0.30, 0.60]],
-            u:               vec![vec![0.70, 0.20, 0.07, 0.03]],
-            log_prior_odds:  -2.0,
+            m: vec![vec![0.01, 0.09, 0.30, 0.60]],
+            u: vec![vec![0.70, 0.20, 0.07, 0.03]],
+            log_prior_odds: -2.0,
             upper_threshold: 0.9,
             lower_threshold: 0.1,
         }
@@ -82,8 +90,8 @@ mod tests {
     #[test]
     fn slow_rate_returns_base_params() {
         let adapter = RateAdapter::new(RateConfig::default());
-        let base    = base_params();
-        let adj     = adapter.adjusted_params(&base);
+        let base = base_params();
+        let adj = adapter.adjusted_params(&base);
         assert!(
             (adj.upper_threshold - base.upper_threshold).abs() < 1e-6,
             "at slow rate, threshold must remain unchanged"
@@ -93,13 +101,13 @@ mod tests {
     #[test]
     fn fast_rate_widens_upper_threshold() {
         let config = RateConfig {
-            fast_threshold:            0.0, // always triggers fast path
+            fast_threshold: 0.0, // always triggers fast path
             bulk_threshold_multiplier: 1.05,
-            slow_threshold:            0.0,
+            slow_threshold: 0.0,
         };
         let adapter = RateAdapter::new(config);
         let base = base_params();
-        let adj  = adapter.adjusted_params(&base);
+        let adj = adapter.adjusted_params(&base);
         assert!(
             adj.upper_threshold < base.upper_threshold,
             "fast rate must widen (lower) the upper threshold"
@@ -110,13 +118,13 @@ mod tests {
     fn adjusted_params_never_exceeds_one() {
         // Even with a multiplier < 1 (widening), result must be capped at 1.0.
         let config = RateConfig {
-            fast_threshold:            0.0,
+            fast_threshold: 0.0,
             bulk_threshold_multiplier: 0.5, // dividing by 0.5 doubles the threshold, but .min(1.0) caps it
-            slow_threshold:            0.0,
+            slow_threshold: 0.0,
         };
         let adapter = RateAdapter::new(config);
-        let base    = base_params();
-        let adj     = adapter.adjusted_params(&base);
+        let base = base_params();
+        let adj = adapter.adjusted_params(&base);
         assert!(adj.upper_threshold <= 1.0);
     }
 }

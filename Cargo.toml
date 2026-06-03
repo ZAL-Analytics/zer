@@ -36,6 +36,12 @@ ahash               = { version = "0.8", features = ["serde"] }
 toml                = "0.8"
 sysinfo             = "0.32"
 
+[profile.release]
+opt-level     = 3
+lto           = "thin"
+codegen-units = 1
+strip         = "debuginfo"
+
 [profile.debug-full]
 inherits = "dev"
 codegen-units = 1

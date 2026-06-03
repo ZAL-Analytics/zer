@@ -9,11 +9,12 @@
 /// | `arrow`  | `ArrowIngest` extension trait for Arrow RecordBatches |
 ///
 /// Enable only the features you need to keep compile times low.
-
 pub mod bench_writer;
 pub mod time;
 
-pub use bench_writer::{AccuracyMetrics, BenchBatchSummary, BenchResultWriter, PairRecord, band_to_match};
+pub use bench_writer::{
+    band_to_match, AccuracyMetrics, BenchBatchSummary, BenchResultWriter, PairRecord,
+};
 pub use time::{fmt_unix_secs, unix_secs_now, utc_timestamp_iso};
 
 #[cfg(feature = "polars")]

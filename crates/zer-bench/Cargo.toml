@@ -1,6 +1,6 @@
 [package]
 name        = "zer-bench"
-version     = "1.0.7"
+version     = "1.0.8"
 edition     = "2021"
 description = "Benchmark harness for zer: throughput, accuracy, and competitor-library comparison"
 license     = "Apache-2.0"
@@ -47,12 +47,3 @@ csv                 = "1"
 tempfile            = "3"
 tokio               = { version = "1", features = ["full"] }
 sysinfo             = { workspace = true }
-
-# Applied when the crate is installed standalone via `cargo install zer-bench`.
-# (Cargo ignores [profile.*] in workspace-member Cargo.toml during workspace builds;
-#  the workspace root's profiles take precedence there.)
-[profile.release]
-opt-level     = 3
-lto           = "thin"
-codegen-units = 1
-strip         = "debuginfo"

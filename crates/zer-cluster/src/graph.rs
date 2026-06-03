@@ -19,7 +19,7 @@ pub struct ClusterConfig {
 impl Default for ClusterConfig {
     fn default() -> Self {
         Self {
-            max_cluster_size:   50,
+            max_cluster_size: 50,
             within_cluster_min: 0.85,
         }
     }
@@ -30,14 +30,14 @@ impl Default for ClusterConfig {
 /// Each node is a `RecordId`; each edge weight is the `match_probability` of
 /// the `AutoMatch` pair that connected those two records.
 pub struct ClusterGraph {
-    graph:    UnGraph<RecordId, f32>,
+    graph: UnGraph<RecordId, f32>,
     node_map: HashMap<RecordId, NodeIndex>,
 }
 
 impl ClusterGraph {
     pub fn new() -> Self {
         Self {
-            graph:    UnGraph::new_undirected(),
+            graph: UnGraph::new_undirected(),
             node_map: HashMap::new(),
         }
     }
@@ -129,14 +129,14 @@ fn weak_edge_removal(graph: &UnGraph<RecordId, f32>, min_weight: f32) -> UnGraph
 /// `petgraph::algo::connected_components()` returns only a count, this
 /// function also yields the actual groups.
 pub(crate) fn extract_components(graph: &UnGraph<RecordId, f32>) -> Vec<Vec<RecordId>> {
-    let mut visited   = HashSet::new();
+    let mut visited = HashSet::new();
     let mut components = Vec::new();
 
     for start in graph.node_indices() {
         if !visited.insert(start) {
             continue;
         }
-        let mut comp  = vec![graph[start]];
+        let mut comp = vec![graph[start]];
         let mut queue = VecDeque::from([start]);
 
         while let Some(node) = queue.pop_front() {
@@ -158,8 +158,8 @@ pub(crate) fn extract_components(graph: &UnGraph<RecordId, f32>) -> Vec<Vec<Reco
 /// `comp`), builds a sub-graph containing only hub-edges with weight ≥
 /// `min_weight`, and returns the resulting sub-components.
 fn star_prune(
-    graph:      &UnGraph<RecordId, f32>,
-    comp:       &[RecordId],
+    graph: &UnGraph<RecordId, f32>,
+    comp: &[RecordId],
     min_weight: f32,
 ) -> Vec<Vec<RecordId>> {
     let comp_set: HashSet<RecordId> = comp.iter().copied().collect();
@@ -175,7 +175,11 @@ fn star_prune(
         graph
             .edges(n)
             .filter(|e| {
-                let other = if e.source() == n { e.target() } else { e.source() };
+                let other = if e.source() == n {
+                    e.target()
+                } else {
+                    e.source()
+                };
                 comp_set.contains(&graph[other]) && *e.weight() >= min_weight
             })
             .count()
@@ -193,11 +197,17 @@ fn star_prune(
     sub_map.insert(hub_idx, hub_sub);
 
     for edge in graph.edges(hub_idx) {
-        let other = if edge.source() == hub_idx { edge.target() } else { edge.source() };
+        let other = if edge.source() == hub_idx {
+            edge.target()
+        } else {
+            edge.source()
+        };
         if !comp_set.contains(&graph[other]) || *edge.weight() < min_weight {
             continue;
         }
-        let other_sub = *sub_map.entry(other).or_insert_with(|| sub.add_node(graph[other]));
+        let other_sub = *sub_map
+            .entry(other)
+            .or_insert_with(|| sub.add_node(graph[other]));
         sub.add_edge(hub_sub, other_sub, *edge.weight());
     }
 
@@ -209,22 +219,29 @@ fn star_prune(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{comparison::ComparisonVector, scoring::MatchBand};
     use zer_core::scoring::ScoredPair;
+    use zer_core::{comparison::ComparisonVector, scoring::MatchBand};
 
     fn auto_match_pair(a: u64, b: u64, prob: f32) -> ScoredPair {
         ScoredPair {
-            record_a:          a,
-            record_b:          b,
-            match_weight:      0.0,
+            record_a: a,
+            record_b: b,
+            match_weight: 0.0,
             match_probability: prob,
-            vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
-            band:              MatchBand::AutoMatch,
+            vector: ComparisonVector {
+                record_a: a,
+                record_b: b,
+                levels: vec![],
+            },
+            band: MatchBand::AutoMatch,
         }
     }
 
     fn config() -> ClusterConfig {
-        ClusterConfig { max_cluster_size: 50, within_cluster_min: 0.85 }
+        ClusterConfig {
+            max_cluster_size: 50,
+            within_cluster_min: 0.85,
+        }
     }
 
     #[test]
@@ -259,12 +276,18 @@ mod tests {
         ]);
         let mut clusters = g.compute_clusters(&config());
         clusters.sort_by_key(|c| *c.iter().min().unwrap());
-        assert_eq!(clusters.len(), 2, "weak bridge must split chain into 2 clusters");
+        assert_eq!(
+            clusters.len(),
+            2,
+            "weak bridge must split chain into 2 clusters"
+        );
         assert_eq!(clusters[0].len(), 2);
         assert_eq!(clusters[1].len(), 2);
 
-        let mut c0 = clusters[0].clone(); c0.sort();
-        let mut c1 = clusters[1].clone(); c1.sort();
+        let mut c0 = clusters[0].clone();
+        c0.sort();
+        let mut c1 = clusters[1].clone();
+        c1.sort();
         assert_eq!(c0, vec![1, 2]);
         assert_eq!(c1, vec![3, 4]);
     }
@@ -274,7 +297,10 @@ mod tests {
         // Hub (id=0) connected to 60 satellites with prob 0.95.
         // max_cluster_size = 50 → star pruning kicks in, yielding the hub+satellites
         // as a valid cluster (star pruning keeps all hub-edges ≥ min_weight).
-        let cfg = ClusterConfig { max_cluster_size: 50, within_cluster_min: 0.85 };
+        let cfg = ClusterConfig {
+            max_cluster_size: 50,
+            within_cluster_min: 0.85,
+        };
         let mut g = ClusterGraph::new();
         let pairs: Vec<_> = (1u64..=60).map(|i| auto_match_pair(0, i, 0.95)).collect();
         g.add_pairs(&pairs);

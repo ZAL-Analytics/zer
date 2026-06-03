@@ -14,8 +14,8 @@ use std::collections::{HashMap, HashSet};
 
 use csv::Reader;
 use zer_blocking::{
-    CompositeBlocker, InvertedIndex,
     keys::{AliasPhoneticKey, FuzzyYearKey, PhoneticNameDobKey},
+    CompositeBlocker, InvertedIndex,
 };
 use zer_core::{
     record::{Record, RecordId},
@@ -27,42 +27,47 @@ fn sis_persons() -> std::path::PathBuf {
     zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/sis/sis_persons.csv")
 }
 fn sis_ground_truth() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "tests/sis/ground_truth_alias_pairs.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "tests/sis/ground_truth_alias_pairs.csv",
+    )
 }
 
 fn sis_schema() -> Schema {
     SchemaBuilder::new()
-        .field("achternaam",      FieldKind::Name)
-        .field("voornamen",       FieldKind::Name)
-        .field("alias_namen",     FieldKind::Alias)
-        .field("geboortedatum",   FieldKind::Date)
+        .field("achternaam", FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("alias_namen", FieldKind::Alias)
+        .field("geboortedatum", FieldKind::Date)
         .field("document_nummer", FieldKind::Id)
         .build()
         .unwrap()
 }
 
 fn load_persons() -> (Vec<Record>, HashMap<String, RecordId>) {
-    let mut rdr      = Reader::from_path(sis_persons()).expect("SIS persons CSV not found");
-    let mut records  = vec![];
+    let mut rdr = Reader::from_path(sis_persons()).expect("SIS persons CSV not found");
+    let mut records = vec![];
     let mut id_map: HashMap<String, RecordId> = HashMap::new();
     let mut next_id: u64 = 1;
 
     for result in rdr.records() {
         let row = result.expect("CSV read error");
-        let sis_id      = row.get(0).unwrap_or("").to_string();
-        let achternaam  = row.get(3).unwrap_or("").to_string();
-        let voornamen   = row.get(2).unwrap_or("").to_string();
+        let sis_id = row.get(0).unwrap_or("").to_string();
+        let achternaam = row.get(3).unwrap_or("").to_string();
+        let voornamen = row.get(2).unwrap_or("").to_string();
         let alias_namen = row.get(4).unwrap_or("").to_string();
         let geboortedatum = row.get(5).unwrap_or("").to_string();
         let document_nummer = row.get(11).unwrap_or("").to_string();
 
-        if sis_id.is_empty() { continue; }
+        if sis_id.is_empty() {
+            continue;
+        }
 
         let r = Record::new(next_id)
-            .insert("achternaam",      achternaam)
-            .insert("voornamen",       voornamen)
-            .insert("alias_namen",     alias_namen)
-            .insert("geboortedatum",   geboortedatum)
+            .insert("achternaam", achternaam)
+            .insert("voornamen", voornamen)
+            .insert("alias_namen", alias_namen)
+            .insert("geboortedatum", geboortedatum)
             .insert("document_nummer", document_nummer);
 
         id_map.insert(sis_id, next_id);
@@ -74,7 +79,7 @@ fn load_persons() -> (Vec<Record>, HashMap<String, RecordId>) {
 }
 
 fn load_true_pairs(id_map: &HashMap<String, RecordId>) -> Vec<(RecordId, RecordId)> {
-    let mut rdr  = Reader::from_path(sis_ground_truth()).expect("SIS ground truth CSV not found");
+    let mut rdr = Reader::from_path(sis_ground_truth()).expect("SIS ground truth CSV not found");
     let mut pairs = vec![];
 
     for result in rdr.records() {
@@ -82,7 +87,9 @@ fn load_true_pairs(id_map: &HashMap<String, RecordId>) -> Vec<(RecordId, RecordI
         let sis_id_a = row.get(0).unwrap_or("");
         let sis_id_b = row.get(1).unwrap_or("");
         let is_match = row.get(2).unwrap_or("False");
-        if is_match != "True" { continue; }
+        if is_match != "True" {
+            continue;
+        }
 
         if let (Some(&a), Some(&b)) = (id_map.get(sis_id_a), id_map.get(sis_id_b)) {
             pairs.push((a, b));
@@ -93,11 +100,11 @@ fn load_true_pairs(id_map: &HashMap<String, RecordId>) -> Vec<(RecordId, RecordI
 
 #[test]
 fn blocking_recall_sis_alias_pairs() {
-    let schema             = sis_schema();
-    let (records, id_map)  = load_persons();
-    let true_pairs         = load_true_pairs(&id_map);
+    let schema = sis_schema();
+    let (records, id_map) = load_persons();
+    let true_pairs = load_true_pairs(&id_map);
 
-    assert!(!records.is_empty(),    "SIS persons CSV produced no records");
+    assert!(!records.is_empty(), "SIS persons CSV produced no records");
     assert!(!true_pairs.is_empty(), "SIS ground truth has no true pairs");
 
     let blocker = CompositeBlocker::new()
@@ -106,8 +113,7 @@ fn blocking_recall_sis_alias_pairs() {
         .add(FuzzyYearKey::new("achternaam", "geboortedatum", 1));
 
     let mut idx = InvertedIndex::new();
-    let record_map: HashMap<RecordId, &Record> =
-        records.iter().map(|r| (r.id, r)).collect();
+    let record_map: HashMap<RecordId, &Record> = records.iter().map(|r| (r.id, r)).collect();
 
     for record in &records {
         blocker.index_record(record, &schema, &mut idx);
@@ -116,8 +122,10 @@ fn blocking_recall_sis_alias_pairs() {
     let mut found = 0usize;
     for (a_id, b_id) in &true_pairs {
         if let Some(rec_a) = record_map.get(a_id) {
-            let candidates: HashSet<RecordId> =
-                blocker.candidates(rec_a, &schema, &idx).into_iter().collect();
+            let candidates: HashSet<RecordId> = blocker
+                .candidates(rec_a, &schema, &idx)
+                .into_iter()
+                .collect();
             if candidates.contains(b_id) {
                 found += 1;
             }
@@ -127,7 +135,10 @@ fn blocking_recall_sis_alias_pairs() {
     let recall = found as f64 / true_pairs.len() as f64;
     println!(
         "SIS II blocking recall: {:.4} ({}/{} alias pairs found, {} records)",
-        recall, found, true_pairs.len(), records.len()
+        recall,
+        found,
+        true_pairs.len(),
+        records.len()
     );
 
     assert!(
@@ -139,11 +150,11 @@ fn blocking_recall_sis_alias_pairs() {
 
 #[test]
 fn sis_no_self_candidates() {
-    let schema            = sis_schema();
-    let (records, _)      = load_persons();
+    let schema = sis_schema();
+    let (records, _) = load_persons();
 
-    let blocker = CompositeBlocker::new()
-        .add(PhoneticNameDobKey::new("achternaam", "geboortedatum"));
+    let blocker =
+        CompositeBlocker::new().add(PhoneticNameDobKey::new("achternaam", "geboortedatum"));
 
     let mut idx = InvertedIndex::new();
     for record in &records {

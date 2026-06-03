@@ -5,8 +5,8 @@
 pub mod viz;
 
 pub use viz::{
-    print_block_histogram, print_cluster_tree, print_comparison_vectors,
-    print_pair_table, print_score_histogram,
+    print_block_histogram, print_cluster_tree, print_comparison_vectors, print_pair_table,
+    print_score_histogram,
 };
 
 /// No-op, kept so existing demo `main` functions compile unchanged.
@@ -17,6 +17,6 @@ pub fn init_tracing() {}
 /// Print a styled section header.
 pub fn section(label: &str) {
     let fill = 60usize.saturating_sub(label.len() + 5);
-    let bar  = "─".repeat(fill);
+    let bar = "─".repeat(fill);
     println!("─── {} {}", label, bar);
 }

@@ -1,6 +1,6 @@
 [package]
 name        = "zer-pipeline"
-version     = "1.0.5"
+version     = "1.0.8"
 edition     = "2021"
 description = "End-to-end entity resolution pipeline: ingestion, blocking, comparison, scoring, and clustering"
 license     = "Apache-2.0"

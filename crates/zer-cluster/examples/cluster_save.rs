@@ -32,11 +32,15 @@ const GROUPS: &[&[u64]] = &[
 
 fn make_pair(a: u64, b: u64, prob: f32, band: MatchBand) -> ScoredPair {
     ScoredPair {
-        record_a:          a,
-        record_b:          b,
-        match_weight:      0.0,
+        record_a: a,
+        record_b: b,
+        match_weight: 0.0,
         match_probability: prob,
-        vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
+        vector: ComparisonVector {
+            record_a: a,
+            record_b: b,
+            levels: vec![],
+        },
         band,
     }
 }
@@ -67,24 +71,35 @@ fn main() {
     println!(
         "Generated {} pairs ({} AutoMatch, {} AutoReject).",
         pairs.len(),
-        pairs.iter().filter(|p| p.band == MatchBand::AutoMatch).count(),
-        pairs.iter().filter(|p| p.band == MatchBand::AutoReject).count(),
+        pairs
+            .iter()
+            .filter(|p| p.band == MatchBand::AutoMatch)
+            .count(),
+        pairs
+            .iter()
+            .filter(|p| p.band == MatchBand::AutoReject)
+            .count(),
     );
 
     // ── Cluster ───────────────────────────────────────────────────────────────
 
     let clusterer = ConnectedComponentsClusterer::default();
     let params = ModelParams {
-        m:               vec![],
-        u:               vec![],
-        log_prior_odds:  0.0,
+        m: vec![],
+        u: vec![],
+        log_prior_odds: 0.0,
         upper_threshold: 0.80,
         lower_threshold: 0.20,
     };
 
     let entities = clusterer.cluster(&pairs, &params);
     println!("\nClustering complete: {} entities found.", entities.len());
-    assert_eq!(entities.len(), GROUPS.len(), "expected exactly {} groups", GROUPS.len());
+    assert_eq!(
+        entities.len(),
+        GROUPS.len(),
+        "expected exactly {} groups",
+        GROUPS.len()
+    );
 
     // ── Persist to .zes store ─────────────────────────────────────────────────
 
@@ -100,8 +115,16 @@ fn main() {
         let eid = store.upsert_entity(entity).expect("upsert failed");
         let mut member_ids: Vec<_> = entity.members.iter().map(|m| m.record_id).collect();
         member_ids.sort();
-        let best = entity.members.iter().map(|m| m.score).fold(0.0_f32, f32::max);
-        println!("  Entity #{eid}: {} members {:?}  (best score: {best:.3})", entity.members.len(), member_ids);
+        let best = entity
+            .members
+            .iter()
+            .map(|m| m.score)
+            .fold(0.0_f32, f32::max);
+        println!(
+            "  Entity #{eid}: {} members {:?}  (best score: {best:.3})",
+            entity.members.len(),
+            member_ids
+        );
     }
 
     // Verify round-trip in the same session.
@@ -109,7 +132,11 @@ fn main() {
     assert_eq!(all.len(), GROUPS.len());
 
     let file_size = std::fs::metadata(store_path).map(|m| m.len()).unwrap_or(0);
-    println!("\nFile size on disk: {} bytes ({:.1} KB)", file_size, file_size as f64 / 1024.0);
+    println!(
+        "\nFile size on disk: {} bytes ({:.1} KB)",
+        file_size,
+        file_size as f64 / 1024.0
+    );
 
     println!("\nDone. Run `cargo run --example cluster_load -p zer-cluster` to verify the file.");
 }

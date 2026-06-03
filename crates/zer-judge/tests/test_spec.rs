@@ -1,10 +1,8 @@
 /// Integration tests for `zer_judge::spec`, model spec constructors and
 /// `spec_from_vram` selection logic.
-
 use std::path::Path;
 use zer_judge::spec::{
-    DebertaBaseSpec, JudgeModelSpec, MiniLmSpec,
-    TokenizerSource, spec_from_vram,
+    spec_from_vram, DebertaBaseSpec, JudgeModelSpec, MiniLmSpec, TokenizerSource,
 };
 
 const MODELS_BASE: &str = "../../models/fp16_fused";
@@ -40,14 +38,21 @@ fn deberta_base_from_dir_model_path_is_correct() {
 fn spec_names_are_distinct() {
     let mini = MiniLmSpec::from_dir("/d");
     let base = DebertaBaseSpec::from_dir("/d");
-    assert_ne!(mini.name(), base.name(), "each spec must have a unique name");
+    assert_ne!(
+        mini.name(),
+        base.name(),
+        "each spec must have a unique name"
+    );
 }
 
 #[test]
 fn vram_requirements_ordered() {
     let mini = MiniLmSpec::from_dir("/d");
     let base = DebertaBaseSpec::from_dir("/d");
-    assert!(mini.vram_bytes() < base.vram_bytes(), "MiniLM should need less VRAM than Base");
+    assert!(
+        mini.vram_bytes() < base.vram_bytes(),
+        "MiniLM should need less VRAM than Base"
+    );
 }
 
 #[test]
@@ -80,15 +85,22 @@ fn spec_from_vram_nonexistent_dirs_always_returns_minilm() {
 
 #[test]
 fn spec_from_vram_low_vram_returns_minilm_even_with_real_dirs() {
-    if !models_base().exists() { return; }
+    if !models_base().exists() {
+        return;
+    }
     let spec = spec_from_vram(models_base(), 256 * 1024 * 1024);
-    assert_eq!(spec.name(), "cross-encoder/nli-MiniLM2-L6-H768",
-        "256 MB VRAM is not enough for DeBERTa-base");
+    assert_eq!(
+        spec.name(),
+        "cross-encoder/nli-MiniLM2-L6-H768",
+        "256 MB VRAM is not enough for DeBERTa-base"
+    );
 }
 
 #[test]
 fn spec_from_vram_2gb_returns_base_when_dir_exists() {
-    if !models_base().join("nli-deberta-v3-base-onnx").exists() { return; }
+    if !models_base().join("nli-deberta-v3-base-onnx").exists() {
+        return;
+    }
     let two_gb = 2 * 1024 * 1024 * 1024_u64;
     let spec = spec_from_vram(models_base(), two_gb);
     assert_eq!(spec.name(), "cross-encoder/nli-deberta-v3-base");
@@ -105,5 +117,7 @@ fn tokenizer_source_file_roundtrip() {
 #[test]
 fn tokenizer_source_hub_roundtrip() {
     let ts = TokenizerSource::hub("cross-encoder/nli-deberta-v3-base");
-    assert!(matches!(ts, TokenizerSource::HuggingFace(s) if s == "cross-encoder/nli-deberta-v3-base"));
+    assert!(
+        matches!(ts, TokenizerSource::HuggingFace(s) if s == "cross-encoder/nli-deberta-v3-base")
+    );
 }

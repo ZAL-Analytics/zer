@@ -12,15 +12,23 @@ pub struct ExactIdSimilarity;
 impl SimilarityFn for ExactIdSimilarity {
     fn similarity(&self, a: &FieldValue, b: &FieldValue) -> f32 {
         match (a, b) {
-            (FieldValue::Text(a),  FieldValue::Text(b))  => if a == b { 1.0 } else { 0.0 },
-            (FieldValue::Int(a),   FieldValue::Int(b))   => if a == b { 1.0 } else { 0.0 },
-            (FieldValue::Float(a), FieldValue::Float(b)) => if (a - b).abs() < f64::EPSILON { 1.0 } else { 0.0 },
-            (FieldValue::Bool(a),  FieldValue::Bool(b))  => if a == b { 1.0 } else { 0.0 },
+            (FieldValue::Text(a), FieldValue::Text(b)) if a == b => 1.0,
+            (FieldValue::Int(a), FieldValue::Int(b)) if a == b => 1.0,
+            (FieldValue::Float(a), FieldValue::Float(b)) if (a - b).abs() < f64::EPSILON => 1.0,
+            (FieldValue::Bool(a), FieldValue::Bool(b)) if a == b => 1.0,
             _ => 0.0,
         }
     }
-    fn similarity_str(&self, a: &str, b: &str) -> f32 { if a == b { 1.0 } else { 0.0 } }
-    fn field_kind(&self) -> FieldKind { FieldKind::Id }
+    fn similarity_str(&self, a: &str, b: &str) -> f32 {
+        if a == b {
+            1.0
+        } else {
+            0.0
+        }
+    }
+    fn field_kind(&self) -> FieldKind {
+        FieldKind::Id
+    }
 }
 
 // ── HammingSimilarity ─────────────────────────────────────────────────────────
@@ -40,7 +48,7 @@ impl SimilarityFn for HammingSimilarity {
         match (a, b) {
             (FieldValue::Text(a), FieldValue::Text(b)) if a.len() == b.len() => {
                 match strsim::hamming(a, b) {
-                    Ok(0)    => 1.0,
+                    Ok(0) => 1.0,
                     Ok(dist) if dist <= self.max_distance => 0.8,
                     _ => 0.0,
                 }
@@ -49,14 +57,18 @@ impl SimilarityFn for HammingSimilarity {
         }
     }
     fn similarity_str(&self, a: &str, b: &str) -> f32 {
-        if a.len() != b.len() { return 0.0; }
+        if a.len() != b.len() {
+            return 0.0;
+        }
         match strsim::hamming(a, b) {
-            Ok(0)    => 1.0,
+            Ok(0) => 1.0,
             Ok(dist) if dist <= self.max_distance => 0.8,
             _ => 0.0,
         }
     }
-    fn field_kind(&self) -> FieldKind { FieldKind::Id }
+    fn field_kind(&self) -> FieldKind {
+        FieldKind::Id
+    }
 }
 
 // ── SuffixMatchSimilarity ─────────────────────────────────────────────────────
@@ -73,26 +85,42 @@ impl SimilarityFn for SuffixMatchSimilarity {
     fn similarity(&self, a: &FieldValue, b: &FieldValue) -> f32 {
         match (a, b) {
             (FieldValue::Text(a), FieldValue::Text(b)) => {
-                if a.len() < self.n || b.len() < self.n { return 0.0; }
+                if a.len() < self.n || b.len() < self.n {
+                    return 0.0;
+                }
                 let sa = &a[a.len() - self.n..];
                 let sb = &b[b.len() - self.n..];
-                if sa == sb { 1.0 } else { 0.0 }
+                if sa == sb {
+                    1.0
+                } else {
+                    0.0
+                }
             }
             _ => 0.0,
         }
     }
     fn similarity_str(&self, a: &str, b: &str) -> f32 {
-        if a.len() < self.n || b.len() < self.n { return 0.0; }
-        if &a[a.len() - self.n..] == &b[b.len() - self.n..] { 1.0 } else { 0.0 }
+        if a.len() < self.n || b.len() < self.n {
+            return 0.0;
+        }
+        if a[a.len() - self.n..] == b[b.len() - self.n..] {
+            1.0
+        } else {
+            0.0
+        }
     }
-    fn field_kind(&self) -> FieldKind { FieldKind::Id }
+    fn field_kind(&self) -> FieldKind {
+        FieldKind::Id
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn tv(s: &str) -> FieldValue { FieldValue::Text(s.into()) }
+    fn tv(s: &str) -> FieldValue {
+        FieldValue::Text(s.into())
+    }
 
     #[test]
     fn exact_id_match() {
@@ -109,8 +137,14 @@ mod tests {
     #[test]
     fn exact_id_integer() {
         let sim = ExactIdSimilarity;
-        assert_eq!(sim.similarity(&FieldValue::Int(12345), &FieldValue::Int(12345)), 1.0);
-        assert_eq!(sim.similarity(&FieldValue::Int(12345), &FieldValue::Int(99999)), 0.0);
+        assert_eq!(
+            sim.similarity(&FieldValue::Int(12345), &FieldValue::Int(12345)),
+            1.0
+        );
+        assert_eq!(
+            sim.similarity(&FieldValue::Int(12345), &FieldValue::Int(99999)),
+            0.0
+        );
     }
 
     #[test]

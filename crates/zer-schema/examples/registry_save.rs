@@ -18,13 +18,14 @@ use zer_core::{
     scoring::ModelParams,
 };
 use zer_schema::{
-    artifact::ModelArtifact,
-    fingerprint::SchemaFingerprint,
-    registry::SchemaRegistry,
+    artifact::ModelArtifact, fingerprint::SchemaFingerprint, registry::SchemaRegistry,
 };
 
 fn brp_q1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q1/brp_persons.csv",
+    )
 }
 
 const REGISTRY_PATH: &str = concat!(
@@ -34,19 +35,19 @@ const REGISTRY_PATH: &str = concat!(
 
 fn brp_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("bsn",            FieldKind::Id)
-        .field("voornamen",      FieldKind::Name)
-        .field("tussenvoegsel",  FieldKind::Categorical)
-        .field("achternaam",     FieldKind::Name)
-        .field("geboortedatum",  FieldKind::Date)
+        .field("bsn", FieldKind::Id)
+        .field("voornamen", FieldKind::Name)
+        .field("tussenvoegsel", FieldKind::Categorical)
+        .field("achternaam", FieldKind::Name)
+        .field("geboortedatum", FieldKind::Date)
         .field("geboorteplaats", FieldKind::Categorical)
-        .field("geboorteland",   FieldKind::Categorical)
-        .field("nationaliteit",  FieldKind::Categorical)
-        .field("geslacht",       FieldKind::Categorical)
-        .field("straatnaam",     FieldKind::Address)
-        .field("huisnummer",     FieldKind::Address)
-        .field("postcode",       FieldKind::Id)
-        .field("woonplaats",     FieldKind::Address)
+        .field("geboorteland", FieldKind::Categorical)
+        .field("nationaliteit", FieldKind::Categorical)
+        .field("geslacht", FieldKind::Categorical)
+        .field("straatnaam", FieldKind::Address)
+        .field("huisnummer", FieldKind::Address)
+        .field("postcode", FieldKind::Id)
+        .field("woonplaats", FieldKind::Address)
         .build()
         .unwrap()
 }
@@ -65,7 +66,11 @@ fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
             let v = row.get(i).unwrap_or("").trim();
             r = r.insert(
                 header,
-                if v.is_empty() { FieldValue::Null } else { FieldValue::Text(v.into()) },
+                if v.is_empty() {
+                    FieldValue::Null
+                } else {
+                    FieldValue::Text(v.into())
+                },
             );
         }
         records.push(r);
@@ -100,7 +105,11 @@ fn main() {
     let schema = brp_schema();
     let fingerprint = SchemaFingerprint::from_sample(&schema, &records);
     println!("  Schema hash: {}", hex_short(&fingerprint.schema_hash));
-    println!("  Fields: {}, Record count: {}", schema.len(), fingerprint.record_count);
+    println!(
+        "  Fields: {}, Record count: {}",
+        schema.len(),
+        fingerprint.record_count
+    );
 
     // Simulate EM training.
     let (params, iterations) = simulate_em(schema.len());
@@ -113,7 +122,11 @@ fn main() {
     };
 
     let bytes = artifact.to_bytes().unwrap();
-    println!("  Artifact size: {} bytes ({:.1} KB)", bytes.len(), bytes.len() as f64 / 1024.0);
+    println!(
+        "  Artifact size: {} bytes ({:.1} KB)",
+        bytes.len(),
+        bytes.len() as f64 / 1024.0
+    );
 
     // Open (or create) the persistent registry and save.
     let registry = SchemaRegistry::open(registry_path).expect("failed to open registry");
@@ -124,14 +137,21 @@ fn main() {
     assert_eq!(loaded.tag.as_deref(), Some("brp_q1_demo"));
     println!("\nArtifact saved and verified in-session.");
 
-    let file_size = std::fs::metadata(registry_path).map(|m| m.len()).unwrap_or(0);
+    let file_size = std::fs::metadata(registry_path)
+        .map(|m| m.len())
+        .unwrap_or(0);
     println!("File size on disk: {} bytes", file_size);
 
     println!("\nDone. Run `cargo run --example registry_load -p zer-schema` to verify the file.");
 }
 
 fn hex_short(bytes: &[u8]) -> String {
-    bytes.iter().take(8).map(|b| format!("{b:02x}")).collect::<String>() + "…"
+    bytes
+        .iter()
+        .take(8)
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>()
+        + "…"
 }
 
 fn unix_now() -> u64 {

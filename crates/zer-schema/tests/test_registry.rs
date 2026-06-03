@@ -95,13 +95,22 @@ fn sim_schema() -> zer_core::schema::Schema {
 // ── CSV loaders ───────────────────────────────────────────────────────────────
 
 fn brp_q1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q1/brp_persons.csv",
+    )
 }
 fn brp_q2_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q2/brp_persons.csv",
+    )
 }
 fn sim_snap1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/sim/sim_subscribers.csv",
+    )
 }
 
 fn load_brp_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
@@ -230,11 +239,7 @@ fn dummy_params(n_fields: usize) -> ModelParams {
     }
 }
 
-fn make_artifact(
-    fingerprint: SchemaFingerprint,
-    n_fields: usize,
-    tag: &str,
-) -> ModelArtifact {
+fn make_artifact(fingerprint: SchemaFingerprint, n_fields: usize, tag: &str) -> ModelArtifact {
     ModelArtifact {
         fingerprint,
         params: dummy_params(n_fields),
@@ -381,12 +386,24 @@ fn artifact_roundtrip_through_registry() {
 
     assert_eq!(original.tag, loaded.tag);
     assert_eq!(original.em_iterations, loaded.em_iterations);
-    assert_eq!(original.params.upper_threshold, loaded.params.upper_threshold);
-    assert_eq!(original.params.lower_threshold, loaded.params.lower_threshold);
+    assert_eq!(
+        original.params.upper_threshold,
+        loaded.params.upper_threshold
+    );
+    assert_eq!(
+        original.params.lower_threshold,
+        loaded.params.lower_threshold
+    );
     assert_eq!(original.params.m, loaded.params.m);
     assert_eq!(original.params.u, loaded.params.u);
-    assert_eq!(original.fingerprint.schema_hash, loaded.fingerprint.schema_hash);
-    assert_eq!(original.fingerprint.record_count, loaded.fingerprint.record_count);
+    assert_eq!(
+        original.fingerprint.schema_hash,
+        loaded.fingerprint.schema_hash
+    );
+    assert_eq!(
+        original.fingerprint.record_count,
+        loaded.fingerprint.record_count
+    );
 }
 
 /// `list_all` returns one entry per saved artifact.
@@ -419,8 +436,7 @@ fn list_all_reflects_all_saved_artifacts() {
     let all = registry.list_all().unwrap();
     assert_eq!(all.len(), 2, "registry must hold exactly 2 artifacts");
 
-    let tags: std::collections::HashSet<Option<String>> =
-        all.into_iter().map(|a| a.tag).collect();
+    let tags: std::collections::HashSet<Option<String>> = all.into_iter().map(|a| a.tag).collect();
     assert!(tags.contains(&Some("brp".into())));
     assert!(tags.contains(&Some("sim".into())));
 }

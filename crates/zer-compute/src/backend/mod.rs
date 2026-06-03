@@ -187,7 +187,7 @@ impl DeviceBackend {
     pub fn from_preference(pref: BackendPreference) -> Result<Self, GpuError> {
         match pref {
             BackendPreference::Auto => Ok(Self::auto_detect()),
-            BackendPreference::Cpu  => Ok(Self::Cpu),
+            BackendPreference::Cpu => Ok(Self::Cpu),
 
             BackendPreference::Cuda => {
                 #[cfg(feature = "cuda")]
@@ -313,20 +313,24 @@ impl DeviceBackend {
     pub(crate) fn em_init_session(
         &self,
         comparison_levels: &[u32],
-        n_pairs:  usize,
+        n_pairs: usize,
         n_fields: usize,
     ) -> Result<EmSession, GpuError> {
         match self {
             #[cfg(feature = "cuda")]
-            Self::Cuda(dev) => dev.em_init_session(comparison_levels, n_pairs, n_fields)
+            Self::Cuda(dev) => dev
+                .em_init_session(comparison_levels, n_pairs, n_fields)
                 .map(EmSession::Cuda),
             #[cfg(feature = "vulkan")]
-            Self::Vulkan(dev) => dev.em_init_session(comparison_levels, n_pairs, n_fields)
+            Self::Vulkan(dev) => dev
+                .em_init_session(comparison_levels, n_pairs, n_fields)
                 .map(EmSession::Vulkan),
             #[cfg(feature = "avx2")]
-            Self::Avx2 => Ok(EmSession::Avx2(
-                avx2::device::Avx2Device::em_init_session(comparison_levels, n_pairs, n_fields),
-            )),
+            Self::Avx2 => Ok(EmSession::Avx2(avx2::device::Avx2Device::em_init_session(
+                comparison_levels,
+                n_pairs,
+                n_fields,
+            ))),
             _ => Err(GpuError::BackendUnavailable(
                 "em_init_session requires an accelerated backend".into(),
             )),
@@ -339,20 +343,23 @@ impl DeviceBackend {
     /// Returns raw M-step counts; the caller normalises them into `ModelParams`.
     pub(crate) fn em_run_iteration(
         &self,
-        session:        &mut EmSession,
-        weights:        &[f32],
+        session: &mut EmSession,
+        weights: &[f32],
         log_prior_odds: f32,
     ) -> Result<EmReduceOutput, GpuError> {
         match (self, session) {
             #[cfg(feature = "cuda")]
-            (Self::Cuda(dev), EmSession::Cuda(s)) =>
-                dev.em_run_iteration(s, weights, log_prior_odds),
+            (Self::Cuda(dev), EmSession::Cuda(s)) => {
+                dev.em_run_iteration(s, weights, log_prior_odds)
+            }
             #[cfg(feature = "vulkan")]
-            (Self::Vulkan(dev), EmSession::Vulkan(s)) =>
-                dev.em_run_iteration(s, weights, log_prior_odds),
+            (Self::Vulkan(dev), EmSession::Vulkan(s)) => {
+                dev.em_run_iteration(s, weights, log_prior_odds)
+            }
             #[cfg(feature = "avx2")]
-            (Self::Avx2, EmSession::Avx2(s)) =>
-                avx2::device::Avx2Device::em_run_iteration(s, weights, log_prior_odds),
+            (Self::Avx2, EmSession::Avx2(s)) => {
+                avx2::device::Avx2Device::em_run_iteration(s, weights, log_prior_odds)
+            }
             _ => Err(GpuError::BackendUnavailable(
                 "em_run_iteration requires an accelerated backend".into(),
             )),
@@ -389,12 +396,19 @@ impl KernelDispatch<HelloBackend> for DeviceBackend {
     fn dispatch(&self, input: HelloBackendInput) -> Result<HelloBackendOutput, GpuError> {
         match self {
             #[cfg(feature = "cuda")]
-            Self::Cuda(dev)   => <cuda::CudaDevice as KernelDispatch<HelloBackend>>::dispatch(dev, input),
+            Self::Cuda(dev) => {
+                <cuda::CudaDevice as KernelDispatch<HelloBackend>>::dispatch(dev, input)
+            }
             #[cfg(feature = "vulkan")]
-            Self::Vulkan(dev) => <vulkan::VulkanDevice as KernelDispatch<HelloBackend>>::dispatch(dev, input),
+            Self::Vulkan(dev) => {
+                <vulkan::VulkanDevice as KernelDispatch<HelloBackend>>::dispatch(dev, input)
+            }
             #[cfg(feature = "avx2")]
-            Self::Avx2        => <avx2::Avx2Device as KernelDispatch<HelloBackend>>::dispatch(&avx2::Avx2Device, input),
-            Self::Cpu         => <CpuDevice as KernelDispatch<HelloBackend>>::dispatch(&CpuDevice, input),
+            Self::Avx2 => <avx2::Avx2Device as KernelDispatch<HelloBackend>>::dispatch(
+                &avx2::Avx2Device,
+                input,
+            ),
+            Self::Cpu => <CpuDevice as KernelDispatch<HelloBackend>>::dispatch(&CpuDevice, input),
         }
     }
 }
@@ -403,12 +417,16 @@ impl KernelDispatch<EmReduce> for DeviceBackend {
     fn dispatch(&self, input: EmReduceInput<'_>) -> Result<EmReduceOutput, GpuError> {
         match self {
             #[cfg(feature = "cuda")]
-            Self::Cuda(dev)   => <cuda::CudaDevice as KernelDispatch<EmReduce>>::dispatch(dev, input),
+            Self::Cuda(dev) => <cuda::CudaDevice as KernelDispatch<EmReduce>>::dispatch(dev, input),
             #[cfg(feature = "vulkan")]
-            Self::Vulkan(dev) => <vulkan::VulkanDevice as KernelDispatch<EmReduce>>::dispatch(dev, input),
+            Self::Vulkan(dev) => {
+                <vulkan::VulkanDevice as KernelDispatch<EmReduce>>::dispatch(dev, input)
+            }
             #[cfg(feature = "avx2")]
-            Self::Avx2        => <avx2::Avx2Device as KernelDispatch<EmReduce>>::dispatch(&avx2::Avx2Device, input),
-            Self::Cpu         => <CpuDevice as KernelDispatch<EmReduce>>::dispatch(&CpuDevice, input),
+            Self::Avx2 => {
+                <avx2::Avx2Device as KernelDispatch<EmReduce>>::dispatch(&avx2::Avx2Device, input)
+            }
+            Self::Cpu => <CpuDevice as KernelDispatch<EmReduce>>::dispatch(&CpuDevice, input),
         }
     }
 }

@@ -1,7 +1,7 @@
 use zer_core::{record::Record, schema::Schema};
 
-use crate::normalize::normalize_text;
 use super::BlockingKey;
+use crate::normalize::normalize_text;
 
 pub struct ExactFieldKey {
     field: String,
@@ -9,7 +9,9 @@ pub struct ExactFieldKey {
 
 impl ExactFieldKey {
     pub fn new(field: &str) -> Self {
-        Self { field: field.into() }
+        Self {
+            field: field.into(),
+        }
     }
 }
 
@@ -22,7 +24,7 @@ impl BlockingKey for ExactFieldKey {
         let cow = record.field_as_str(&self.field);
         let raw = match cow.as_deref() {
             Some(s) => s,
-            None    => return vec![],
+            None => return vec![],
         };
 
         let normalized = normalize_text(raw);
@@ -37,16 +39,22 @@ impl BlockingKey for ExactFieldKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::{SchemaBuilder, FieldKind}};
+    use zer_core::{
+        record::FieldValue,
+        schema::{FieldKind, SchemaBuilder},
+    };
 
     fn schema() -> Schema {
-        SchemaBuilder::new().field("category", FieldKind::Categorical).build().unwrap()
+        SchemaBuilder::new()
+            .field("category", FieldKind::Categorical)
+            .build()
+            .unwrap()
     }
 
     #[test]
     fn exact_normalizes_and_matches() {
-        let k  = ExactFieldKey::new("category");
-        let s  = schema();
+        let k = ExactFieldKey::new("category");
+        let s = schema();
         let r1 = Record::new(1).insert("category", FieldValue::Text("Eenmanszaak".into()));
         let r2 = Record::new(2).insert("category", FieldValue::Text("EENMANSZAAK".into()));
         assert_eq!(k.extract(&r1, &s), k.extract(&r2, &s));

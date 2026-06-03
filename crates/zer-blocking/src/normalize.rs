@@ -35,10 +35,9 @@ pub fn normalize_digits_only(s: &str) -> String {
 /// "VAN DEN BERG" and "BERG" produce the same phonetic key.
 pub fn strip_tussenvoegsel(s: &str) -> &str {
     const PREFIXES: &[&str] = &[
-        "VAN DER ", "VAN DEN ", "VAN DE ", "VAN HET ", "VAN 'T ",
-        "VAN T ", "VAN ", "DEN ", "DER ", "DE ", "TEN ", "TER ",
-        "TE ", "IN 'T ", "IN T ", "OP DEN ", "OP DE ", "OP HET ",
-        "OP ", "V/D ", "V.D. ",
+        "VAN DER ", "VAN DEN ", "VAN DE ", "VAN HET ", "VAN 'T ", "VAN T ", "VAN ", "DEN ", "DER ",
+        "DE ", "TEN ", "TER ", "TE ", "IN 'T ", "IN T ", "OP DEN ", "OP DE ", "OP HET ", "OP ",
+        "V/D ", "V.D. ",
     ];
 
     let upper = s.to_ascii_uppercase();

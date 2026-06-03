@@ -15,21 +15,24 @@ pub enum ResolutionMethod {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EntityMember {
     pub record_id: RecordId,
-    pub score:     f32,
-    pub method:    ResolutionMethod,
-    pub source:    Option<String>,
+    pub score: f32,
+    pub method: ResolutionMethod,
+    pub source: Option<String>,
 }
 
 /// A resolved entity grouping one or more records.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Entity {
-    pub id:      EntityId,
+    pub id: EntityId,
     pub members: Vec<EntityMember>,
 }
 
 impl Entity {
     pub fn new(id: EntityId) -> Self {
-        Self { id, members: vec![] }
+        Self {
+            id,
+            members: vec![],
+        }
     }
 
     pub fn member_ids(&self) -> impl Iterator<Item = RecordId> + '_ {

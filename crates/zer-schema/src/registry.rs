@@ -21,13 +21,16 @@ pub enum StartupMode {
     WarmLoad(ModelArtifact),
     /// Schema is similar (distance ≤ threshold), use saved params as the EM
     /// warm-start initializer and run 2–3 iterations to fine-tune.
-    WarmStart { artifact: ModelArtifact, distance: f32 },
+    WarmStart {
+        artifact: ModelArtifact,
+        distance: f32,
+    },
     /// Schema is new or too different, initialize from priors and run full EM.
     ColdStart,
 }
 
 struct RegistryInner {
-    path:      Option<PathBuf>,
+    path: Option<PathBuf>,
     artifacts: HashMap<[u8; 32], ModelArtifact>,
 }
 
@@ -75,7 +78,9 @@ impl SchemaRegistry {
     /// the same schema hash and atomically flushes to disk.
     pub fn save(&self, artifact: &ModelArtifact) -> Result<(), ZerError> {
         let mut inner = self.inner.lock().unwrap();
-        inner.artifacts.insert(artifact.fingerprint.schema_hash, artifact.clone());
+        inner
+            .artifacts
+            .insert(artifact.fingerprint.schema_hash, artifact.clone());
         flush(&inner)?;
         tracing::debug!(tag = artifact.tag.as_deref(), "saved model artifact");
         Ok(())
@@ -133,7 +138,10 @@ impl SchemaRegistry {
         match self.get_nearest(fingerprint)? {
             Some((artifact, dist)) if dist <= WARM_START_THRESHOLD => {
                 tracing::info!(dist, "similar schema, warm start");
-                Ok(StartupMode::WarmStart { artifact, distance: dist })
+                Ok(StartupMode::WarmStart {
+                    artifact,
+                    distance: dist,
+                })
             }
             _ => {
                 tracing::info!("no suitable prior, cold start");
@@ -169,8 +177,8 @@ fn flush(inner: &RegistryInner) -> Result<(), ZerError> {
     let Some(path) = &inner.path else {
         return Ok(());
     };
-    let payload = bincode::serialize(&inner.artifacts)
-        .map_err(|e| ZerError::Serialization(e.to_string()))?;
+    let payload =
+        bincode::serialize(&inner.artifacts).map_err(|e| ZerError::Serialization(e.to_string()))?;
     let mut buf = Vec::with_capacity(4 + payload.len());
     buf.extend_from_slice(MAGIC);
     buf.extend(payload);
@@ -263,7 +271,10 @@ mod tests {
             loaded.fingerprint.schema_hash,
             artifact.fingerprint.schema_hash
         );
-        assert_eq!(loaded.params.upper_threshold, artifact.params.upper_threshold);
+        assert_eq!(
+            loaded.params.upper_threshold,
+            artifact.params.upper_threshold
+        );
     }
 
     #[test]

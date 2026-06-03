@@ -15,7 +15,10 @@ pub const WARM_START_THRESHOLD: f32 = 0.25;
 
 /// Represent each field as a canonical string `"name:DebugKind"` for set ops.
 fn field_set(stats: &[FieldStats]) -> HashSet<String> {
-    stats.iter().map(|f| format!("{}:{:?}", f.name, f.kind)).collect()
+    stats
+        .iter()
+        .map(|f| format!("{}:{:?}", f.name, f.kind))
+        .collect()
 }
 
 /// Jaccard similarity J(A,B) = |A ∩ B| / |A ∪ B| over (name, kind) pairs.

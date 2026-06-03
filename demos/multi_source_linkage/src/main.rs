@@ -12,7 +12,7 @@ use std::{
 
 use std::sync::Arc;
 
-use demo_common::{init_tracing, section, print_pair_table, viz::PairRow};
+use demo_common::{init_tracing, print_pair_table, section, viz::PairRow};
 use zer_cluster::ZalEntityStore;
 use zer_compute::{DeviceBackend, DeviceScorer};
 use zer_core::{
@@ -30,39 +30,42 @@ const KVK_ID_OFFSET: u64 = 10_000_000;
 #[derive(Debug, serde::Deserialize)]
 #[allow(dead_code)]
 struct BrpRow {
-    record_id:      u64,
-    voornamen:      String,
-    #[serde(default)] tussenvoegsel: String,
-    achternaam:     String,
-    geboortedatum:  String,
-    geslacht:       String,
-    straatnaam:     String,
-    huisnummer:     String,
-    postcode:       String,
-    woonplaats:     String,
+    record_id: u64,
+    voornamen: String,
+    #[serde(default)]
+    tussenvoegsel: String,
+    achternaam: String,
+    geboortedatum: String,
+    geslacht: String,
+    straatnaam: String,
+    huisnummer: String,
+    postcode: String,
+    woonplaats: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
 #[allow(dead_code)]
 struct KvkRow {
-    record_id:      u64,
-    kvk_nummer:     String,
-    handelsnaam:    String,
-    rechtsvorm:     String,
-    voornamen:      String,
-    #[serde(default)] tussenvoegsel: String,
-    achternaam:     String,
-    geboortedatum:  String,
-    woonplaats:     String,
-    postcode:       String,
+    record_id: u64,
+    kvk_nummer: String,
+    handelsnaam: String,
+    rechtsvorm: String,
+    voornamen: String,
+    #[serde(default)]
+    tussenvoegsel: String,
+    achternaam: String,
+    geboortedatum: String,
+    woonplaats: String,
+    postcode: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
 struct GroundTruthRow {
     record_id_a: u64,
     record_id_b: u64,
-    #[allow(dead_code)] is_match: String,
-    match_type:  String,
+    #[allow(dead_code)]
+    is_match: String,
+    match_type: String,
 }
 
 // ── Loaders ───────────────────────────────────────────────────────────────────
@@ -73,12 +76,12 @@ fn load_brp(path: &Path) -> Vec<(BrpRow, Record)> {
         .map(|r| {
             let row = r.expect("parse BRP row");
             let rec = Record::new(row.record_id)
-                .insert("voornamen",     row.voornamen.clone())
+                .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
-                .insert("achternaam",    row.achternaam.clone())
+                .insert("achternaam", row.achternaam.clone())
                 .insert("geboortedatum", row.geboortedatum.clone())
-                .insert("geslacht",      row.geslacht.clone())
-                .insert("postcode",      row.postcode.clone());
+                .insert("geslacht", row.geslacht.clone())
+                .insert("postcode", row.postcode.clone());
             (row, rec)
         })
         .collect()
@@ -90,11 +93,11 @@ fn load_kvk(path: &Path) -> Vec<(KvkRow, Record)> {
         .map(|r| {
             let row = r.expect("parse KvK row");
             let rec = Record::new(row.record_id)
-                .insert("voornamen",     row.voornamen.clone())
+                .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
-                .insert("achternaam",    row.achternaam.clone())
+                .insert("achternaam", row.achternaam.clone())
                 .insert("geboortedatum", row.geboortedatum.clone())
-                .insert("postcode",      row.postcode.clone());
+                .insert("postcode", row.postcode.clone());
             (row, rec)
         })
         .collect()
@@ -102,15 +105,22 @@ fn load_kvk(path: &Path) -> Vec<(KvkRow, Record)> {
 
 fn load_ground_truth(path: &Path) -> (HashSet<(u64, u64)>, HashSet<(u64, u64)>) {
     let mut rdr = csv::Reader::from_path(path).expect("open ground_truth.csv");
-    let mut cross:  HashSet<(u64, u64)> = HashSet::new();
+    let mut cross: HashSet<(u64, u64)> = HashSet::new();
     let mut within: HashSet<(u64, u64)> = HashSet::new();
     for r in rdr.deserialize::<GroundTruthRow>() {
         let row = r.expect("parse ground truth row");
-        let pair = (row.record_id_a.min(row.record_id_b), row.record_id_a.max(row.record_id_b));
+        let pair = (
+            row.record_id_a.min(row.record_id_b),
+            row.record_id_a.max(row.record_id_b),
+        );
         match row.match_type.as_str() {
-            "cross_source"  => { cross.insert(pair); }
-            "within_source" => { within.insert(pair); }
-            _               => {}
+            "cross_source" => {
+                cross.insert(pair);
+            }
+            "within_source" => {
+                within.insert(pair);
+            }
+            _ => {}
         }
     }
     (cross, within)
@@ -120,11 +130,11 @@ fn load_ground_truth(path: &Path) -> (HashSet<(u64, u64)>, HashSet<(u64, u64)>) 
 
 fn build_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
-        .field("geslacht",      FieldKind::FreeText)
-        .field("postcode",      FieldKind::FreeText)
+        .field("geslacht", FieldKind::FreeText)
+        .field("postcode", FieldKind::FreeText)
         .build()
         .expect("build schema")
 }
@@ -132,14 +142,24 @@ fn build_schema() -> zer_core::schema::Schema {
 // ── Evaluation helpers ────────────────────────────────────────────────────────
 
 fn evaluate(predicted: &HashSet<(u64, u64)>, truth: &HashSet<(u64, u64)>, label: &str) {
-    let tp  = predicted.intersection(truth).count();
-    let fp  = predicted.difference(truth).count();
+    let tp = predicted.intersection(truth).count();
+    let fp = predicted.difference(truth).count();
     let fn_ = truth.difference(predicted).count();
-    let precision = if tp + fp > 0 { tp as f64 / (tp + fp) as f64 } else { 0.0 };
-    let recall    = if tp + fn_ > 0 { tp as f64 / (tp + fn_) as f64 } else { 0.0 };
-    let f1        = if precision + recall > 0.0 {
+    let precision = if tp + fp > 0 {
+        tp as f64 / (tp + fp) as f64
+    } else {
+        0.0
+    };
+    let recall = if tp + fn_ > 0 {
+        tp as f64 / (tp + fn_) as f64
+    } else {
+        0.0
+    };
+    let f1 = if precision + recall > 0.0 {
         2.0 * precision * recall / (precision + recall)
-    } else { 0.0 };
+    } else {
+        0.0
+    };
     println!("{label}");
     println!("  true positives  : {tp}");
     println!("  false positives : {fp}");
@@ -158,7 +178,7 @@ async fn main() {
     let data_dir = Path::new(DATA_DIR);
     let path_brp = data_dir.join("source_brp.csv");
     let path_kvk = data_dir.join("source_kvk.csv");
-    let path_gt  = data_dir.join("ground_truth.csv");
+    let path_gt = data_dir.join("ground_truth.csv");
 
     // ── Backend ───────────────────────────────────────────────────────────────
     section("Compute backend");
@@ -187,23 +207,31 @@ async fn main() {
     println!("GT within-src  : {}", gt_within.len());
 
     // Build name lookup tables for the pair display table.
-    let brp_names: HashMap<u64, String> = brp_rows.iter()
-        .map(|(row, _)| (row.record_id, format!("{} {}", row.voornamen, row.achternaam)))
+    let brp_names: HashMap<u64, String> = brp_rows
+        .iter()
+        .map(|(row, _)| {
+            (
+                row.record_id,
+                format!("{} {}", row.voornamen, row.achternaam),
+            )
+        })
         .collect();
-    let kvk_names: HashMap<u64, String> = kvk_rows.iter()
-        .map(|(row, _)| (row.record_id, format!("{} {}", row.voornamen, row.achternaam)))
+    let kvk_names: HashMap<u64, String> = kvk_rows
+        .iter()
+        .map(|(row, _)| {
+            (
+                row.record_id,
+                format!("{} {}", row.voornamen, row.achternaam),
+            )
+        })
         .collect();
 
     // Helper: combine BRP + KvK records into one Vec<Record> with source labels.
     let all_records = || -> Vec<Record> {
-        let brp: Vec<Record> = label_source(
-            brp_rows.iter().map(|(_, r)| r.clone()).collect(),
-            "brp",
-        );
-        let kvk: Vec<Record> = label_source(
-            kvk_rows.iter().map(|(_, r)| r.clone()).collect(),
-            "kvk",
-        );
+        let brp: Vec<Record> =
+            label_source(brp_rows.iter().map(|(_, r)| r.clone()).collect(), "brp");
+        let kvk: Vec<Record> =
+            label_source(kvk_rows.iter().map(|(_, r)| r.clone()).collect(), "kvk");
         [brp, kvk].concat()
     };
 
@@ -224,7 +252,10 @@ async fn main() {
         .build()
         .expect("build LinkOnly pipeline");
 
-    let report_link = pipeline_link.run_batch(all_records()).await.expect("run_batch LinkOnly");
+    let report_link = pipeline_link
+        .run_batch(all_records())
+        .await
+        .expect("run_batch LinkOnly");
 
     println!("startup mode      : {}", report_link.startup_mode);
     println!("total records     : {}", report_link.total_records);
@@ -241,7 +272,8 @@ async fn main() {
     let view_link = pipeline_link.cluster_view();
     let pairs_link = view_link.linked_pairs();
 
-    let predicted_cross_link: HashSet<(u64, u64)> = pairs_link.iter()
+    let predicted_cross_link: HashSet<(u64, u64)> = pairs_link
+        .iter()
         .map(|lp| {
             let (a, b) = if lp.source_a.as_deref() == Some("brp") {
                 (lp.record_id_a, lp.record_id_b)
@@ -256,24 +288,34 @@ async fn main() {
 
     section("Linked pairs sample, LinkOnly");
 
-    let pair_rows_link: Vec<PairRow> = pairs_link.iter().take(20).map(|lp| {
-        let (brp_id, kvk_id) = if lp.source_a.as_deref() == Some("brp") {
-            (lp.record_id_a, lp.record_id_b)
-        } else {
-            (lp.record_id_b, lp.record_id_a)
-        };
-        PairRow {
-            score: lp.score,
-            a_fields: vec![
-                ("id".into(),   brp_id.to_string()),
-                ("name".into(), brp_names.get(&brp_id).cloned().unwrap_or_default()),
-            ],
-            b_fields: vec![
-                ("id".into(),   (kvk_id - KVK_ID_OFFSET).to_string()),
-                ("name".into(), kvk_names.get(&kvk_id).cloned().unwrap_or_default()),
-            ],
-        }
-    }).collect();
+    let pair_rows_link: Vec<PairRow> = pairs_link
+        .iter()
+        .take(20)
+        .map(|lp| {
+            let (brp_id, kvk_id) = if lp.source_a.as_deref() == Some("brp") {
+                (lp.record_id_a, lp.record_id_b)
+            } else {
+                (lp.record_id_b, lp.record_id_a)
+            };
+            PairRow {
+                score: lp.score,
+                a_fields: vec![
+                    ("id".into(), brp_id.to_string()),
+                    (
+                        "name".into(),
+                        brp_names.get(&brp_id).cloned().unwrap_or_default(),
+                    ),
+                ],
+                b_fields: vec![
+                    ("id".into(), (kvk_id - KVK_ID_OFFSET).to_string()),
+                    (
+                        "name".into(),
+                        kvk_names.get(&kvk_id).cloned().unwrap_or_default(),
+                    ),
+                ],
+            }
+        })
+        .collect();
     print_pair_table(&pair_rows_link, 10);
 
     // ── Mode 2: LinkAndDedupe ─────────────────────────────────────────────────
@@ -291,7 +333,10 @@ async fn main() {
         .build()
         .expect("build LinkAndDedupe pipeline");
 
-    let report_lad = pipeline_lad.run_batch(all_records()).await.expect("run_batch LinkAndDedupe");
+    let report_lad = pipeline_lad
+        .run_batch(all_records())
+        .await
+        .expect("run_batch LinkAndDedupe");
 
     println!("startup mode       : {}", report_lad.startup_mode);
     println!("total records      : {}", report_lad.total_records);
@@ -310,7 +355,8 @@ async fn main() {
     let pairs_lad = view_lad.linked_pairs();
 
     // Cross-source evaluation (same logic as LinkOnly).
-    let predicted_cross_lad: HashSet<(u64, u64)> = pairs_lad.iter()
+    let predicted_cross_lad: HashSet<(u64, u64)> = pairs_lad
+        .iter()
         .map(|lp| {
             let (a, b) = if lp.source_a.as_deref() == Some("brp") {
                 (lp.record_id_a, lp.record_id_b)
@@ -321,16 +367,22 @@ async fn main() {
         })
         .collect();
 
-    evaluate(&predicted_cross_lad, &gt_cross, "cross-source (LinkAndDedupe):");
+    evaluate(
+        &predicted_cross_lad,
+        &gt_cross,
+        "cross-source (LinkAndDedupe):",
+    );
 
     // Within-source evaluation: scan clusters for records sharing the same source.
     let mut predicted_within: HashSet<(u64, u64)> = HashSet::new();
     for (_, members) in &view_lad {
-        let brp_ids: Vec<u64> = members.iter()
+        let brp_ids: Vec<u64> = members
+            .iter()
             .filter(|r| r.source.as_deref() == Some("brp"))
             .map(|r| r.id)
             .collect();
-        let kvk_ids: Vec<u64> = members.iter()
+        let kvk_ids: Vec<u64> = members
+            .iter()
             .filter(|r| r.source.as_deref() == Some("kvk"))
             .map(|r| r.id)
             .collect();
@@ -350,29 +402,52 @@ async fn main() {
         }
     }
 
-    evaluate(&predicted_within, &gt_within, "within-source deduplication (LinkAndDedupe):");
+    evaluate(
+        &predicted_within,
+        &gt_within,
+        "within-source deduplication (LinkAndDedupe):",
+    );
 
     // ── Mode comparison ───────────────────────────────────────────────────────
     section("Mode comparison");
 
-    println!("{:<28} {:>12} {:>12}", "Metric", "LinkOnly", "LinkAndDedupe");
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "Metric", "LinkOnly", "LinkAndDedupe"
+    );
     println!("{}", "─".repeat(54));
-    println!("{:<28} {:>12} {:>12}", "candidate pairs",
-        report_link.candidate_pairs, report_lad.candidate_pairs);
-    println!("{:<28} {:>12} {:>12}", "cross-source pairs",
-        report_link.cross_source_pairs, report_lad.cross_source_pairs);
-    println!("{:<28} {:>12} {:>12}", "within-source pairs",
-        report_link.within_source_pairs, report_lad.within_source_pairs);
-    println!("{:<28} {:>12} {:>12}", "auto-matched",
-        report_link.auto_matched, report_lad.auto_matched);
-    println!("{:<28} {:>12} {:>12}", "borderline",
-        report_link.borderline, report_lad.borderline);
-    println!("{:<28} {:>12} {:>12}", "auto-rejected",
-        report_link.auto_rejected, report_lad.auto_rejected);
-    println!("{:<28} {:>12} {:>12}", "entities created",
-        report_link.entities_created, report_lad.entities_created);
-    println!("{:<28} {:>12} {:>12}", "elapsed ms",
-        report_link.elapsed_ms, report_lad.elapsed_ms);
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "candidate pairs", report_link.candidate_pairs, report_lad.candidate_pairs
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "cross-source pairs", report_link.cross_source_pairs, report_lad.cross_source_pairs
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "within-source pairs", report_link.within_source_pairs, report_lad.within_source_pairs
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "auto-matched", report_link.auto_matched, report_lad.auto_matched
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "borderline", report_link.borderline, report_lad.borderline
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "auto-rejected", report_link.auto_rejected, report_lad.auto_rejected
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "entities created", report_link.entities_created, report_lad.entities_created
+    );
+    println!(
+        "{:<28} {:>12} {:>12}",
+        "elapsed ms", report_link.elapsed_ms, report_lad.elapsed_ms
+    );
 
     section("Done");
 }

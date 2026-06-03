@@ -89,7 +89,7 @@ enum BackendInner {
 /// ```
 pub struct Backend {
     inner: BackendInner,
-    name:  &'static str,
+    name: &'static str,
 }
 
 impl Backend {
@@ -104,13 +104,16 @@ impl Backend {
             .as_deref()
         {
             Some(t) => Self::from_target(t),
-            None    => Self::cpu(),
+            None => Self::cpu(),
         }
     }
 
     /// Force the CPU backend regardless of available hardware.
     pub fn cpu() -> Self {
-        Self { inner: BackendInner::Cpu, name: "cpu" }
+        Self {
+            inner: BackendInner::Cpu,
+            name: "cpu",
+        }
     }
 
     /// Select a backend by name, called by `auto_detect()` to resolve `--target=<name>`.
@@ -126,12 +129,15 @@ impl Backend {
         #[cfg(any(feature = "cuda", feature = "avx2", feature = "vulkan"))]
         {
             let pref = match target {
-                "auto"   => zer_compute::BackendPreference::Auto,
-                "cuda"   => zer_compute::BackendPreference::Cuda,
+                "auto" => zer_compute::BackendPreference::Auto,
+                "cuda" => zer_compute::BackendPreference::Cuda,
                 "vulkan" => zer_compute::BackendPreference::Vulkan,
-                "avx2"   => zer_compute::BackendPreference::Avx2,
+                "avx2" => zer_compute::BackendPreference::Avx2,
                 other => {
-                    tracing::error!(target = other, "unknown --target; valid: auto, cpu, avx2, cuda, vulkan");
+                    tracing::error!(
+                        target = other,
+                        "unknown --target; valid: auto, cpu, avx2, cuda, vulkan"
+                    );
                     std::process::exit(1);
                 }
             };
@@ -139,9 +145,15 @@ impl Backend {
                 Ok(dev) => {
                     let name = dev.name();
                     if dev.is_accelerated() {
-                        Self { inner: BackendInner::Gpu(Arc::new(dev)), name }
+                        Self {
+                            inner: BackendInner::Gpu(Arc::new(dev)),
+                            name,
+                        }
                     } else {
-                        Self { inner: BackendInner::Cpu, name: "cpu" }
+                        Self {
+                            inner: BackendInner::Cpu,
+                            name: "cpu",
+                        }
                     }
                 }
                 Err(e) => {
@@ -156,7 +168,10 @@ impl Backend {
             if target == "auto" {
                 return Self::cpu();
             }
-            tracing::error!(target, "unknown --target; valid values when built without GPU features: auto, cpu");
+            tracing::error!(
+                target,
+                "unknown --target; valid values when built without GPU features: auto, cpu"
+            );
             std::process::exit(1);
         }
     }
@@ -195,16 +210,16 @@ impl Comparator {
     /// [`zer_compare::FieldComparator::with_fns`] before creating the comparator.
     /// Always uses the CPU path; GPU acceleration is not available this way.
     pub fn from_cpu(fc: zer_compare::FieldComparator) -> Self {
-        Self { inner: ComparatorInner::Cpu(fc) }
+        Self {
+            inner: ComparatorInner::Cpu(fc),
+        }
     }
 
     /// Build a comparator from a schema and backend.
     pub fn new(schema: &Schema, backend: &Backend) -> Self {
         match &backend.inner {
             BackendInner::Cpu => Self {
-                inner: ComparatorInner::Cpu(
-                    zer_compare::FieldComparator::from_schema(schema),
-                ),
+                inner: ComparatorInner::Cpu(zer_compare::FieldComparator::from_schema(schema)),
             },
             #[cfg(any(feature = "cuda", feature = "avx2", feature = "vulkan"))]
             BackendInner::Gpu(dev) => Self {
@@ -232,9 +247,9 @@ impl Comparator {
     /// large BRP-style jobs where records are already loaded into a pool.
     pub fn compare_batch_from_pool(
         &self,
-        pool:         &RecordPool,
+        pool: &RecordPool,
         pair_indices: &[(usize, usize)],
-        schema:       &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
         match &self.inner {
             ComparatorInner::Cpu(c) => c.compare_batch_from_pool(pool, pair_indices, schema),
@@ -247,9 +262,9 @@ impl Comparator {
     /// the `pair_indices` pairs.  No `Record::clone()`.
     pub fn compare_batch_indexed(
         &self,
-        records:      &[Record],
+        records: &[Record],
         pair_indices: &[(usize, usize)],
-        schema:       &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
         let pool = RecordPool::from_records(records, schema);
         self.compare_batch_from_pool(&pool, pair_indices, schema)
@@ -267,9 +282,9 @@ impl ComparatorTrait for Comparator {
 
     fn compare_batch_from_pool(
         &self,
-        pool:    &RecordPool,
+        pool: &RecordPool,
         indices: &[(usize, usize)],
-        schema:  &Schema,
+        schema: &Schema,
     ) -> ComparisonBatch {
         self.compare_batch_from_pool(pool, indices, schema)
     }
@@ -326,11 +341,7 @@ impl ScorerTrait for Scorer {
         }
     }
 
-    fn score_batch(
-        &self,
-        batch:  &ComparisonBatch,
-        params: &ModelParams,
-    ) -> Vec<ScoredPair> {
+    fn score_batch(&self, batch: &ComparisonBatch, params: &ModelParams) -> Vec<ScoredPair> {
         match &self.inner {
             ScorerInner::Cpu(s) => s.score_batch(batch, params),
             #[cfg(any(feature = "cuda", feature = "avx2", feature = "vulkan"))]
@@ -340,8 +351,8 @@ impl ScorerTrait for Scorer {
 
     fn estimate_params(
         &self,
-        batch:    &ComparisonBatch,
-        init:     Option<ModelParams>,
+        batch: &ComparisonBatch,
+        init: Option<ModelParams>,
         max_iter: usize,
     ) -> ZerResult<ModelParams> {
         match &self.inner {
@@ -379,10 +390,10 @@ pub mod kernel {
 // ── Crate re-exports ──────────────────────────────────────────────────────────
 
 pub use zer_blocking as blocking;
-pub use zer_compare  as compare;
-pub use zer_core     as core;
-pub use zer_schema   as schema;
-pub use zer_cluster  as cluster;
+pub use zer_cluster as cluster;
+pub use zer_compare as compare;
+pub use zer_core as core;
+pub use zer_schema as schema;
 
 #[cfg(feature = "pipeline")]
 pub use zer_pipeline as pipeline;
@@ -406,9 +417,15 @@ pub mod prelude {
         schema::{FieldKind, Schema, SchemaBuilder},
         scoring::{MatchBand, ModelParams, ScoredPair},
         traits::{
-            BlockIndex, Blocker, Clusterer, EntityStore, Judge, JudgeVerdict, RecordStore,
+            BlockIndex,
+            Blocker,
+            Clusterer,
             // Renamed to avoid shadowing the concrete Comparator / Scorer structs above
             Comparator as ComparatorTrait,
+            EntityStore,
+            Judge,
+            JudgeVerdict,
+            RecordStore,
             Scorer as ScorerTrait,
         },
         VecRecordStore,
@@ -416,24 +433,26 @@ pub mod prelude {
 
     // Blocking
     pub use zer_blocking::{
-        BlockerFactory, CompositeBlocker, InvertedIndex, SchemaCategory,
         keys::{
             AddressInitialKey, AliasPhoneticKey, CameraTimeWindowKey, DateFragmentKey,
             DateGranularity, DocumentDigitSuffixKey, DocumentSuffixKey, ExactFieldKey,
             FuzzyYearKey, GeoGridKey, LicensePlateNormKey, PhoneticAlgo, PhoneticNameDobKey,
             PlateOCRFuzzyKey, SuffixKey, TransliteratedPhoneticKey,
         },
+        BlockerFactory, CompositeBlocker, InvertedIndex, SchemaCategory,
     };
 
     // CPU implementations, available directly for users who want the raw types
     pub use zer_compare::{
-        FellegiSunterScorer, FieldComparator, LevelThresholds, SimilarityFn,
-        JaroWinklerSimilarity, PhoneticEqualitySimilarity, TokenOverlapSimilarity,
-        AddressTokenOverlap, StreetNumberEditDistance,
+        AddressTokenOverlap, FellegiSunterScorer, FieldComparator, JaroWinklerSimilarity,
+        LevelThresholds, PhoneticEqualitySimilarity, SimilarityFn, StreetNumberEditDistance,
+        TokenOverlapSimilarity,
     };
 
     // Schema registry and artifact management (Phase 6)
-    pub use zer_schema::{ModelArtifact, SchemaFingerprint, SchemaInferrer, SchemaRegistry, StartupMode};
+    pub use zer_schema::{
+        ModelArtifact, SchemaFingerprint, SchemaInferrer, SchemaRegistry, StartupMode,
+    };
 
     // Clustering and entity store (Phase 6)
     pub use zer_cluster::{ClusterConfig, ConnectedComponentsClusterer, ZalEntityStore};
@@ -441,8 +460,7 @@ pub mod prelude {
     // Pipeline types, available with the `pipeline` feature (no polars required)
     #[cfg(feature = "pipeline")]
     pub use zer_pipeline::{
-        BatchReport, ClusterIter, ClusterView, IngestResult, Ingester,
-        Pipeline, PipelineBuilder, PipelineConfig, RateConfig,
+        BatchReport, ClusterIter, ClusterView, IngestResult, Ingester, Pipeline, PipelineBuilder,
+        PipelineConfig, RateConfig,
     };
-
 }

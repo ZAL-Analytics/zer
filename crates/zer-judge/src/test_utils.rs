@@ -60,7 +60,7 @@ pub struct NearDuplicateGenerator {
     /// Number of near-duplicate pairs to generate (`generate()` returns 2  times  this many records).
     pub pair_count: usize,
     /// Starting ID for synthetic records.  Should be well above any real record IDs.
-    pub id_offset:  u64,
+    pub id_offset: u64,
 }
 
 impl NearDuplicateGenerator {
@@ -154,7 +154,7 @@ fn perturb_date(value: &FieldValue, pair_index: usize) -> FieldValue {
             let year = &s[..4];
             // Deterministic alternative month (1–11, excluding original range) and day (1–25).
             let alt_month = (pair_index % 11 + 1) as u8;
-            let alt_day   = (pair_index % 25 + 1) as u8;
+            let alt_day = (pair_index % 25 + 1) as u8;
             FieldValue::Text(format!("{year}-{alt_month:02}-{alt_day:02}"))
         }
         other => other.clone(),
@@ -166,12 +166,12 @@ fn perturb_date(value: &FieldValue, pair_index: usize) -> FieldValue {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::schema::{SchemaBuilder};
+    use zer_core::schema::SchemaBuilder;
 
     fn person_schema() -> Schema {
         SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
             .build()
             .unwrap()
@@ -179,25 +179,28 @@ mod tests {
 
     fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
         Record::new(id)
-            .insert("voornamen",     FieldValue::Text(first.into()))
-            .insert("achternaam",    FieldValue::Text(last.into()))
+            .insert("voornamen", FieldValue::Text(first.into()))
+            .insert("achternaam", FieldValue::Text(last.into()))
             .insert("geboortedatum", FieldValue::Text(dob.into()))
     }
 
     fn source_records() -> Vec<Record> {
         vec![
-            make_record(1, "Maria",   "Jansen", "1985-03-15"),
-            make_record(2, "Pieter",  "de Vries", "1990-07-22"),
-            make_record(3, "Annelies","Bakker",  "1978-11-05"),
+            make_record(1, "Maria", "Jansen", "1985-03-15"),
+            make_record(2, "Pieter", "de Vries", "1990-07-22"),
+            make_record(3, "Annelies", "Bakker", "1978-11-05"),
         ]
     }
 
     #[test]
     fn generate_correct_count() {
-        let schema  = person_schema();
-        let source  = source_records();
-        let gen     = NearDuplicateGenerator { pair_count: 3, id_offset: 9_000_000 };
-        let result  = gen.generate(&source, &schema);
+        let schema = person_schema();
+        let source = source_records();
+        let gen = NearDuplicateGenerator {
+            pair_count: 3,
+            id_offset: 9_000_000,
+        };
+        let result = gen.generate(&source, &schema);
         assert_eq!(result.len(), 6, "pair_count=3 → 6 synthetic records");
     }
 
@@ -205,9 +208,15 @@ mod tests {
     fn generate_ids_start_at_offset() {
         let schema = person_schema();
         let source = source_records();
-        let gen    = NearDuplicateGenerator { pair_count: 2, id_offset: 5_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 2,
+            id_offset: 5_000,
+        };
         let result = gen.generate(&source, &schema);
-        assert!(result.iter().all(|r| r.id >= 5_000), "all IDs must be >= id_offset");
+        assert!(
+            result.iter().all(|r| r.id >= 5_000),
+            "all IDs must be >= id_offset"
+        );
         assert_eq!(result[0].id, 5_000);
         assert_eq!(result[1].id, 5_001);
     }
@@ -216,29 +225,45 @@ mod tests {
     fn generate_ids_are_unique() {
         let schema = person_schema();
         let source = source_records();
-        let gen    = NearDuplicateGenerator { pair_count: 5, id_offset: 1_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 5,
+            id_offset: 1_000,
+        };
         let result = gen.generate(&source, &schema);
         let ids: std::collections::HashSet<u64> = result.iter().map(|r| r.id).collect();
-        assert_eq!(ids.len(), result.len(), "all generated record IDs must be unique");
+        assert_eq!(
+            ids.len(),
+            result.len(),
+            "all generated record IDs must be unique"
+        );
     }
 
     #[test]
     fn generate_name_fields_are_perturbed() {
         let schema = person_schema();
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")];
-        let gen    = NearDuplicateGenerator { pair_count: 1, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 1,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
         // result[0] = verbatim copy, result[1] = perturbed
         let orig_first = source[0].get("voornamen");
         let pert_first = result[1].get("voornamen");
-        assert_ne!(orig_first, pert_first, "first name must differ between original and perturbed");
+        assert_ne!(
+            orig_first, pert_first,
+            "first name must differ between original and perturbed"
+        );
     }
 
     #[test]
     fn generate_surname_is_also_perturbed() {
         let schema = person_schema();
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")];
-        let gen    = NearDuplicateGenerator { pair_count: 1, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 1,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
         // Surname gets the same strip-last-char treatment as first name.
         let orig = source[0].get("achternaam");
@@ -252,7 +277,10 @@ mod tests {
     fn generate_date_year_preserved() {
         let schema = person_schema();
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")];
-        let gen    = NearDuplicateGenerator { pair_count: 1, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 1,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
         // perturbed record is result[1]
         let dob_val = result[1].get("geboortedatum");
@@ -267,38 +295,60 @@ mod tests {
     fn generate_date_day_month_differ() {
         let schema = person_schema();
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")];
-        let gen    = NearDuplicateGenerator { pair_count: 1, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 1,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
         let orig_dob = source[0].get("geboortedatum");
         let pert_dob = result[1].get("geboortedatum");
-        assert_ne!(orig_dob, pert_dob, "perturbed DOB must differ from original");
+        assert_ne!(
+            orig_dob, pert_dob,
+            "perturbed DOB must differ from original"
+        );
     }
 
     #[test]
     fn generate_verbatim_copy_equals_source() {
         let schema = person_schema();
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")];
-        let gen    = NearDuplicateGenerator { pair_count: 1, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 1,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
         // result[0] is the verbatim copy (different ID, same field values)
-        assert_eq!(result[0].get("voornamen"),     source[0].get("voornamen"));
-        assert_eq!(result[0].get("achternaam"),    source[0].get("achternaam"));
-        assert_eq!(result[0].get("geboortedatum"), source[0].get("geboortedatum"));
+        assert_eq!(result[0].get("voornamen"), source[0].get("voornamen"));
+        assert_eq!(result[0].get("achternaam"), source[0].get("achternaam"));
+        assert_eq!(
+            result[0].get("geboortedatum"),
+            source[0].get("geboortedatum")
+        );
     }
 
     #[test]
     fn generate_cycles_when_fewer_sources() {
         let schema = person_schema();
         let source = vec![make_record(1, "Maria", "Jansen", "1985-03-15")]; // only 1 source
-        let gen    = NearDuplicateGenerator { pair_count: 3, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 3,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
-        assert_eq!(result.len(), 6, "should still generate 2 times pair_count records when cycling");
+        assert_eq!(
+            result.len(),
+            6,
+            "should still generate 2 times pair_count records when cycling"
+        );
     }
 
     #[test]
     fn generate_empty_source_returns_empty() {
         let schema = person_schema();
-        let gen    = NearDuplicateGenerator { pair_count: 5, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 5,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&[], &schema);
         assert!(result.is_empty());
     }
@@ -307,7 +357,10 @@ mod tests {
     fn generate_zero_pairs_returns_empty() {
         let schema = person_schema();
         let source = source_records();
-        let gen    = NearDuplicateGenerator { pair_count: 0, id_offset: 9_000 };
+        let gen = NearDuplicateGenerator {
+            pair_count: 0,
+            id_offset: 9_000,
+        };
         let result = gen.generate(&source, &schema);
         assert!(result.is_empty());
     }
@@ -348,7 +401,10 @@ mod tests {
         let v = FieldValue::Text("1990-06-15".into());
         let p0 = perturb_date(&v, 0);
         let p1 = perturb_date(&v, 1);
-        assert_ne!(p0, p1, "different pair indices must produce different dates");
+        assert_ne!(
+            p0, p1,
+            "different pair indices must produce different dates"
+        );
     }
 
     #[test]

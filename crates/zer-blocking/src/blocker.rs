@@ -16,15 +16,19 @@ use crate::keys::BlockingKey;
 /// renamed to the canonical (A-side) names so the existing `BlockingKey`
 /// implementations can extract values without knowing about schema differences.
 pub struct CompositeBlocker {
-    keys:          Vec<Box<dyn BlockingKey>>,
+    keys: Vec<Box<dyn BlockingKey>>,
     source_remaps: HashMap<String, HashMap<String, String>>,
 }
 
 impl CompositeBlocker {
     pub fn new() -> Self {
-        Self { keys: vec![], source_remaps: HashMap::new() }
+        Self {
+            keys: vec![],
+            source_remaps: HashMap::new(),
+        }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, key: impl BlockingKey + 'static) -> Self {
         self.keys.push(Box::new(key));
         self
@@ -42,13 +46,13 @@ impl CompositeBlocker {
     pub fn with_source_remap(
         mut self,
         source: impl Into<String>,
-        remap:  HashMap<String, String>,
+        remap: HashMap<String, String>,
     ) -> Self {
         self.source_remaps.insert(source.into(), remap);
         self
     }
 
-    fn effective_record<'r>(&self, record: &'r Record) -> Option<Record> {
+    fn effective_record(&self, record: &Record) -> Option<Record> {
         let src = record.source.as_deref()?;
         let remap = self.source_remaps.get(src)?;
         let mut new_rec = Record::new(record.id);
@@ -56,7 +60,9 @@ impl CompositeBlocker {
             new_rec = new_rec.with_source(s);
         }
         for (field_name, value) in &record.fields {
-            let canonical = remap.get(field_name).cloned()
+            let canonical = remap
+                .get(field_name)
+                .cloned()
                 .unwrap_or_else(|| field_name.clone());
             new_rec.fields.insert(canonical, value.clone());
         }
@@ -89,7 +95,12 @@ impl Blocker for CompositeBlocker {
         index.insert(record.id, keys);
     }
 
-    fn candidates(&self, record: &Record, schema: &Schema, index: &dyn BlockIndex) -> Vec<RecordId> {
+    fn candidates(
+        &self,
+        record: &Record,
+        schema: &Schema,
+        index: &dyn BlockIndex,
+    ) -> Vec<RecordId> {
         let keys = self.blocking_keys(record, schema);
         index.lookup_union(&keys, record.id)
     }
@@ -98,8 +109,11 @@ impl Blocker for CompositeBlocker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zer_core::{record::FieldValue, schema::{SchemaBuilder, FieldKind}};
     use crate::{index::InvertedIndex, keys::ExactFieldKey};
+    use zer_core::{
+        record::FieldValue,
+        schema::{FieldKind, SchemaBuilder},
+    };
 
     fn schema() -> Schema {
         SchemaBuilder::new()
@@ -110,7 +124,7 @@ mod tests {
 
     #[test]
     fn index_and_candidates_round_trip() {
-        let schema  = schema();
+        let schema = schema();
         let blocker = CompositeBlocker::new().add(ExactFieldKey::new("category"));
         let mut idx = InvertedIndex::new();
 
@@ -125,12 +139,15 @@ mod tests {
         let cands_r1 = blocker.candidates(&r1, &schema, &idx);
         assert!(cands_r1.contains(&2), "r2 should be a candidate for r1");
         assert!(!cands_r1.contains(&1), "r1 should not be its own candidate");
-        assert!(!cands_r1.contains(&3), "r3 should not match r1 (different category)");
+        assert!(
+            !cands_r1.contains(&3),
+            "r3 should not match r1 (different category)"
+        );
     }
 
     #[test]
     fn no_self_candidates() {
-        let schema  = schema();
+        let schema = schema();
         let blocker = CompositeBlocker::new().add(ExactFieldKey::new("category"));
         let mut idx = InvertedIndex::new();
 

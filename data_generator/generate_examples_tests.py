@@ -536,7 +536,9 @@ def generate_kvk_tests():
 
     The same director appears under multiple KVK entries (different companies).
     Blocking recall ≥ 0.97: phonetic name + DOB keys catch the matches.
-    Dataset is large enough for blocking reduction ratio ≥ 0.98.
+    Blocking reduction ratio ≥ 0.90: Zipf-weighted Dutch surnames produce a
+    large "de" tussenvoegsel bucket (~250 records) which is realistic but limits
+    how aggressively the blocker can prune pairs.
     """
     random.seed(7007)
     Faker.seed(7007)

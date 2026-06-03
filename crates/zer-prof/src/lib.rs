@@ -51,9 +51,21 @@
 
 // ── NVTX guard module ─────────────────────────────────────────────────────────
 
-#[cfg(any(feature = "nvtx", feature = "cuda", feature = "avx2", feature = "cpu", feature = "vulkan"))]
+#[cfg(any(
+    feature = "nvtx",
+    feature = "cuda",
+    feature = "avx2",
+    feature = "cpu",
+    feature = "vulkan"
+))]
 pub mod nvtx;
-#[cfg(any(feature = "nvtx", feature = "cuda", feature = "avx2", feature = "cpu", feature = "vulkan"))]
+#[cfg(any(
+    feature = "nvtx",
+    feature = "cuda",
+    feature = "avx2",
+    feature = "cpu",
+    feature = "vulkan"
+))]
 pub use nvtx::NvtxGuard;
 
 // ── init ─────────────────────────────────────────────────────────────────────
@@ -71,7 +83,13 @@ pub fn init() {}
 /// Evaluates to the block's value.  The range is visible in Nsight Systems as
 /// a labelled band and in Nsight Compute as a host-side context annotation.
 /// Expands to a bare block when no feature is compiled in.
-#[cfg(any(feature = "nvtx", feature = "cuda", feature = "avx2", feature = "cpu", feature = "vulkan"))]
+#[cfg(any(
+    feature = "nvtx",
+    feature = "cuda",
+    feature = "avx2",
+    feature = "cpu",
+    feature = "vulkan"
+))]
 #[macro_export]
 macro_rules! trace {
     ($name:expr, $body:block) => {{
@@ -80,7 +98,13 @@ macro_rules! trace {
     }};
 }
 
-#[cfg(not(any(feature = "nvtx", feature = "cuda", feature = "avx2", feature = "cpu", feature = "vulkan")))]
+#[cfg(not(any(
+    feature = "nvtx",
+    feature = "cuda",
+    feature = "avx2",
+    feature = "cpu",
+    feature = "vulkan"
+)))]
 #[macro_export]
 macro_rules! trace {
     ($name:expr, $body:block) => {

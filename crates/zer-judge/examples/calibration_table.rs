@@ -12,9 +12,18 @@ fn main() {
     let table = CalibrationTable::default();
 
     println!("CalibrationTable (defaults):");
-    println!("  lr_increase  = {:.4}  → applied when judge says 'match'", table.lr_increase);
-    println!("  lr_decrease  = {:.4}  → applied when judge says 'non-match'", table.lr_decrease);
-    println!("  lr_no_change = {:.4}  → applied when judge abstains", table.lr_no_change);
+    println!(
+        "  lr_increase  = {:.4}  → applied when judge says 'match'",
+        table.lr_increase
+    );
+    println!(
+        "  lr_decrease  = {:.4}  → applied when judge says 'non-match'",
+        table.lr_decrease
+    );
+    println!(
+        "  lr_no_change = {:.4}  → applied when judge abstains",
+        table.lr_no_change
+    );
     println!();
 
     println!(

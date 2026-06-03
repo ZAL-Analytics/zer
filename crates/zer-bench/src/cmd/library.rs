@@ -13,23 +13,23 @@ use super::util::workspace_root;
 // ── Core library runner ───────────────────────────────────────────────────────
 
 pub fn run_library(
-    root:         &PathBuf,
-    library:      &str,
-    mode:         &str,
-    scenario:     Option<&str>,
-    datasets:     &[&str],
+    root: &PathBuf,
+    library: &str,
+    mode: &str,
+    scenario: Option<&str>,
+    datasets: &[&str],
     ground_truth: Option<&str>,
-    out:          &str,
-    max_records:  Option<usize>,
-    force_setup:  bool,
+    out: &str,
+    max_records: Option<usize>,
+    force_setup: bool,
 ) -> anyhow::Result<()> {
-    let lib_dir  = root.join(library);
+    let lib_dir = root.join(library);
     let mode_dir = lib_dir.join(mode_dir_name(mode));
 
     // Ensure setup has been run (idempotent via sentinel file).
     // --force-setup ignores the sentinel; useful after switching Python environments.
     let setup_sentinel = lib_dir.join(".setup_done");
-    let setup_sh       = lib_dir.join("setup.sh");
+    let setup_sh = lib_dir.join("setup.sh");
     if (!setup_sentinel.exists() || force_setup) && setup_sh.exists() {
         println!("running setup  library={library}");
         let status = Command::new("bash")
@@ -69,7 +69,8 @@ pub fn run_library(
     }
 
     println!("running benchmark script  library={library}  mode={mode}  script={script:?}");
-    let status = cmd.status()
+    let status = cmd
+        .status()
         .map_err(|e| anyhow::anyhow!("failed to execute {library} script: {e}"))?;
 
     if !status.success() {
@@ -100,16 +101,16 @@ pub fn run_library(
 pub fn mode_dir_name(mode: &str) -> &str {
     match mode.to_lowercase().replace('-', "_").as_str() {
         "dedupe" | "deduplicate" => "dedupe",
-        "link_only"                        => "link_only",
-        "link_and_dedupe" | "link_dedupe"  => "link_and_dedupe",
-        "throughput"                       => "throughput",
+        "link_only" => "link_only",
+        "link_and_dedupe" | "link_dedupe" => "link_and_dedupe",
+        "throughput" => "throughput",
         _ => mode,
     }
 }
 
 fn resolve_script(dir: &PathBuf) -> anyhow::Result<(&'static str, PathBuf)> {
     let py = dir.join("run.py");
-    let r  = dir.join("run.R");
+    let r = dir.join("run.R");
 
     if py.exists() {
         return Ok(("python3", py));

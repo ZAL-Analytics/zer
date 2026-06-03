@@ -17,12 +17,12 @@ use zer_core::{error::ZerError, record::RecordId, scoring::MatchBand};
 /// Aggregate accuracy metrics computed against a ground-truth labels file.
 #[derive(Debug, Clone)]
 pub struct AccuracyMetrics {
-    pub true_pos:  usize,
+    pub true_pos: usize,
     pub false_pos: usize,
     pub false_neg: usize,
     pub precision: f32,
-    pub recall:    f32,
-    pub f1:        f32,
+    pub recall: f32,
+    pub f1: f32,
 }
 
 impl AccuracyMetrics {
@@ -43,60 +43,67 @@ impl AccuracyMetrics {
         } else {
             0.0
         };
-        Self { true_pos, false_pos, false_neg, precision, recall, f1 }
+        Self {
+            true_pos,
+            false_pos,
+            false_neg,
+            precision,
+            recall,
+            f1,
+        }
     }
 }
 
 /// A single scored pair as written to the NDJSON pairs file.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct PairRecord {
-    pub run_id:            String,
-    pub record_id_a:       RecordId,
-    pub source_a:          Option<String>,
-    pub record_id_b:       RecordId,
-    pub source_b:          Option<String>,
+    pub run_id: String,
+    pub record_id_a: RecordId,
+    pub source_a: Option<String>,
+    pub record_id_b: RecordId,
+    pub source_b: Option<String>,
     pub match_probability: f32,
-    pub predicted_match:   bool,
+    pub predicted_match: bool,
 }
 
 /// Summary row shared with all benchmark libraries.
 #[derive(Debug, Clone, serde::Serialize)]
 struct SummaryRow {
-    library:         String,
-    mode:            String,
-    dataset:         String,
-    run_id:          String,
-    timestamp:       String,
-    total_records:   usize,
+    library: String,
+    mode: String,
+    dataset: String,
+    run_id: String,
+    timestamp: String,
+    total_records: usize,
     candidate_pairs: usize,
-    auto_matched:    usize,
-    borderline:      usize,
-    auto_rejected:   usize,
-    elapsed_ms:      u64,
-    true_pos:        Option<usize>,
-    false_pos:       Option<usize>,
-    false_neg:       Option<usize>,
-    precision:       Option<f32>,
-    recall:          Option<f32>,
-    f1:              Option<f32>,
+    auto_matched: usize,
+    borderline: usize,
+    auto_rejected: usize,
+    elapsed_ms: u64,
+    true_pos: Option<usize>,
+    false_pos: Option<usize>,
+    false_neg: Option<usize>,
+    precision: Option<f32>,
+    recall: Option<f32>,
+    f1: Option<f32>,
 }
 
 /// A lightweight `BatchReport`-like view used by `BenchResultWriter`.
 ///
 /// This avoids a direct dependency on `zer-pipeline` from `zer-adapters`.
 pub struct BenchBatchSummary {
-    pub total_records:   usize,
+    pub total_records: usize,
     pub candidate_pairs: usize,
-    pub auto_matched:    usize,
-    pub borderline:      usize,
-    pub auto_rejected:   usize,
-    pub elapsed_ms:      u64,
-    pub link_mode:       String,
-    pub dataset:         String,
+    pub auto_matched: usize,
+    pub borderline: usize,
+    pub auto_rejected: usize,
+    pub elapsed_ms: u64,
+    pub link_mode: String,
+    pub dataset: String,
 }
 
 pub struct BenchResultWriter {
-    run_id:  String,
+    run_id: String,
     out_dir: PathBuf,
 }
 
@@ -106,7 +113,7 @@ impl BenchResultWriter {
         fs::create_dir_all(out_dir)
             .map_err(|e| ZerError::Store(format!("cannot create output dir: {e}")))?;
         Ok(Self {
-            run_id:  run_id.to_owned(),
+            run_id: run_id.to_owned(),
             out_dir: out_dir.to_path_buf(),
         })
     }
@@ -120,8 +127,7 @@ impl BenchResultWriter {
         for pair in pairs {
             let line = serde_json::to_string(pair)
                 .map_err(|e| ZerError::Store(format!("JSON serialise error: {e}")))?;
-            writeln!(w, "{line}")
-                .map_err(|e| ZerError::Store(format!("write error: {e}")))?;
+            writeln!(w, "{line}").map_err(|e| ZerError::Store(format!("write error: {e}")))?;
         }
         Ok(())
     }
@@ -157,23 +163,23 @@ impl BenchResultWriter {
 
         let timestamp = crate::time::utc_timestamp_iso();
         let row = SummaryRow {
-            library:         library.to_owned(),
-            mode:            summary.link_mode.to_lowercase(),
-            dataset:         summary.dataset.clone(),
-            run_id:          self.run_id.clone(),
+            library: library.to_owned(),
+            mode: summary.link_mode.to_lowercase(),
+            dataset: summary.dataset.clone(),
+            run_id: self.run_id.clone(),
             timestamp,
-            total_records:   summary.total_records,
+            total_records: summary.total_records,
             candidate_pairs: summary.candidate_pairs,
-            auto_matched:    summary.auto_matched,
-            borderline:      summary.borderline,
-            auto_rejected:   summary.auto_rejected,
-            elapsed_ms:      summary.elapsed_ms,
-            true_pos:  accuracy.map(|a| a.true_pos),
+            auto_matched: summary.auto_matched,
+            borderline: summary.borderline,
+            auto_rejected: summary.auto_rejected,
+            elapsed_ms: summary.elapsed_ms,
+            true_pos: accuracy.map(|a| a.true_pos),
             false_pos: accuracy.map(|a| a.false_pos),
             false_neg: accuracy.map(|a| a.false_neg),
             precision: accuracy.map(|a| a.precision),
-            recall:    accuracy.map(|a| a.recall),
-            f1:        accuracy.map(|a| a.f1),
+            recall: accuracy.map(|a| a.recall),
+            f1: accuracy.map(|a| a.f1),
         };
 
         let mut wtr = csv::Writer::from_writer(file);
@@ -190,7 +196,9 @@ impl BenchResultWriter {
     /// `score` (f32) and `is_match` (0 or 1).  Separating this from the benchmark
     /// JSON keeps the JSON small and allows millions of rows without memory cost.
     pub fn write_scored_pairs_csv(&self, pairs: &[(f32, bool)]) -> Result<(), ZerError> {
-        let path = self.out_dir.join(format!("{}_scored_pairs.csv", self.run_id));
+        let path = self
+            .out_dir
+            .join(format!("{}_scored_pairs.csv", self.run_id));
         let file = File::create(&path)
             .map_err(|e| ZerError::Store(format!("cannot create scored pairs file: {e}")))?;
         let mut w = csv::Writer::from_writer(file);
@@ -202,7 +210,8 @@ impl BenchResultWriter {
             w.write_record(&[score.to_string(), (*is_match as u8).to_string()])
                 .map_err(|e| ZerError::Store(format!("CSV write error: {e}")))?;
         }
-        w.flush().map_err(|e| ZerError::Store(format!("CSV flush error: {e}")))?;
+        w.flush()
+            .map_err(|e| ZerError::Store(format!("CSV flush error: {e}")))?;
         Ok(())
     }
 
@@ -220,7 +229,6 @@ pub fn band_to_match(band: MatchBand) -> bool {
     matches!(band, MatchBand::AutoMatch)
 }
 
-
 // ── Unit tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -230,35 +238,37 @@ mod tests {
 
     fn sample_summary(_dir: &TempDir) -> BenchBatchSummary {
         BenchBatchSummary {
-            total_records:   100,
+            total_records: 100,
             candidate_pairs: 500,
-            auto_matched:    400,
-            borderline:      50,
-            auto_rejected:   50,
-            elapsed_ms:      1200,
-            link_mode:       "deduplicate".into(),
-            dataset:         "test_dataset".into(),
+            auto_matched: 400,
+            borderline: 50,
+            auto_rejected: 50,
+            elapsed_ms: 1200,
+            link_mode: "deduplicate".into(),
+            dataset: "test_dataset".into(),
         }
     }
 
     #[test]
     fn write_pairs_ndjson_line_count() {
-        let dir    = TempDir::new().unwrap();
+        let dir = TempDir::new().unwrap();
         let writer = BenchResultWriter::new(dir.path(), "test_run").unwrap();
 
-        let pairs: Vec<PairRecord> = (0..5).map(|i| PairRecord {
-            run_id:            "test_run".into(),
-            record_id_a:       i,
-            source_a:          Some("brp".into()),
-            record_id_b:       i + 100,
-            source_b:          Some("kvk".into()),
-            match_probability: 0.9,
-            predicted_match:   true,
-        }).collect();
+        let pairs: Vec<PairRecord> = (0..5)
+            .map(|i| PairRecord {
+                run_id: "test_run".into(),
+                record_id_a: i,
+                source_a: Some("brp".into()),
+                record_id_b: i + 100,
+                source_b: Some("kvk".into()),
+                match_probability: 0.9,
+                predicted_match: true,
+            })
+            .collect();
 
         writer.write_pairs(&pairs).unwrap();
 
-        let path    = dir.path().join("test_run_pairs.ndjson");
+        let path = dir.path().join("test_run_pairs.ndjson");
         let content = std::fs::read_to_string(&path).unwrap();
         let lines: Vec<&str> = content.lines().collect();
         assert_eq!(lines.len(), 5, "NDJSON file must have exactly N lines");
@@ -273,13 +283,13 @@ mod tests {
 
     #[test]
     fn write_summary_csv_no_accuracy() {
-        let dir     = TempDir::new().unwrap();
-        let writer  = BenchResultWriter::new(dir.path(), "run_no_acc").unwrap();
+        let dir = TempDir::new().unwrap();
+        let writer = BenchResultWriter::new(dir.path(), "run_no_acc").unwrap();
         let summary = sample_summary(&dir);
 
         writer.write_summary(&summary, None).unwrap();
 
-        let path    = dir.path().join("run_no_acc_summary.csv");
+        let path = dir.path().join("run_no_acc_summary.csv");
         let content = std::fs::read_to_string(&path).unwrap();
         assert!(content.contains("zer"), "library field must be 'zer'");
         assert!(content.contains("test_dataset"));
@@ -288,14 +298,14 @@ mod tests {
 
     #[test]
     fn write_summary_csv_with_accuracy() {
-        let dir     = TempDir::new().unwrap();
-        let writer  = BenchResultWriter::new(dir.path(), "run_acc").unwrap();
+        let dir = TempDir::new().unwrap();
+        let writer = BenchResultWriter::new(dir.path(), "run_acc").unwrap();
         let summary = sample_summary(&dir);
-        let acc     = AccuracyMetrics::from_counts(96, 4, 2);
+        let acc = AccuracyMetrics::from_counts(96, 4, 2);
 
         writer.write_summary(&summary, Some(&acc)).unwrap();
 
-        let path    = dir.path().join("run_acc_summary.csv");
+        let path = dir.path().join("run_acc_summary.csv");
         let content = std::fs::read_to_string(&path).unwrap();
         assert!(content.contains("96")); // true_pos
     }

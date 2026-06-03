@@ -116,9 +116,9 @@ pub trait ArrowIngest {
 
 impl ArrowIngest for RecordBatch {
     fn into_records(self, id_start: RecordId) -> Vec<Record> {
-        let schema   = self.schema();
-        let n_rows   = self.num_rows();
-        let n_cols   = self.num_columns();
+        let schema = self.schema();
+        let n_rows = self.num_rows();
+        let n_cols = self.num_columns();
         let mut records = Vec::with_capacity(n_rows);
 
         for row in 0..n_rows {
@@ -126,8 +126,8 @@ impl ArrowIngest for RecordBatch {
             let mut record = Record::new(id);
             for col_idx in 0..n_cols {
                 let field_name = schema.field(col_idx).name().clone();
-                let col        = self.column(col_idx).as_ref();
-                let value      = arrow_cell_to_field_value(col, row);
+                let col = self.column(col_idx).as_ref();
+                let value = arrow_cell_to_field_value(col, row);
                 record = record.insert(field_name, value);
             }
             records.push(record);
@@ -142,23 +142,28 @@ impl ArrowIngest for RecordBatch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arrow_array::{Int32Array, Int64Array, StringArray, UInt64Array, Float64Array, BooleanArray, BinaryArray};
+    use arrow_array::{
+        BinaryArray, BooleanArray, Float64Array, Int32Array, Int64Array, StringArray, UInt64Array,
+    };
     use arrow_schema::{DataType, Field, Schema};
     use std::sync::Arc;
 
     fn make_batch() -> RecordBatch {
         let schema = Arc::new(Schema::new(vec![
-            Field::new("name",   DataType::Utf8,    true),
-            Field::new("age",    DataType::Int64,   true),
-            Field::new("score",  DataType::Float64, true),
+            Field::new("name", DataType::Utf8, true),
+            Field::new("age", DataType::Int64, true),
+            Field::new("score", DataType::Float64, true),
             Field::new("active", DataType::Boolean, true),
         ]));
-        RecordBatch::try_new(schema, vec![
-            Arc::new(StringArray::from(vec![Some("Alice"), Some("Bob"), None])),
-            Arc::new(Int64Array::from(vec![Some(30i64), Some(25i64), None])),
-            Arc::new(Float64Array::from(vec![Some(0.9f64), Some(0.7f64), None])),
-            Arc::new(BooleanArray::from(vec![Some(true), Some(false), None])),
-        ])
+        RecordBatch::try_new(
+            schema,
+            vec![
+                Arc::new(StringArray::from(vec![Some("Alice"), Some("Bob"), None])),
+                Arc::new(Int64Array::from(vec![Some(30i64), Some(25i64), None])),
+                Arc::new(Float64Array::from(vec![Some(0.9f64), Some(0.7f64), None])),
+                Arc::new(BooleanArray::from(vec![Some(true), Some(false), None])),
+            ],
+        )
         .unwrap()
     }
 
@@ -174,7 +179,10 @@ mod tests {
     #[test]
     fn batch_into_records_string_column() {
         let records = make_batch().into_records(1);
-        assert_eq!(records[0].get("name"), Some(&FieldValue::Text("Alice".into())));
+        assert_eq!(
+            records[0].get("name"),
+            Some(&FieldValue::Text("Alice".into()))
+        );
         assert_eq!(records[2].get("name"), Some(&FieldValue::Null));
     }
 
@@ -200,40 +208,42 @@ mod tests {
 
     #[test]
     fn batch_uint64_preserved() {
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("uid", DataType::UInt64, false),
-        ]));
-        let batch = RecordBatch::try_new(schema, vec![
-            Arc::new(UInt64Array::from(vec![u64::MAX])),
-        ])
-        .unwrap();
+        let schema = Arc::new(Schema::new(vec![Field::new(
+            "uid",
+            DataType::UInt64,
+            false,
+        )]));
+        let batch = RecordBatch::try_new(schema, vec![Arc::new(UInt64Array::from(vec![u64::MAX]))])
+            .unwrap();
         let records = batch.into_records(1);
         assert_eq!(records[0].get("uid"), Some(&FieldValue::UInt(u64::MAX)));
     }
 
     #[test]
     fn batch_int32_widened_to_int64() {
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("val", DataType::Int32, false),
-        ]));
-        let batch = RecordBatch::try_new(schema, vec![
-            Arc::new(Int32Array::from(vec![42i32])),
-        ])
-        .unwrap();
+        let schema = Arc::new(Schema::new(vec![Field::new("val", DataType::Int32, false)]));
+        let batch =
+            RecordBatch::try_new(schema, vec![Arc::new(Int32Array::from(vec![42i32]))]).unwrap();
         let records = batch.into_records(1);
         assert_eq!(records[0].get("val"), Some(&FieldValue::Int(42)));
     }
 
     #[test]
     fn batch_binary_column() {
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("blob", DataType::Binary, false),
-        ]));
-        let batch = RecordBatch::try_new(schema, vec![
-            Arc::new(BinaryArray::from_vec(vec![&[1u8, 2u8, 3u8][..]])),
-        ])
+        let schema = Arc::new(Schema::new(vec![Field::new(
+            "blob",
+            DataType::Binary,
+            false,
+        )]));
+        let batch = RecordBatch::try_new(
+            schema,
+            vec![Arc::new(BinaryArray::from_vec(vec![&[1u8, 2u8, 3u8][..]]))],
+        )
         .unwrap();
         let records = batch.into_records(1);
-        assert_eq!(records[0].get("blob"), Some(&FieldValue::Bytes(vec![1, 2, 3])));
+        assert_eq!(
+            records[0].get("blob"),
+            Some(&FieldValue::Bytes(vec![1, 2, 3]))
+        );
     }
 }

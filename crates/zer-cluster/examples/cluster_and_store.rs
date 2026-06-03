@@ -24,12 +24,7 @@ fn main() {
     //   Group C: records 8,9
     //   Group D: records 10,11,12
 
-    let groups: &[&[u64]] = &[
-        &[1, 2, 3],
-        &[4, 5, 6, 7],
-        &[8, 9],
-        &[10, 11, 12],
-    ];
+    let groups: &[&[u64]] = &[&[1, 2, 3], &[4, 5, 6, 7], &[8, 9], &[10, 11, 12]];
 
     let mut pairs: Vec<ScoredPair> = Vec::new();
     for group in groups {
@@ -45,10 +40,17 @@ fn main() {
     pairs.push(make_pair(7, 8, 0.05, MatchBand::AutoReject));
     pairs.push(make_pair(9, 10, 0.05, MatchBand::AutoReject));
 
-    println!("Generated {} scored pairs ({} AutoMatch, {} AutoReject).",
+    println!(
+        "Generated {} scored pairs ({} AutoMatch, {} AutoReject).",
         pairs.len(),
-        pairs.iter().filter(|p| p.band == MatchBand::AutoMatch).count(),
-        pairs.iter().filter(|p| p.band == MatchBand::AutoReject).count(),
+        pairs
+            .iter()
+            .filter(|p| p.band == MatchBand::AutoMatch)
+            .count(),
+        pairs
+            .iter()
+            .filter(|p| p.band == MatchBand::AutoReject)
+            .count(),
     );
 
     // ── Step 2: Cluster ───────────────────────────────────────────────────────
@@ -77,7 +79,11 @@ fn main() {
             "  Entity #{eid}: {} members {:?}  (best score: {:.3})",
             entity.members.len(),
             member_ids,
-            entity.members.iter().map(|m| m.score).fold(0.0_f32, f32::max),
+            entity
+                .members
+                .iter()
+                .map(|m| m.score)
+                .fold(0.0_f32, f32::max),
         );
     }
 
@@ -114,11 +120,15 @@ fn main() {
 
 fn make_pair(a: u64, b: u64, prob: f32, band: MatchBand) -> ScoredPair {
     ScoredPair {
-        record_a:          a,
-        record_b:          b,
-        match_weight:      0.0,
+        record_a: a,
+        record_b: b,
+        match_weight: 0.0,
         match_probability: prob,
-        vector:            ComparisonVector { record_a: a, record_b: b, levels: vec![] },
+        vector: ComparisonVector {
+            record_a: a,
+            record_b: b,
+            levels: vec![],
+        },
         band,
     }
 }

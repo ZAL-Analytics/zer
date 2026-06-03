@@ -33,7 +33,7 @@ use crate::{
 // ── Wire types ────────────────────────────────────────────────────────────────
 
 struct InferRequest {
-    texts:    Vec<String>,
+    texts: Vec<String>,
     reply_tx: mpsc::SyncSender<Result<Vec<f32>, JudgeError>>,
 }
 
@@ -62,8 +62,8 @@ impl Drop for WorkerGuard {
 
 fn worker_loop(
     mut session: OnnxSession,
-    tokenizer:   JudgeTokenizer,
-    rx:          mpsc::Receiver<InferRequest>,
+    tokenizer: JudgeTokenizer,
+    rx: mpsc::Receiver<InferRequest>,
 ) {
     for req in rx {
         let result = (|| {
@@ -82,26 +82,26 @@ pub struct DebertaJudgeConfig {
     /// Entailment probability above which the pair is promoted.
     pub promote_threshold: f32,
     /// Entailment probability below which the pair is demoted.
-    pub demote_threshold:  f32,
+    pub demote_threshold: f32,
     /// Maximum number of pairs sent to the ORT worker in a single call.
     ///
     /// Chunking keeps memory usage bounded and lets the caller observe tracing
     /// progress between chunks.  Defaults to 64.
-    pub batch_size:        usize,
+    pub batch_size: usize,
     /// Bayesian calibration applied to matched/rejected pairs.
-    pub calibration:       CalibrationTable,
+    pub calibration: CalibrationTable,
     /// Optional audit log, if `None`, no audit trail is written.
-    pub audit_log:         Option<Arc<AuditLog>>,
+    pub audit_log: Option<Arc<AuditLog>>,
 }
 
 impl Default for DebertaJudgeConfig {
     fn default() -> Self {
         Self {
             promote_threshold: 0.6,
-            demote_threshold:  0.35,
-            batch_size:        64,
-            calibration:       CalibrationTable::default(),
-            audit_log:         None,
+            demote_threshold: 0.35,
+            batch_size: 64,
+            calibration: CalibrationTable::default(),
+            audit_log: None,
         }
     }
 }
@@ -118,23 +118,23 @@ pub struct DebertaJudge {
     // worker thread to exit its receive loop.  Only then does `_worker`'s Arc
     // decrement; when it reaches zero `WorkerGuard::drop` joins the thread,
     // ensuring the ORT/TRT session is fully released before process teardown.
-    work_tx:      mpsc::SyncSender<InferRequest>,
-    _worker:      Arc<WorkerGuard>,
+    work_tx: mpsc::SyncSender<InferRequest>,
+    _worker: Arc<WorkerGuard>,
     record_store: Arc<dyn RecordStore>,
-    schema:       Schema,
-    config:       DebertaJudgeConfig,
+    schema: Schema,
+    config: DebertaJudgeConfig,
 }
 
 impl DebertaJudge {
     /// Build a `DebertaJudge`, spawning the background ORT worker thread.
     pub fn new(
-        spec:         &dyn JudgeModelSpec,
-        backend:      &JudgeBackend,
+        spec: &dyn JudgeModelSpec,
+        backend: &JudgeBackend,
         record_store: Arc<dyn RecordStore>,
-        schema:       Schema,
-        config:       DebertaJudgeConfig,
+        schema: Schema,
+        config: DebertaJudgeConfig,
     ) -> Result<Self, JudgeError> {
-        let session   = OnnxSession::from_spec(spec, backend)?;
+        let session = OnnxSession::from_spec(spec, backend)?;
         let tokenizer = JudgeTokenizer::from_spec(spec)?;
 
         let (work_tx, work_rx) = mpsc::sync_channel::<InferRequest>(32);
@@ -177,10 +177,7 @@ impl DebertaJudge {
 }
 
 impl Judge for DebertaJudge {
-    fn adjudicate(
-        &self,
-        pairs: &[ScoredPair],
-    ) -> zer_core::traits::Result<Vec<JudgeVerdict>> {
+    fn adjudicate(&self, pairs: &[ScoredPair]) -> zer_core::traits::Result<Vec<JudgeVerdict>> {
         if pairs.is_empty() {
             return Ok(vec![]);
         }
@@ -188,10 +185,12 @@ impl Judge for DebertaJudge {
         // Build pair texts, look up full records from the store.
         let mut texts = Vec::with_capacity(pairs.len());
         for pair in pairs {
-            let a = self.record_store
+            let a = self
+                .record_store
                 .get(pair.record_a)
                 .ok_or(JudgeError::RecordNotFound(pair.record_a))?;
-            let b = self.record_store
+            let b = self
+                .record_store
                 .get(pair.record_b)
                 .ok_or(JudgeError::RecordNotFound(pair.record_b))?;
             texts.push(serialize_pair(&a, &b, &self.schema));
@@ -207,7 +206,8 @@ impl Judge for DebertaJudge {
                 total = texts.len(),
                 "judge inference chunk"
             );
-            let chunk_probs = self.send_batch(chunk.to_vec())
+            let chunk_probs = self
+                .send_batch(chunk.to_vec())
                 .map_err(zer_core::error::ZerError::from)?;
             probs.extend(chunk_probs);
         }
@@ -226,15 +226,15 @@ impl Judge for DebertaJudge {
                 let verdict_str = match &verdict {
                     JudgeVerdict::IncreaseConfidence => "increase",
                     JudgeVerdict::DecreaseConfidence => "decrease",
-                    JudgeVerdict::NoChange           => "no_change",
+                    JudgeVerdict::NoChange => "no_change",
                 };
                 log.append(&AuditEntry {
-                    record_a:          pair.record_a,
-                    record_b:          pair.record_b,
-                    pair_text:         texts[idx].clone(),
+                    record_a: pair.record_a,
+                    record_b: pair.record_b,
+                    pair_text: texts[idx].clone(),
                     match_probability: pair.match_probability,
-                    entailment_score:  *prob,
-                    verdict:           verdict_str,
+                    entailment_score: *prob,
+                    verdict: verdict_str,
                 });
             }
 
@@ -269,7 +269,10 @@ mod tests {
 
     #[test]
     fn deberta_judge_config_batch_size_custom() {
-        let cfg = DebertaJudgeConfig { batch_size: 16, ..Default::default() };
+        let cfg = DebertaJudgeConfig {
+            batch_size: 16,
+            ..Default::default()
+        };
         assert_eq!(cfg.batch_size, 16);
         assert_eq!(cfg.promote_threshold, 0.6);
     }
@@ -289,7 +292,10 @@ mod tests {
 
     #[test]
     fn batch_size_one_is_clamped_to_one() {
-        let cfg = DebertaJudgeConfig { batch_size: 0, ..Default::default() };
+        let cfg = DebertaJudgeConfig {
+            batch_size: 0,
+            ..Default::default()
+        };
         // The adjudicate() impl uses batch_size.max(1) to prevent zero-chunk loops.
         assert_eq!(cfg.batch_size.max(1), 1);
     }

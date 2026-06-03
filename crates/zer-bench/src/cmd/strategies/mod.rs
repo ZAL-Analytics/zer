@@ -24,25 +24,25 @@ use zer_pipeline::config::PipelineConfig;
 pub struct ScenarioStrategy {
     /// Custom blocker factory.  When `None`, the pipeline falls back to
     /// `BlockerFactory::from_schema`.
-    pub blocker_fn:       Option<fn(&Schema) -> CompositeBlocker>,
+    pub blocker_fn: Option<fn(&Schema) -> CompositeBlocker>,
     /// Custom comparator factory.  When `None`, the pipeline uses
     /// `Comparator::new(&schema, &backend)` with default similarity functions.
-    pub comparator_fn:    Option<fn(&Schema) -> FieldComparator>,
+    pub comparator_fn: Option<fn(&Schema) -> FieldComparator>,
     pub em_max_iter_cold: Option<usize>,
-    pub max_bucket_size:  Option<usize>,
-    pub upper_threshold:  Option<f32>,
-    pub lower_threshold:  Option<f32>,
+    pub max_bucket_size: Option<usize>,
+    pub upper_threshold: Option<f32>,
+    pub lower_threshold: Option<f32>,
 }
 
 impl Default for ScenarioStrategy {
     fn default() -> Self {
         Self {
-            blocker_fn:       None,
-            comparator_fn:    None,
+            blocker_fn: None,
+            comparator_fn: None,
             em_max_iter_cold: None,
-            max_bucket_size:  None,
-            upper_threshold:  None,
-            lower_threshold:  None,
+            max_bucket_size: None,
+            upper_threshold: None,
+            lower_threshold: None,
         }
     }
 }
@@ -50,10 +50,18 @@ impl Default for ScenarioStrategy {
 impl ScenarioStrategy {
     /// Apply config overrides to `cfg`, leaving fields untouched where `None`.
     pub fn apply_to_config(&self, mut cfg: PipelineConfig) -> PipelineConfig {
-        if let Some(v) = self.em_max_iter_cold { cfg.em_max_iter_cold = v; }
-        if let Some(v) = self.max_bucket_size  { cfg.max_bucket_size  = v; }
-        if let Some(v) = self.upper_threshold  { cfg.upper_threshold  = Some(v); }
-        if let Some(v) = self.lower_threshold  { cfg.lower_threshold  = Some(v); }
+        if let Some(v) = self.em_max_iter_cold {
+            cfg.em_max_iter_cold = v;
+        }
+        if let Some(v) = self.max_bucket_size {
+            cfg.max_bucket_size = v;
+        }
+        if let Some(v) = self.upper_threshold {
+            cfg.upper_threshold = Some(v);
+        }
+        if let Some(v) = self.lower_threshold {
+            cfg.lower_threshold = Some(v);
+        }
         cfg
     }
 }
@@ -67,8 +75,7 @@ impl ScenarioStrategy {
 pub(crate) fn phonetic_name_dob_initial_blocker(schema: &Schema) -> CompositeBlocker {
     BlockerFactory::from_custom_category(
         schema,
-        CustomSchemaCategory::new()
-            .with_phonetic_name_dob_initial(),
+        CustomSchemaCategory::new().with_phonetic_name_dob_initial(),
     )
 }
 
@@ -81,9 +88,9 @@ pub(crate) fn phonetic_name_dob_initial_blocker(schema: &Schema) -> CompositeBlo
 pub fn strategy_for(dataset_name: &str) -> ScenarioStrategy {
     match dataset_name {
         "brp_dedupe" | "micro_brp_dedupe" | "kvk_dedupe" => brp_dedupe::strategy(),
-        "brp_hks_link"                                    => brp_hks_link::strategy(),
-        "brp_sis_link" | "micro_brp_sis_link"            => brp_sis_link::strategy(),
-        "brp_kvk_hks_link_and_dedupe"                    => brp_kvk_hks_link_and_dedupe::strategy(),
-        _                                                 => ScenarioStrategy::default(),
+        "brp_hks_link" => brp_hks_link::strategy(),
+        "brp_sis_link" | "micro_brp_sis_link" => brp_sis_link::strategy(),
+        "brp_kvk_hks_link_and_dedupe" => brp_kvk_hks_link_and_dedupe::strategy(),
+        _ => ScenarioStrategy::default(),
     }
 }

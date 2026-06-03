@@ -16,25 +16,31 @@ use zer_judge::NearDuplicateGenerator;
 
 fn main() {
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()
         .expect("schema build failed");
 
     // Real BRP-style records as seed data.
     let source = vec![
-        make_record(1, "Maria",    "Jansen",   "1985-03-15"),
-        make_record(2, "Pieter",   "de Vries", "1990-07-22"),
-        make_record(3, "Annelies", "Bakker",   "1978-11-05"),
+        make_record(1, "Maria", "Jansen", "1985-03-15"),
+        make_record(2, "Pieter", "de Vries", "1990-07-22"),
+        make_record(3, "Annelies", "Bakker", "1978-11-05"),
     ];
 
-    let gen = NearDuplicateGenerator { pair_count: 4, id_offset: 9_000_000 };
+    let gen = NearDuplicateGenerator {
+        pair_count: 4,
+        id_offset: 9_000_000,
+    };
     let synthetics = gen.generate(&source, &schema);
 
     println!("source records  : {}", source.len());
     println!("pair_count      : {}", gen.pair_count);
-    println!("synthetic records generated: {} (2  times  pair_count)", synthetics.len());
+    println!(
+        "synthetic records generated: {} (2  times  pair_count)",
+        synthetics.len()
+    );
     println!();
 
     println!(
@@ -45,10 +51,17 @@ fn main() {
 
     for (i, r) in synthetics.iter().enumerate() {
         let first = field_str(r, "voornamen");
-        let last  = field_str(r, "achternaam");
-        let dob   = field_str(r, "geboortedatum");
-        let note  = if i % 2 == 0 { "verbatim copy" } else { "perturbed copy" };
-        println!("{:<12}  {:<10}  {:<14}  {:<12}  {}", r.id, first, last, dob, note);
+        let last = field_str(r, "achternaam");
+        let dob = field_str(r, "geboortedatum");
+        let note = if i % 2 == 0 {
+            "verbatim copy"
+        } else {
+            "perturbed copy"
+        };
+        println!(
+            "{:<12}  {:<10}  {:<14}  {:<12}  {}",
+            r.id, first, last, dob, note
+        );
     }
 
     println!();
@@ -60,8 +73,8 @@ fn main() {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }
 

@@ -9,18 +9,28 @@ use zer_core::{
 use zer_schema::infer::SchemaInferrer;
 
 fn brp_q1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q1/brp_persons.csv",
+    )
 }
 fn sim_snap1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/sim/sim_subscribers.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/sim/sim_subscribers.csv",
+    )
 }
 
 // ── CSV loader helpers ────────────────────────────────────────────────────────
 
 fn load_csv_as_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
     let path = path.as_ref();
-    let mut rdr = csv::Reader::from_path(path)
-        .unwrap_or_else(|_| panic!("CSV not found at {}, run data generator first", path.display()));
+    let mut rdr = csv::Reader::from_path(path).unwrap_or_else(|_| {
+        panic!(
+            "CSV not found at {}, run data generator first",
+            path.display()
+        )
+    });
     let headers = rdr.headers().unwrap().clone();
 
     let mut records = Vec::new();
@@ -55,8 +65,16 @@ fn infer_brp_name_fields() {
 
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
 
-    assert_eq!(kind_of("voornamen"), Some(FieldKind::Name), "voornamen should be Name");
-    assert_eq!(kind_of("achternaam"), Some(FieldKind::Name), "achternaam should be Name");
+    assert_eq!(
+        kind_of("voornamen"),
+        Some(FieldKind::Name),
+        "voornamen should be Name"
+    );
+    assert_eq!(
+        kind_of("achternaam"),
+        Some(FieldKind::Name),
+        "achternaam should be Name"
+    );
 }
 
 #[test]
@@ -129,7 +147,11 @@ fn infer_sim_phone_field() {
     let schema = SchemaInferrer::new().infer(&records).unwrap();
     let kind_of = |n: &str| schema.fields.iter().find(|f| f.name == n).map(|f| f.kind);
 
-    assert_eq!(kind_of("msisdn"), Some(FieldKind::Phone), "msisdn should be Phone");
+    assert_eq!(
+        kind_of("msisdn"),
+        Some(FieldKind::Phone),
+        "msisdn should be Phone"
+    );
 }
 
 #[test]
@@ -176,7 +198,11 @@ fn override_beats_inference_on_real_data() {
         .infer(&records)
         .unwrap();
 
-    let dob = schema.fields.iter().find(|f| f.name == "geboortedatum").unwrap();
+    let dob = schema
+        .fields
+        .iter()
+        .find(|f| f.name == "geboortedatum")
+        .unwrap();
     assert_eq!(
         dob.kind,
         FieldKind::Id,

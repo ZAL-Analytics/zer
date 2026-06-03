@@ -18,10 +18,16 @@ use zer_schema::{
 };
 
 fn brp_q1_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q1/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q1/brp_persons.csv",
+    )
 }
 fn brp_q2_csv() -> std::path::PathBuf {
-    zer_test_utils::dataset_path(env!("CARGO_MANIFEST_DIR"), "examples/brp_q2/brp_persons.csv")
+    zer_test_utils::dataset_path(
+        env!("CARGO_MANIFEST_DIR"),
+        "examples/brp_q2/brp_persons.csv",
+    )
 }
 
 fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
@@ -38,7 +44,11 @@ fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
             let v = row.get(i).unwrap_or("").trim();
             r = r.insert(
                 header,
-                if v.is_empty() { FieldValue::Null } else { FieldValue::Text(v.into()) },
+                if v.is_empty() {
+                    FieldValue::Null
+                } else {
+                    FieldValue::Text(v.into())
+                },
             );
         }
         records.push(r);
@@ -49,59 +59,59 @@ fn load_records(path: impl AsRef<std::path::Path>) -> Vec<Record> {
 
 fn brp_schema_base() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("bsn",            FieldKind::Id)
-        .field("voornamen",      FieldKind::Name)
-        .field("tussenvoegsel",  FieldKind::Categorical)
-        .field("achternaam",     FieldKind::Name)
-        .field("geboortedatum",  FieldKind::Date)
+        .field("bsn", FieldKind::Id)
+        .field("voornamen", FieldKind::Name)
+        .field("tussenvoegsel", FieldKind::Categorical)
+        .field("achternaam", FieldKind::Name)
+        .field("geboortedatum", FieldKind::Date)
         .field("geboorteplaats", FieldKind::Categorical)
-        .field("geboorteland",   FieldKind::Categorical)
-        .field("nationaliteit",  FieldKind::Categorical)
-        .field("geslacht",       FieldKind::Categorical)
-        .field("straatnaam",     FieldKind::Address)
-        .field("huisnummer",     FieldKind::Address)
-        .field("postcode",       FieldKind::Id)
-        .field("woonplaats",     FieldKind::Address)
+        .field("geboorteland", FieldKind::Categorical)
+        .field("nationaliteit", FieldKind::Categorical)
+        .field("geslacht", FieldKind::Categorical)
+        .field("straatnaam", FieldKind::Address)
+        .field("huisnummer", FieldKind::Address)
+        .field("postcode", FieldKind::Id)
+        .field("woonplaats", FieldKind::Address)
         .build()
         .unwrap()
 }
 
 fn brp_schema_extended() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("bsn",             FieldKind::Id)
-        .field("voornamen",       FieldKind::Name)
-        .field("tussenvoegsel",   FieldKind::Categorical)
-        .field("achternaam",      FieldKind::Name)
-        .field("geboortedatum",   FieldKind::Date)
-        .field("geboorteplaats",  FieldKind::Categorical)
-        .field("geboorteland",    FieldKind::Categorical)
-        .field("nationaliteit",   FieldKind::Categorical)
-        .field("geslacht",        FieldKind::Categorical)
-        .field("straatnaam",      FieldKind::Address)
-        .field("huisnummer",      FieldKind::Address)
-        .field("postcode",        FieldKind::Id)
-        .field("woonplaats",      FieldKind::Address)
-        .field("verblijfstitel",  FieldKind::Categorical) // added field
+        .field("bsn", FieldKind::Id)
+        .field("voornamen", FieldKind::Name)
+        .field("tussenvoegsel", FieldKind::Categorical)
+        .field("achternaam", FieldKind::Name)
+        .field("geboortedatum", FieldKind::Date)
+        .field("geboorteplaats", FieldKind::Categorical)
+        .field("geboorteland", FieldKind::Categorical)
+        .field("nationaliteit", FieldKind::Categorical)
+        .field("geslacht", FieldKind::Categorical)
+        .field("straatnaam", FieldKind::Address)
+        .field("huisnummer", FieldKind::Address)
+        .field("postcode", FieldKind::Id)
+        .field("woonplaats", FieldKind::Address)
+        .field("verblijfstitel", FieldKind::Categorical) // added field
         .build()
         .unwrap()
 }
 
 fn sim_schema() -> zer_core::schema::Schema {
     SchemaBuilder::new()
-        .field("sim_id",          FieldKind::Id)
-        .field("msisdn",          FieldKind::Phone)
-        .field("imsi",            FieldKind::Id)
-        .field("iccid",           FieldKind::Id)
-        .field("carrier",         FieldKind::Categorical)
-        .field("contract_type",   FieldKind::Categorical)
-        .field("activatiedatum",  FieldKind::Date)
-        .field("voornamen",       FieldKind::Name)
-        .field("achternaam",      FieldKind::Name)
-        .field("geboortedatum",   FieldKind::Date)
-        .field("nationaliteit",   FieldKind::Categorical)
-        .field("document_type",   FieldKind::Categorical)
+        .field("sim_id", FieldKind::Id)
+        .field("msisdn", FieldKind::Phone)
+        .field("imsi", FieldKind::Id)
+        .field("iccid", FieldKind::Id)
+        .field("carrier", FieldKind::Categorical)
+        .field("contract_type", FieldKind::Categorical)
+        .field("activatiedatum", FieldKind::Date)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
+        .field("geboortedatum", FieldKind::Date)
+        .field("nationaliteit", FieldKind::Categorical)
+        .field("document_type", FieldKind::Categorical)
         .field("document_nummer", FieldKind::Id)
-        .field("bsn",             FieldKind::Id)
+        .field("bsn", FieldKind::Id)
         .build()
         .unwrap()
 }
@@ -125,7 +135,8 @@ fn main() {
     // ── Setup: open a temporary registry ─────────────────────────────────────
 
     let dir = tempfile::tempdir().expect("failed to create temp dir");
-    let registry = SchemaRegistry::open(&dir.path().join("demo.zsm")).expect("failed to open registry");
+    let registry =
+        SchemaRegistry::open(&dir.path().join("demo.zsm")).expect("failed to open registry");
 
     // ── Step 1: Train on BRP Q1 and save artifact ─────────────────────────────
 
@@ -143,11 +154,19 @@ fn main() {
         em_iterations: iterations,
     };
     registry.save(&artifact).expect("save must succeed");
-    println!("  Saved artifact 'brp_q1_2024' ({} fields, {} EM iterations).", base_schema.len(), iterations);
+    println!(
+        "  Saved artifact 'brp_q1_2024' ({} fields, {} EM iterations).",
+        base_schema.len(),
+        iterations
+    );
 
     // Check serialized size
     let bytes = artifact.to_bytes().unwrap();
-    println!("  Serialized size: {} bytes ({:.1} KB).", bytes.len(), bytes.len() as f64 / 1024.0);
+    println!(
+        "  Serialized size: {} bytes ({:.1} KB).",
+        bytes.len(),
+        bytes.len() as f64 / 1024.0
+    );
     assert!(bytes.len() < 10_240, "artifact should be under 10 KB");
 
     // ── Step 2: Arrive with BRP Q2, same schema ──────────────────────────────
@@ -158,10 +177,15 @@ fn main() {
 
     match registry.lookup_startup_mode(&fp_q2).expect("lookup failed") {
         StartupMode::WarmLoad(art) => {
-            println!("  → WarmLoad: loaded '{}', EM skipped entirely. ✓",
-                art.tag.as_deref().unwrap_or("(no tag)"));
+            println!(
+                "  → WarmLoad: loaded '{}', EM skipped entirely. ✓",
+                art.tag.as_deref().unwrap_or("(no tag)")
+            );
         }
-        other => panic!("expected WarmLoad, got {:?}", std::mem::discriminant(&other)),
+        other => panic!(
+            "expected WarmLoad, got {:?}",
+            std::mem::discriminant(&other)
+        ),
     }
 
     // ── Step 3: Arrive with extended schema (verblijfstitel added) ────────────
@@ -169,12 +193,24 @@ fn main() {
     println!("\nStep 3, Arriving with extended BRP schema (verblijfstitel added) ...");
     let fp_ext = SchemaFingerprint::from_schema(&brp_schema_extended());
 
-    match registry.lookup_startup_mode(&fp_ext).expect("lookup failed") {
-        StartupMode::WarmStart { artifact: art, distance: d } => {
-            println!("  → WarmStart: loaded '{}', distance={:.4}, run 2–3 EM iterations. ✓",
-                art.tag.as_deref().unwrap_or("(no tag)"), d);
+    match registry
+        .lookup_startup_mode(&fp_ext)
+        .expect("lookup failed")
+    {
+        StartupMode::WarmStart {
+            artifact: art,
+            distance: d,
+        } => {
+            println!(
+                "  → WarmStart: loaded '{}', distance={:.4}, run 2–3 EM iterations. ✓",
+                art.tag.as_deref().unwrap_or("(no tag)"),
+                d
+            );
         }
-        other => panic!("expected WarmStart, got {:?}", std::mem::discriminant(&other)),
+        other => panic!(
+            "expected WarmStart, got {:?}",
+            std::mem::discriminant(&other)
+        ),
     }
 
     // ── Step 4: Arrive with SIM subscriber schema ─────────────────────────────
@@ -182,11 +218,17 @@ fn main() {
     println!("\nStep 4, Arriving with SIM subscriber schema (incompatible) ...");
     let fp_sim = SchemaFingerprint::from_schema(&sim_schema());
 
-    match registry.lookup_startup_mode(&fp_sim).expect("lookup failed") {
+    match registry
+        .lookup_startup_mode(&fp_sim)
+        .expect("lookup failed")
+    {
         StartupMode::ColdStart => {
             println!("  → ColdStart: no suitable prior found, run full EM. ✓");
         }
-        other => panic!("expected ColdStart, got {:?}", std::mem::discriminant(&other)),
+        other => panic!(
+            "expected ColdStart, got {:?}",
+            std::mem::discriminant(&other)
+        ),
     }
 
     // ── Step 5: list_all and delete ───────────────────────────────────────────
@@ -195,12 +237,21 @@ fn main() {
     let all = registry.list_all().expect("list_all failed");
     println!("  Registry contains {} artifact(s):", all.len());
     for a in &all {
-        println!("    • {} (trained_on={})", a.tag.as_deref().unwrap_or("(no tag)"), a.trained_on);
+        println!(
+            "    • {} (trained_on={})",
+            a.tag.as_deref().unwrap_or("(no tag)"),
+            a.trained_on
+        );
     }
 
-    let removed = registry.delete(&artifact.fingerprint.schema_hash).expect("delete failed");
+    let removed = registry
+        .delete(&artifact.fingerprint.schema_hash)
+        .expect("delete failed");
     assert!(removed, "delete must return true for existing artifact");
-    println!("  Deleted 'brp_q1_2024'. Registry now empty: {}", registry.list_all().unwrap().is_empty());
+    println!(
+        "  Deleted 'brp_q1_2024'. Registry now empty: {}",
+        registry.list_all().unwrap().is_empty()
+    );
 
     println!("\nExample completed successfully.");
 }

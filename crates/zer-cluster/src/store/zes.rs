@@ -22,18 +22,20 @@ pub struct ZalEntityStore {
 impl ZalEntityStore {
     /// Open (or create) a `.zes` store at the given path.
     pub fn open(path: &Path) -> Result<Self> {
-        let conn = Connection::open(path)
-            .map_err(|e| ZerError::Store(e.to_string()))?;
+        let conn = Connection::open(path).map_err(|e| ZerError::Store(e.to_string()))?;
         init_schema(&conn)?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     /// Open an in-memory store. No file is created; data is lost on drop.
     pub fn open_in_memory() -> Result<Self> {
-        let conn = Connection::open_in_memory()
-            .map_err(|e| ZerError::Store(e.to_string()))?;
+        let conn = Connection::open_in_memory().map_err(|e| ZerError::Store(e.to_string()))?;
         init_schema(&conn)?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 }
 
@@ -72,7 +74,7 @@ fn init_schema(conn: &Connection) -> Result<()> {
 impl EntityStore for ZalEntityStore {
     fn upsert_entity(&self, entity: &Entity) -> Result<EntityId> {
         let conn = self.conn.lock().unwrap();
-        let now  = unix_now();
+        let now = unix_now();
 
         // Find if any member already belongs to an existing entity.
         let mut existing_id: Option<EntityId> = None;
@@ -100,7 +102,8 @@ impl EntityStore for ZalEntityStore {
             )
             .map_err(|e| ZerError::Store(e.to_string()))?;
 
-            let new_record_ids: Vec<RecordId> = entity.members.iter().map(|m| m.record_id).collect();
+            let new_record_ids: Vec<RecordId> =
+                entity.members.iter().map(|m| m.record_id).collect();
             for member in &entity.members {
                 conn.execute(
                     "INSERT OR IGNORE INTO entity_members
@@ -123,7 +126,11 @@ impl EntityStore for ZalEntityStore {
                 &ResolutionEvent::RecordsAdded {
                     entity_id: eid,
                     record_ids: new_record_ids,
-                    method: entity.members.first().map(|m| m.method).unwrap_or(ResolutionMethod::AutoMatch),
+                    method: entity
+                        .members
+                        .first()
+                        .map(|m| m.method)
+                        .unwrap_or(ResolutionMethod::AutoMatch),
                 },
             )?;
 
@@ -158,7 +165,10 @@ impl EntityStore for ZalEntityStore {
 
             append_event(
                 &conn,
-                &ResolutionEvent::EntityCreated { entity_id: eid, record_ids },
+                &ResolutionEvent::EntityCreated {
+                    entity_id: eid,
+                    record_ids,
+                },
             )?;
 
             Ok(eid)
@@ -185,14 +195,13 @@ impl EntityStore for ZalEntityStore {
             })
             .map_err(|e| ZerError::Store(e.to_string()))?
             .map(|r| {
-                r.map_err(|e| ZerError::Store(e.to_string())).and_then(|(rid, score, method, source)| {
-                    Ok(EntityMember {
+                r.map_err(|e| ZerError::Store(e.to_string()))
+                    .map(|(rid, score, method, source)| EntityMember {
                         record_id: rid,
                         score,
                         method: method_from_str(&method),
                         source,
                     })
-                })
             })
             .collect::<Result<_>>()?;
 
@@ -247,7 +256,10 @@ impl EntityStore for ZalEntityStore {
             };
             match entities.last_mut() {
                 Some(e) if e.id == eid => e.members.push(member),
-                _ => entities.push(Entity { id: eid, members: vec![member] }),
+                _ => entities.push(Entity {
+                    id: eid,
+                    members: vec![member],
+                }),
             }
         }
 
@@ -259,19 +271,19 @@ impl EntityStore for ZalEntityStore {
 
 fn method_to_str(method: ResolutionMethod) -> &'static str {
     match method {
-        ResolutionMethod::AutoMatch    => "AutoMatch",
+        ResolutionMethod::AutoMatch => "AutoMatch",
         ResolutionMethod::JudgePromoted => "JudgePromoted",
-        ResolutionMethod::JudgeDemoted  => "JudgeDemoted",
-        ResolutionMethod::Manual        => "Manual",
+        ResolutionMethod::JudgeDemoted => "JudgeDemoted",
+        ResolutionMethod::Manual => "Manual",
     }
 }
 
 fn method_from_str(s: &str) -> ResolutionMethod {
     match s {
         "JudgePromoted" => ResolutionMethod::JudgePromoted,
-        "JudgeDemoted"  => ResolutionMethod::JudgeDemoted,
-        "Manual"        => ResolutionMethod::Manual,
-        _               => ResolutionMethod::AutoMatch,
+        "JudgeDemoted" => ResolutionMethod::JudgeDemoted,
+        "Manual" => ResolutionMethod::Manual,
+        _ => ResolutionMethod::AutoMatch,
     }
 }
 
@@ -289,9 +301,9 @@ mod tests {
                 .iter()
                 .map(|&rid| EntityMember {
                     record_id: rid,
-                    score:     0.95,
-                    method:    ResolutionMethod::AutoMatch,
-                    source:    None,
+                    score: 0.95,
+                    method: ResolutionMethod::AutoMatch,
+                    source: None,
                 })
                 .collect(),
         }

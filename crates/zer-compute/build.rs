@@ -19,8 +19,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    let cuda_enabled          = std::env::var("CARGO_FEATURE_CUDA").is_ok();
-    let vulkan_enabled        = std::env::var("CARGO_FEATURE_VULKAN").is_ok();
+    let cuda_enabled = std::env::var("CARGO_FEATURE_CUDA").is_ok();
+    let vulkan_enabled = std::env::var("CARGO_FEATURE_VULKAN").is_ok();
     let debug_shaders_enabled = std::env::var("CARGO_FEATURE_DEBUG_SHADERS").is_ok();
 
     if cuda_enabled {
@@ -36,10 +36,10 @@ fn main() {
 
 fn check_cuda_version() {
     let output = match Command::new("nvcc").arg("--version").output() {
-        Ok(o)  => o,
-        Err(e) => panic!(
-            "nvcc not found ({e}). Install the CUDA toolkit to use the `cuda` feature."
-        ),
+        Ok(o) => o,
+        Err(e) => {
+            panic!("nvcc not found ({e}). Install the CUDA toolkit to use the `cuda` feature.")
+        }
     };
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -47,10 +47,10 @@ fn check_cuda_version() {
     let (major, minor) = stdout
         .lines()
         .find_map(|line| {
-            let idx  = line.find("release ")?;
+            let idx = line.find("release ")?;
             let rest = &line[idx + 8..];
-            let end  = rest.find(',')?;
-            let ver  = &rest[..end];
+            let end = rest.find(',')?;
+            let ver = &rest[..end];
             let mut it = ver.splitn(2, '.');
             let maj: u32 = it.next()?.parse().ok()?;
             let min: u32 = it.next()?.parse().ok()?;
@@ -74,10 +74,10 @@ fn check_cuda_version() {
 fn compile_cuda_kernels(debug: bool) {
     check_cuda_version();
 
-    let out_dir    = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     let kernel_dir = PathBuf::from("src/backend/cuda/kernels");
-    let kernels    = ["em_reduce", "hello_backend"];
-    let n          = kernels.len();
+    let kernels = ["em_reduce", "hello_backend"];
+    let n = kernels.len();
 
     let opt_flags: &[&str] = if debug {
         &["-g", "-G", "-O0"]
@@ -90,7 +90,7 @@ fn compile_cuda_kernels(debug: bool) {
     }
 
     for (i, name) in kernels.iter().enumerate() {
-        let cu_path  = kernel_dir.join(format!("{name}.cu"));
+        let cu_path = kernel_dir.join(format!("{name}.cu"));
         let ptx_path = out_dir.join(format!("{name}.ptx"));
 
         println!("cargo:rerun-if-changed={}", cu_path.display());
@@ -101,8 +101,10 @@ fn compile_cuda_kernels(debug: bool) {
         cmd.args(["-ptx", "-arch=sm_86"]);
         cmd.args(opt_flags);
         cmd.args([
-            "-I", kernel_dir.to_str().unwrap(),
-            "-o", ptx_path.to_str().unwrap(),
+            "-I",
+            kernel_dir.to_str().unwrap(),
+            "-o",
+            ptx_path.to_str().unwrap(),
             cu_path.to_str().unwrap(),
         ]);
 
@@ -112,12 +114,13 @@ fn compile_cuda_kernels(debug: bool) {
             Ok(o) if o.status.success() => {}
             Ok(o) => {
                 let stderr = String::from_utf8_lossy(&o.stderr);
-                panic!("nvcc exited with status {} while compiling {name}.cu\n{stderr}", o.status);
+                panic!(
+                    "nvcc exited with status {} while compiling {name}.cu\n{stderr}",
+                    o.status
+                );
             }
             Err(e) => {
-                panic!(
-                    "nvcc not found ({e}). Install the CUDA toolkit to use the `cuda` feature."
-                );
+                panic!("nvcc not found ({e}). Install the CUDA toolkit to use the `cuda` feature.");
             }
         }
     }
@@ -136,44 +139,50 @@ fn compile_slang_shaders() {
         );
     }
 
-    let out_dir    = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     let shader_dir = PathBuf::from("src/backend/vulkan/shaders");
     // Each tuple: (slang source stem, entry point name, output spv stem).
     // em_reduce has three entry points compiled to three separate SPIR-V modules.
     let shaders: &[(&str, &str, &str)] = &[
-        ("hello_backend",   "hello_backend_main", "hello_backend"),
-        ("em_reduce",       "em_estep",            "em_estep"),
-        ("em_reduce",       "em_mstep_partial",    "em_mstep_partial"),
-        ("em_reduce",       "em_mstep_final",      "em_mstep_final"),
+        ("hello_backend", "hello_backend_main", "hello_backend"),
+        ("em_reduce", "em_estep", "em_estep"),
+        ("em_reduce", "em_mstep_partial", "em_mstep_partial"),
+        ("em_reduce", "em_mstep_final", "em_mstep_final"),
     ];
 
     let n = shaders.len();
     for (i, (src_stem, entry, out_stem)) in shaders.iter().enumerate() {
         let slang_path = shader_dir.join(format!("{src_stem}.slang"));
-        let spv_path   = out_dir.join(format!("{out_stem}.spv"));
+        let spv_path = out_dir.join(format!("{out_stem}.spv"));
 
         println!("cargo:rerun-if-changed={}", slang_path.display());
 
-        println!("   Compiling Slang [{}/{n}] {src_stem}.slang [{entry}] → {out_stem}.spv", i + 1);
+        println!(
+            "   Compiling Slang [{}/{n}] {src_stem}.slang [{entry}] → {out_stem}.spv",
+            i + 1
+        );
 
         let status = Command::new("slangc")
             .args([
                 slang_path.to_str().unwrap(),
-                "-target",  "spirv",
-                "-profile", "spirv_1_5",
-                "-entry",   entry,
-                "-stage",   "compute",
+                "-target",
+                "spirv",
+                "-profile",
+                "spirv_1_5",
+                "-entry",
+                entry,
+                "-stage",
+                "compute",
                 "-O3",
                 "-matrix-layout-column-major",
-                "-o", spv_path.to_str().unwrap(),
+                "-o",
+                spv_path.to_str().unwrap(),
             ])
             .status();
 
         match status {
             Ok(s) if s.success() => {}
-            Ok(s) => panic!(
-                "slangc failed (exit {s}) compiling {src_stem}.slang entry={entry}"
-            ),
+            Ok(s) => panic!("slangc failed (exit {s}) compiling {src_stem}.slang entry={entry}"),
             Err(e) => panic!("slangc not found ({e})"),
         }
     }

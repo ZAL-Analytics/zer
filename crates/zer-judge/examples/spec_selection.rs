@@ -8,9 +8,7 @@
 //!   cargo run -p zer-judge --example spec_selection -- --vram-gb=8
 
 use std::path::Path;
-use zer_judge::spec::{
-    DebertaBaseSpec, JudgeModelSpec, MiniLmSpec, spec_from_vram,
-};
+use zer_judge::spec::{spec_from_vram, DebertaBaseSpec, JudgeModelSpec, MiniLmSpec};
 
 fn main() {
     // ── 1. Parse optional --vram-gb= flag ────────────────────────────────────
@@ -36,8 +34,16 @@ fn main() {
     println!();
 
     let specs: Vec<(&str, Box<dyn JudgeModelSpec>)> = vec![
-        ("nli-minilm-onnx",          Box::new(MiniLmSpec::from_dir("models/fp16_fused/nli-minilm-onnx"))),
-        ("nli-deberta-v3-base-onnx", Box::new(DebertaBaseSpec::from_dir("models/fp16_fused/nli-deberta-v3-base-onnx"))),
+        (
+            "nli-minilm-onnx",
+            Box::new(MiniLmSpec::from_dir("models/fp16_fused/nli-minilm-onnx")),
+        ),
+        (
+            "nli-deberta-v3-base-onnx",
+            Box::new(DebertaBaseSpec::from_dir(
+                "models/fp16_fused/nli-deberta-v3-base-onnx",
+            )),
+        ),
     ];
 
     for (dir, spec) in &specs {
@@ -49,7 +55,10 @@ fn main() {
             spec.vram_bytes() as f64 / (1024.0 * 1024.0),
             spec.max_length(),
         );
-        println!("             dir: {dir}  model: {}", spec.model_path().display());
+        println!(
+            "             dir: {dir}  model: {}",
+            spec.model_path().display()
+        );
         println!();
     }
 }

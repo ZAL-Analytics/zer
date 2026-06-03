@@ -7,7 +7,6 @@
 /// disturbing the internal integrity of either dataset.
 ///
 /// Run with:  cargo run --example link_only -p zer-pipeline
-
 use tempfile::TempDir;
 use zer_cluster::ZalEntityStore;
 use zer_core::{
@@ -25,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
 
     let schema = SchemaBuilder::new()
-        .field("voornamen",     FieldKind::Name)
-        .field("achternaam",    FieldKind::Name)
+        .field("voornamen", FieldKind::Name)
+        .field("achternaam", FieldKind::Name)
         .field("geboortedatum", FieldKind::Date)
         .build()?;
 
@@ -44,17 +43,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Dataset A: BRP persons (source = "brp")
     let brp_raw = vec![
-        make_record(1,  "Jan",    "de Vries",   "1985-03-15"),
-        make_record(2,  "Maria",  "Jansen",     "1992-07-04"),
-        make_record(3,  "Ahmed",  "El Amrani",  "1978-11-20"),
-        make_record(4,  "Sophie", "van der Berg","2000-01-08"),
+        make_record(1, "Jan", "de Vries", "1985-03-15"),
+        make_record(2, "Maria", "Jansen", "1992-07-04"),
+        make_record(3, "Ahmed", "El Amrani", "1978-11-20"),
+        make_record(4, "Sophie", "van der Berg", "2000-01-08"),
     ];
 
     // Dataset B: KvK persons (source = "kvk")
     let kvk_raw = vec![
-        make_record(101, "Jan",    "de Vries",   "1985-03-15"), // same as BRP 1
-        make_record(102, "Maria",  "Jansen",     "1992-07-04"), // same as BRP 2
-        make_record(103, "Peter",  "Bakker",     "1965-05-30"), // not in BRP
+        make_record(101, "Jan", "de Vries", "1985-03-15"), // same as BRP 1
+        make_record(102, "Maria", "Jansen", "1992-07-04"), // same as BRP 2
+        make_record(103, "Peter", "Bakker", "1965-05-30"), // not in BRP
     ];
 
     let brp = label_source(brp_raw, "brp");
@@ -77,13 +76,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("auto_rejected:      {}", report.auto_rejected);
     println!("elapsed_ms:         {}", report.elapsed_ms);
 
-    assert_eq!(report.within_source_pairs, 0,
-               "LinkOnly must produce zero within-source pairs");
+    assert_eq!(
+        report.within_source_pairs, 0,
+        "LinkOnly must produce zero within-source pairs"
+    );
     println!("\nOK, only cross-source pairs were generated.");
 
     // ── Inspect linked pairs from the cluster view ────────────────────────────
 
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.linked_pairs();
     println!("\nLinked pairs ({}):", pairs.len());
     for lp in &pairs {
@@ -103,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn make_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
-        .insert("voornamen",     FieldValue::Text(first.into()))
-        .insert("achternaam",    FieldValue::Text(last.into()))
+        .insert("voornamen", FieldValue::Text(first.into()))
+        .insert("achternaam", FieldValue::Text(last.into()))
         .insert("geboortedatum", FieldValue::Text(dob.into()))
 }

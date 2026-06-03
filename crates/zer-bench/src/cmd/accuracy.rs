@@ -55,10 +55,15 @@ use tempfile::TempDir;
 use zer::prelude::*;
 use zer_core::field_mapping::FieldMapping;
 
-use super::scenarios::{ALL_SCENARIOS, find_scenario, find_scenario_by_preset, datasets_for_scenario, full_size_scenarios};
+use super::scenarios::{
+    datasets_for_scenario, find_scenario, find_scenario_by_preset, full_size_scenarios,
+    ALL_SCENARIOS,
+};
 use super::strategies;
 use super::util::{log_trt_cache_status, resolve_out_dir};
-use zer_adapters::{AccuracyMetrics, BenchBatchSummary, BenchResultWriter, PairRecord, band_to_match};
+use zer_adapters::{
+    band_to_match, AccuracyMetrics, BenchBatchSummary, BenchResultWriter, PairRecord,
+};
 use zer_judge::{DebertaJudge, DebertaJudgeConfig, JudgeBackend, MiniLmSpec};
 use zer_pipeline::{
     config::{LinkMode, PipelineConfig},
@@ -160,11 +165,11 @@ pub struct AccuracyArgs {
 // ── Resolved run parameters (from preset or manual args) ──────────────────────
 
 struct RunParams {
-    datasets:       Vec<String>,
-    sources:        Vec<Option<String>>,
-    mode_str:       String,
-    ground_truth:   Option<String>,
-    dataset_name:   String,
+    datasets: Vec<String>,
+    sources: Vec<Option<String>>,
+    mode_str: String,
+    ground_truth: Option<String>,
+    dataset_name: String,
     field_mappings: Vec<FieldMapping>,
 }
 
@@ -182,10 +187,13 @@ impl RunParams {
             let (datasets, sources, gt) = datasets_for_scenario(spec, &root);
             Ok(Self {
                 datasets,
-                sources:        sources.into_iter().map(Some).collect(),
-                mode_str:       spec.mode.as_str().to_owned(),
-                ground_truth:   Some(gt),
-                dataset_name:   args.dataset_name.clone().unwrap_or_else(|| spec.dataset_name.to_owned()),
+                sources: sources.into_iter().map(Some).collect(),
+                mode_str: spec.mode.as_str().to_owned(),
+                ground_truth: Some(gt),
+                dataset_name: args
+                    .dataset_name
+                    .clone()
+                    .unwrap_or_else(|| spec.dataset_name.to_owned()),
                 field_mappings: spec.to_field_mappings(),
             })
         } else if let Some(tag) = &args.preset {
@@ -198,30 +206,39 @@ impl RunParams {
             let (datasets, sources, gt) = datasets_for_scenario(spec, &root);
             Ok(Self {
                 datasets,
-                sources:        sources.into_iter().map(Some).collect(),
-                mode_str:       spec.mode.as_str().to_owned(),
-                ground_truth:   Some(gt),
-                dataset_name:   args.dataset_name.clone().unwrap_or_else(|| spec.dataset_name.to_owned()),
+                sources: sources.into_iter().map(Some).collect(),
+                mode_str: spec.mode.as_str().to_owned(),
+                ground_truth: Some(gt),
+                dataset_name: args
+                    .dataset_name
+                    .clone()
+                    .unwrap_or_else(|| spec.dataset_name.to_owned()),
                 field_mappings: spec.to_field_mappings(),
             })
         } else {
             if args.datasets.is_empty() {
                 anyhow::bail!("either --scenario, --preset, or at least one --dataset is required");
             }
-            let datasets: Vec<String> = args.datasets.iter()
+            let datasets: Vec<String> = args
+                .datasets
+                .iter()
                 .map(|p| resolve_out_dir(p).to_string_lossy().into_owned())
                 .collect();
             let sources: Vec<Option<String>> = (0..datasets.len())
                 .map(|i| args.sources.get(i).cloned())
                 .collect();
-            let ground_truth = args.ground_truth.as_deref()
+            let ground_truth = args
+                .ground_truth
+                .as_deref()
                 .map(|p| resolve_out_dir(p).to_string_lossy().into_owned());
-            let dataset_name = args.dataset_name.clone()
+            let dataset_name = args
+                .dataset_name
+                .clone()
                 .unwrap_or_else(|| infer_dataset_name(&datasets[0]));
             Ok(Self {
                 datasets,
                 sources,
-                mode_str:       args.mode.clone(),
+                mode_str: args.mode.clone(),
                 ground_truth,
                 dataset_name,
                 field_mappings: Vec::new(),
@@ -246,7 +263,12 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
         println!("{:<35}  {:<25}  {}", "SCENARIO", "TAGS", "DESCRIPTION");
         println!("{}", "-".repeat(100));
         for s in ALL_SCENARIOS {
-            println!("{:<35}  {:<25}  {}", s.name, s.tags.join(", "), s.description);
+            println!(
+                "{:<35}  {:<25}  {}",
+                s.name,
+                s.tags.join(", "),
+                s.description
+            );
         }
         return Ok(());
     }
@@ -267,11 +289,35 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
             std::fs::create_dir_all(&s_out)?;
             let run_start = std::time::SystemTime::now();
             if judge_target.is_some() {
-                run_pass(&args, Some(spec.name), &s_out, None, &args.compare_libs, run_start).await?;
-                run_pass(&args, Some(spec.name), &s_out, judge_target.as_deref(), &[], run_start).await?;
+                run_pass(
+                    &args,
+                    Some(spec.name),
+                    &s_out,
+                    None,
+                    &args.compare_libs,
+                    run_start,
+                )
+                .await?;
+                run_pass(
+                    &args,
+                    Some(spec.name),
+                    &s_out,
+                    judge_target.as_deref(),
+                    &[],
+                    run_start,
+                )
+                .await?;
                 super::compare::print_comparison_for_dir(&s_out, run_start)?;
             } else {
-                run_pass(&args, Some(spec.name), &s_out, None, &args.compare_libs, run_start).await?;
+                run_pass(
+                    &args,
+                    Some(spec.name),
+                    &s_out,
+                    None,
+                    &args.compare_libs,
+                    run_start,
+                )
+                .await?;
             }
         }
         println!("\nDone. All scenario results in: {base_out}/");
@@ -282,29 +328,53 @@ pub async fn run(args: AccuracyArgs) -> anyhow::Result<()> {
     if judge_target.is_some() {
         std::fs::create_dir_all(&args.out)?;
         let run_start = std::time::SystemTime::now();
-        run_pass(&args, args.scenario.as_deref(), &args.out, None, &args.compare_libs, run_start).await?;
-        run_pass(&args, args.scenario.as_deref(), &args.out, judge_target.as_deref(), &[], run_start).await?;
+        run_pass(
+            &args,
+            args.scenario.as_deref(),
+            &args.out,
+            None,
+            &args.compare_libs,
+            run_start,
+        )
+        .await?;
+        run_pass(
+            &args,
+            args.scenario.as_deref(),
+            &args.out,
+            judge_target.as_deref(),
+            &[],
+            run_start,
+        )
+        .await?;
         super::compare::print_comparison_for_dir(&args.out, run_start)?;
         return Ok(());
     }
 
     // ── Single pass (default) ─────────────────────────────────────────────────
-    run_pass(&args, args.scenario.as_deref(), &args.out, None, &args.compare_libs, std::time::SystemTime::now()).await
+    run_pass(
+        &args,
+        args.scenario.as_deref(),
+        &args.out,
+        None,
+        &args.compare_libs,
+        std::time::SystemTime::now(),
+    )
+    .await
 }
 
 async fn run_pass(
-    args:         &AccuracyArgs,
-    scenario:     Option<&str>,
-    out:          &str,
+    args: &AccuracyArgs,
+    scenario: Option<&str>,
+    out: &str,
     judge_target: Option<&str>,
     compare_libs: &[String],
-    run_start:    std::time::SystemTime,
+    run_start: std::time::SystemTime,
 ) -> anyhow::Result<()> {
     let params = RunParams::from_args_with(args, scenario)?;
-    let link_mode        = parse_link_mode(&params.mode_str)?;
-    let use_judge        = judge_target.is_some();
+    let link_mode = parse_link_mode(&params.mode_str)?;
+    let use_judge = judge_target.is_some();
     let judge_target_str = judge_target.unwrap_or("cpu");
-    let backend          = Backend::from_target(&args.target);
+    let backend = Backend::from_target(&args.target);
     let library_name = if use_judge {
         format!("zer+judge_{judge_target_str}")
     } else {
@@ -321,7 +391,12 @@ async fn run_pass(
     };
     super::util::print_bench_header(&[&zer_label, "accuracy", scenario_disp, &args.target]);
 
-    println!("accuracy run  run_id={run_id}  library={library_name}  mode={}  target={}  out={}", params.mode_str, backend.name(), out);
+    println!(
+        "accuracy run  run_id={run_id}  library={library_name}  mode={}  target={}  out={}",
+        params.mode_str,
+        backend.name(),
+        out
+    );
     for (i, ds) in params.datasets.iter().enumerate() {
         println!("dataset  index={i}  path={}", ds.as_str());
     }
@@ -330,7 +405,7 @@ async fn run_pass(
     let schema = infer_schema_from_headers(&params.datasets)?;
 
     // ── Progress channel ─────────────────────────────────────────────────────
-    let verbose   = cfg!(feature = "progress");
+    let verbose = cfg!(feature = "progress");
     let perf_mode = cfg!(feature = "perf-metrics");
     let (progress_tx, progress_handle) = if verbose || perf_mode {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<PipelineEvent>();
@@ -341,51 +416,92 @@ async fn run_pass(
                 match event {
                     PipelineEvent::BlockingStarted { total_records } => {
                         t_phase = now;
-                        if verbose { println!("blocking started  total_records={total_records}"); }
+                        if verbose {
+                            println!("blocking started  total_records={total_records}");
+                        }
                     }
-                    PipelineEvent::CandidatesReady { candidate_pairs, cross_source, within_source } => {
-                        if perf_mode { println!("blocking_ms={}", now.duration_since(t_phase).as_millis()); }
+                    PipelineEvent::CandidatesReady {
+                        candidate_pairs,
+                        cross_source,
+                        within_source,
+                    } => {
+                        if perf_mode {
+                            println!("blocking_ms={}", now.duration_since(t_phase).as_millis());
+                        }
                         t_phase = now;
-                        if verbose { println!("candidates ready  candidate_pairs={candidate_pairs}  cross_source={cross_source}  within_source={within_source}"); }
+                        if verbose {
+                            println!("candidates ready  candidate_pairs={candidate_pairs}  cross_source={cross_source}  within_source={within_source}");
+                        }
                     }
                     PipelineEvent::ComparingPairs { candidate_pairs } => {
                         t_phase = now;
-                        if verbose { println!("comparing pairs  candidate_pairs={candidate_pairs}"); }
+                        if verbose {
+                            println!("comparing pairs  candidate_pairs={candidate_pairs}");
+                        }
                     }
-                    PipelineEvent::EmStarted { startup_mode, max_iterations } => {
-                        if perf_mode { println!("compare_ms={}", now.duration_since(t_phase).as_millis()); }
+                    PipelineEvent::EmStarted {
+                        startup_mode,
+                        max_iterations,
+                    } => {
+                        if perf_mode {
+                            println!("compare_ms={}", now.duration_since(t_phase).as_millis());
+                        }
                         t_phase = now;
-                        if verbose { println!("EM started  startup_mode={startup_mode}  max_iterations={max_iterations}"); }
+                        if verbose {
+                            println!("EM started  startup_mode={startup_mode}  max_iterations={max_iterations}");
+                        }
                     }
                     PipelineEvent::EmComplete { iterations } => {
-                        if perf_mode { println!("em_ms={}", now.duration_since(t_phase).as_millis()); }
+                        if perf_mode {
+                            println!("em_ms={}", now.duration_since(t_phase).as_millis());
+                        }
                         t_phase = now;
-                        if verbose { println!("EM complete  iterations={iterations}"); }
+                        if verbose {
+                            println!("EM complete  iterations={iterations}");
+                        }
                     }
-                    PipelineEvent::ScoringComplete { auto_matched, borderline, auto_rejected } => {
-                        if perf_mode { println!("score_ms={}", now.duration_since(t_phase).as_millis()); }
+                    PipelineEvent::ScoringComplete {
+                        auto_matched,
+                        borderline,
+                        auto_rejected,
+                    } => {
+                        if perf_mode {
+                            println!("score_ms={}", now.duration_since(t_phase).as_millis());
+                        }
                         t_phase = now;
-                        if verbose { println!("scoring complete  auto_matched={auto_matched}  borderline={borderline}  auto_rejected={auto_rejected}"); }
+                        if verbose {
+                            println!("scoring complete  auto_matched={auto_matched}  borderline={borderline}  auto_rejected={auto_rejected}");
+                        }
                     }
                     PipelineEvent::JudgeStarted { borderline } => {
                         t_phase = now;
-                        if verbose { println!("judge started  borderline={borderline}"); }
+                        if verbose {
+                            println!("judge started  borderline={borderline}");
+                        }
                     }
                     PipelineEvent::JudgeComplete { promoted, demoted } => {
-                        if perf_mode { println!("judge_ms={}", now.duration_since(t_phase).as_millis()); }
+                        if perf_mode {
+                            println!("judge_ms={}", now.duration_since(t_phase).as_millis());
+                        }
                         t_phase = now;
-                        if verbose { println!("judge complete  promoted={promoted}  demoted={demoted}"); }
+                        if verbose {
+                            println!("judge complete  promoted={promoted}  demoted={demoted}");
+                        }
                     }
                     PipelineEvent::PersistingEntities => {
                         t_phase = now;
-                        if verbose { println!("clustering and persisting entities"); }
+                        if verbose {
+                            println!("clustering and persisting entities");
+                        }
                     }
                     PipelineEvent::Done { elapsed_ms } => {
                         if perf_mode {
                             println!("persist_ms={}", now.duration_since(t_phase).as_millis());
                             println!("total_pipeline_ms={elapsed_ms}");
                         }
-                        if verbose { println!("pipeline done  elapsed_ms={elapsed_ms}"); }
+                        if verbose {
+                            println!("pipeline done  elapsed_ms={elapsed_ms}");
+                        }
                     }
                 }
             }
@@ -398,16 +514,22 @@ async fn run_pass(
     // ── Per-scenario strategy (config overrides + optional custom blocker/comparator) ──
     let strategy = strategies::strategy_for(&params.dataset_name);
     if strategy.blocker_fn.is_some() {
-        println!("using custom blocker strategy  dataset={}", params.dataset_name);
+        println!(
+            "using custom blocker strategy  dataset={}",
+            params.dataset_name
+        );
     }
     if strategy.comparator_fn.is_some() {
-        println!("using custom comparator strategy  dataset={}", params.dataset_name);
+        println!(
+            "using custom comparator strategy  dataset={}",
+            params.dataset_name
+        );
     }
 
     // ── Pipeline construction (outside timer) ─────────────────────────────────
     let dir = TempDir::new()?;
     let cfg = strategy.apply_to_config(PipelineConfig {
-        registry_path:  dir.path().join("accuracy_run.zsm"),
+        registry_path: dir.path().join("accuracy_run.zsm"),
         link_mode,
         field_mappings: params.field_mappings.clone(),
         ..PipelineConfig::default()
@@ -419,12 +541,19 @@ async fn run_pass(
         }
         let record_store: Arc<dyn RecordStore> = Arc::new(VecRecordStore::new());
         let judge_backend = JudgeBackend::from_target(judge_target_str);
-        let models_base  = args.judge_models_dir.as_deref()
+        let models_base = args
+            .judge_models_dir
+            .as_deref()
             .map(PathBuf::from)
-            .unwrap_or_else(|| judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base")));
-        let minilm_dir   = models_base.join("nli-minilm-onnx");
-        let spec         = MiniLmSpec::from_dir(&minilm_dir);
-        println!("loading judge  target={judge_target_str}  path={}", minilm_dir.display());
+            .unwrap_or_else(|| {
+                judge_backend.resolve_models_dir(&zer_judge::default_models_dir().join("nli-base"))
+            });
+        let minilm_dir = models_base.join("nli-minilm-onnx");
+        let spec = MiniLmSpec::from_dir(&minilm_dir);
+        println!(
+            "loading judge  target={judge_target_str}  path={}",
+            minilm_dir.display()
+        );
         let t_load = Instant::now();
         let judge = DebertaJudge::new(
             &spec,
@@ -432,34 +561,43 @@ async fn run_pass(
             Arc::clone(&record_store),
             schema.clone(),
             DebertaJudgeConfig::default(),
-        ).map_err(|e| anyhow::anyhow!("failed to load judge model: {e}"))?;
+        )
+        .map_err(|e| anyhow::anyhow!("failed to load judge model: {e}"))?;
         println!("judge ready  load_ms={}", t_load.elapsed().as_millis());
         let mut b = Pipeline::builder()
             .schema(schema.clone())
             .comparator(match strategy.comparator_fn {
                 Some(f) => Comparator::from_cpu(f(&schema)),
-                None    => Comparator::new(&schema, &backend),
+                None => Comparator::new(&schema, &backend),
             })
             .scorer(Scorer::new(&backend))
             .store(ZalEntityStore::open_in_memory()?)
             .record_store_arc(record_store)
             .judge(judge)
             .config(cfg);
-        if let Some(blocker_fn) = strategy.blocker_fn { b = b.blocker(blocker_fn(&schema)); }
-        if let Some(tx) = progress_tx { b = b.progress(tx); }
+        if let Some(blocker_fn) = strategy.blocker_fn {
+            b = b.blocker(blocker_fn(&schema));
+        }
+        if let Some(tx) = progress_tx {
+            b = b.progress(tx);
+        }
         b.build()?
     } else {
         let mut b = Pipeline::builder()
             .schema(schema.clone())
             .comparator(match strategy.comparator_fn {
                 Some(f) => Comparator::from_cpu(f(&schema)),
-                None    => Comparator::new(&schema, &backend),
+                None => Comparator::new(&schema, &backend),
             })
             .scorer(Scorer::new(&backend))
             .store(ZalEntityStore::open_in_memory()?)
             .config(cfg);
-        if let Some(blocker_fn) = strategy.blocker_fn { b = b.blocker(blocker_fn(&schema)); }
-        if let Some(tx) = progress_tx { b = b.progress(tx); }
+        if let Some(blocker_fn) = strategy.blocker_fn {
+            b = b.blocker(blocker_fn(&schema));
+        }
+        if let Some(tx) = progress_tx {
+            b = b.progress(tx);
+        }
         b.build()?
     };
 
@@ -469,12 +607,19 @@ async fn run_pass(
     // ── Load records ──────────────────────────────────────────────────────────
     let mut all_records: Vec<Record> = Vec::new();
     let mut id_map: HashMap<String, u64> = HashMap::new();
-    let max = if args.max_records == 0 { usize::MAX } else { args.max_records };
+    let max = if args.max_records == 0 {
+        usize::MAX
+    } else {
+        args.max_records
+    };
 
     for (i, path) in params.datasets.iter().enumerate() {
         let source = params.sources.get(i).and_then(|s| s.as_deref());
         let records = load_csv_records(path, source, max, &mut id_map)?;
-        println!("records loaded  count={}  path={path}  source={source:?}", records.len());
+        println!(
+            "records loaded  count={}  path={path}  source={source:?}",
+            records.len()
+        );
         all_records.extend(records);
     }
     println!("all records loaded  total={}", all_records.len());
@@ -490,87 +635,119 @@ async fn run_pass(
     );
 
     // ── Extract results ───────────────────────────────────────────────────────
-    let view  = pipeline.cluster_view();
+    let view = pipeline.cluster_view();
     let pairs = view.all_member_pairs();
 
     drop(pipeline);
-    if let Some(h) = progress_handle { let _ = h.await; }
+    if let Some(h) = progress_handle {
+        let _ = h.await;
+    }
 
     let wall_elapsed_ms = wall_start.elapsed().as_millis() as u64;
     println!("wall time  wall_elapsed_ms={wall_elapsed_ms}");
 
-    let pair_records: Vec<PairRecord> = pairs.iter().map(|lp| PairRecord {
-        run_id:            run_id.clone(),
-        record_id_a:       lp.record_id_a,
-        source_a:          lp.source_a.clone(),
-        record_id_b:       lp.record_id_b,
-        source_b:          lp.source_b.clone(),
-        match_probability: lp.score,
-        predicted_match:   band_to_match(resolution_to_band(lp.method)),
-    }).collect();
+    let pair_records: Vec<PairRecord> = pairs
+        .iter()
+        .map(|lp| PairRecord {
+            run_id: run_id.clone(),
+            record_id_a: lp.record_id_a,
+            source_a: lp.source_a.clone(),
+            record_id_b: lp.record_id_b,
+            source_b: lp.source_b.clone(),
+            match_probability: lp.score,
+            predicted_match: band_to_match(resolution_to_band(lp.method)),
+        })
+        .collect();
 
     // When the collect-pairs feature is enabled the pipeline holds every candidate
     // pair with its match probability; use that for an unbiased PR-AUC over the
     // full curve.  Without it, fall back to entity-store pairs only (faster but biased).
     let pr_auc_pairs: Vec<PairRecord> = if !report.scored_pairs.is_empty() {
-        report.scored_pairs.iter().map(|&(a, b, prob)| PairRecord {
-            run_id:            run_id.clone(),
-            record_id_a:       a,
-            source_a:          None,
-            record_id_b:       b,
-            source_b:          None,
-            match_probability: prob,
-            predicted_match:   false,
-        }).collect()
+        report
+            .scored_pairs
+            .iter()
+            .map(|&(a, b, prob)| PairRecord {
+                run_id: run_id.clone(),
+                record_id_a: a,
+                source_a: None,
+                record_id_b: b,
+                source_b: None,
+                match_probability: prob,
+                predicted_match: false,
+            })
+            .collect()
     } else {
         pair_records.clone()
     };
 
     // ── Compute accuracy metrics ──────────────────────────────────────────────
-    let (pipeline_accuracy, opt_metrics, pr_auc, f1_max, cluster_recall, strat_rows, scored_pairs) = if let Some(gt_path) = &params.ground_truth {
-        println!("loading ground truth  path={}", gt_path.as_str());
-        let gt_map = load_ground_truth(gt_path, &id_map)?;
-        println!("ground truth loaded  pairs={}", gt_map.len());
+    let (pipeline_accuracy, opt_metrics, pr_auc, f1_max, cluster_recall, strat_rows, scored_pairs) =
+        if let Some(gt_path) = &params.ground_truth {
+            println!("loading ground truth  path={}", gt_path.as_str());
+            let gt_map = load_ground_truth(gt_path, &id_map)?;
+            println!("ground truth loaded  pairs={}", gt_map.len());
 
-        let predicted: HashSet<(u64, u64)> = pair_records.iter()
-            .filter(|p| p.predicted_match)
-            .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
-            .collect();
+            let predicted: HashSet<(u64, u64)> = pair_records
+                .iter()
+                .filter(|p| p.predicted_match)
+                .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
+                .collect();
 
-        let gt_set: HashSet<(u64, u64)> = gt_map.keys().copied().collect();
-        let true_pos  = predicted.intersection(&gt_set).count();
-        let false_pos = predicted.difference(&gt_set).count();
-        let false_neg = gt_set.difference(&predicted).count();
+            let gt_set: HashSet<(u64, u64)> = gt_map.keys().copied().collect();
+            let true_pos = predicted.intersection(&gt_set).count();
+            let false_pos = predicted.difference(&gt_set).count();
+            let false_neg = gt_set.difference(&predicted).count();
 
-        let pipe_acc = AccuracyMetrics::from_counts(true_pos, false_pos, false_neg);
-        println!("pipeline accuracy  precision={}  recall={}  f1={}  tp={true_pos}  fp={false_pos}  fn_={false_neg}", pipe_acc.precision, pipe_acc.recall, pipe_acc.f1);
+            let pipe_acc = AccuracyMetrics::from_counts(true_pos, false_pos, false_neg);
+            println!("pipeline accuracy  precision={}  recall={}  f1={}  tp={true_pos}  fp={false_pos}  fn_={false_neg}", pipe_acc.precision, pipe_acc.recall, pipe_acc.f1);
 
-        let all_m = compute_all_metrics(&pr_auc_pairs, &gt_map);
-        let (opt, pr_auc_val, f1m) = match all_m {
-            Some(ref m) => {
-                println!("optimal threshold metrics  precision={}  recall={}  f1={}  threshold={}  tp={}  fp={}  fn_={}  pr_auc={}  f1_max={}", m.best.precision, m.best.recall, m.best.f1, m.best.threshold, m.best.tp, m.best.fp, m.best.fn_, m.pr_auc, m.f1_max);
-                (Some(ThresholdMetrics { f1: m.best.f1, precision: m.best.precision, recall: m.best.recall,
-                                         threshold: m.best.threshold, tp: m.best.tp, fp: m.best.fp, fn_: m.best.fn_ }),
-                 Some(m.pr_auc), Some(m.f1_max))
-            }
-            None => (None, None, None),
+            let all_m = compute_all_metrics(&pr_auc_pairs, &gt_map);
+            let (opt, pr_auc_val, f1m) = match all_m {
+                Some(ref m) => {
+                    println!("optimal threshold metrics  precision={}  recall={}  f1={}  threshold={}  tp={}  fp={}  fn_={}  pr_auc={}  f1_max={}", m.best.precision, m.best.recall, m.best.f1, m.best.threshold, m.best.tp, m.best.fp, m.best.fn_, m.pr_auc, m.f1_max);
+                    (
+                        Some(ThresholdMetrics {
+                            f1: m.best.f1,
+                            precision: m.best.precision,
+                            recall: m.best.recall,
+                            threshold: m.best.threshold,
+                            tp: m.best.tp,
+                            fp: m.best.fp,
+                            fn_: m.best.fn_,
+                        }),
+                        Some(m.pr_auc),
+                        Some(m.f1_max),
+                    )
+                }
+                None => (None, None, None),
+            };
+
+            let blk = compute_cluster_recall(&pair_records, &gt_map);
+            println!("cluster recall  cluster_recall={blk}");
+
+            let strat = compute_stratified_metrics(&pair_records, &gt_map);
+
+            let tagged: Vec<(f32, bool)> = pr_auc_pairs
+                .iter()
+                .map(|p| {
+                    let key = canonical_pair(p.record_id_a, p.record_id_b);
+                    (p.match_probability, gt_map.contains_key(&key))
+                })
+                .collect();
+
+            (
+                Some(pipe_acc),
+                opt,
+                pr_auc_val,
+                f1m,
+                Some(blk),
+                strat,
+                Some(tagged),
+            )
+        } else {
+            println!("no ground truth, accuracy columns will be empty");
+            (None, None, None, None, None::<f32>, Vec::new(), None)
         };
-
-        let blk  = compute_cluster_recall(&pair_records, &gt_map);
-        println!("cluster recall  cluster_recall={blk}");
-
-        let strat = compute_stratified_metrics(&pair_records, &gt_map);
-
-        let tagged: Vec<(f32, bool)> = pr_auc_pairs.iter().map(|p| {
-            let key = canonical_pair(p.record_id_a, p.record_id_b);
-            (p.match_probability, gt_map.contains_key(&key))
-        }).collect();
-
-        (Some(pipe_acc), opt, pr_auc_val, f1m, Some(blk), strat, Some(tagged))
-    } else {
-        println!("no ground truth, accuracy columns will be empty");
-        (None, None, None, None, None::<f32>, Vec::new(), None)
-    };
 
     // ── Write output ──────────────────────────────────────────────────────────
     let writer = BenchResultWriter::new(resolve_out_dir(out).as_path(), &run_id)?;
@@ -580,19 +757,20 @@ async fn run_pass(
     }
 
     let summary = BenchBatchSummary {
-        total_records:   report.total_records,
+        total_records: report.total_records,
         candidate_pairs: report.candidate_pairs,
-        auto_matched:    report.auto_matched,
-        borderline:      report.borderline,
-        auto_rejected:   report.auto_rejected,
-        elapsed_ms:      wall_elapsed_ms,
-        link_mode:       report.link_mode.as_str().to_owned(),
-        dataset:         params.dataset_name.clone(),
+        auto_matched: report.auto_matched,
+        borderline: report.borderline,
+        auto_rejected: report.auto_rejected,
+        elapsed_ms: wall_elapsed_ms,
+        link_mode: report.link_mode.as_str().to_owned(),
+        dataset: params.dataset_name.clone(),
     };
     // Use optimal-threshold metrics as primary P/R/F1 in summary CSV so the
     // comparison table is on equal footing with splink (which also uses optimal threshold).
     // Pipeline-level metrics are preserved in the benchmark JSON as pipeline_*.
-    let opt_acc: Option<AccuracyMetrics> = opt_metrics.as_ref()
+    let opt_acc: Option<AccuracyMetrics> = opt_metrics
+        .as_ref()
         .map(|m| AccuracyMetrics::from_counts(m.tp, m.fp, m.fn_));
     writer.write_summary_with_library(&summary, opt_acc.as_ref(), &library_name)?;
 
@@ -609,24 +787,24 @@ async fn run_pass(
 
     let json_path = writer.out_dir().join(format!("{run_id}_benchmark.json"));
     write_benchmark_json(BenchmarkJsonArgs {
-        path:             &json_path,
-        run_id:           &run_id,
-        library:          &library_name,
-        scenario:         scenario,
-        mode:             &params.mode_str,
-        dataset:          &params.dataset_name,
-        target:           &args.target,
-        total_records:    report.total_records,
-        candidate_pairs:  report.candidate_pairs,
-        auto_matched:     report.auto_matched,
-        borderline:       report.borderline,
-        auto_rejected:    report.auto_rejected,
-        opt_metrics:      opt_metrics.as_ref(),
-        pipeline_acc:     pipeline_accuracy.as_ref(),
+        path: &json_path,
+        run_id: &run_id,
+        library: &library_name,
+        scenario: scenario,
+        mode: &params.mode_str,
+        dataset: &params.dataset_name,
+        target: &args.target,
+        total_records: report.total_records,
+        candidate_pairs: report.candidate_pairs,
+        auto_matched: report.auto_matched,
+        borderline: report.borderline,
+        auto_rejected: report.auto_rejected,
+        opt_metrics: opt_metrics.as_ref(),
+        pipeline_acc: pipeline_accuracy.as_ref(),
         pr_auc,
         f1_max,
         cluster_recall,
-        strat_rows:       &strat_rows,
+        strat_rows: &strat_rows,
         scored_pairs_csv: scored_pairs_csv.as_deref(),
     })?;
     println!("benchmark json written  path={}", json_path.display());
@@ -656,19 +834,29 @@ async fn run_pass(
 
     // ── Run competitor libraries and print inline comparison ──────────────────
     if !compare_libs.is_empty() {
-        let bench_root = super::library::resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
+        let bench_root =
+            super::library::resolve_benchmarks_root(args.external_benchmarks_dir.as_deref());
         let mode_dir = super::library::mode_dir_name(&params.mode_str);
         let dataset_refs: Vec<&str> = params.datasets.iter().map(String::as_str).collect();
         let gt = params.ground_truth.as_deref();
         let mut lib_errors: Vec<String> = Vec::new();
         for (i, lib) in compare_libs.iter().enumerate() {
-            super::util::print_bench_header(&[&format!("[{}/{total}] {lib}", i + 2), "accuracy", scenario_disp]);
+            super::util::print_bench_header(&[
+                &format!("[{}/{total}] {lib}", i + 2),
+                "accuracy",
+                scenario_disp,
+            ]);
             println!("running library  library={lib}  mode={mode_dir}");
             if let Err(e) = super::library::run_library(
-                &bench_root, lib, mode_dir,
+                &bench_root,
+                lib,
+                mode_dir,
                 scenario,
-                &dataset_refs, gt, out,
-                None, args.force_setup,
+                &dataset_refs,
+                gt,
+                out,
+                None,
+                args.force_setup,
             ) {
                 eprintln!("warning: library failed  library={lib}  error={e}");
                 lib_errors.push(format!("{lib}: {e}"));
@@ -696,8 +884,8 @@ fn load_csv_records(
     max: usize,
     id_map: &mut HashMap<String, u64>,
 ) -> anyhow::Result<Vec<Record>> {
-    let mut rdr = csv::Reader::from_path(path)
-        .map_err(|e| anyhow::anyhow!("cannot open {path}: {e}"))?;
+    let mut rdr =
+        csv::Reader::from_path(path).map_err(|e| anyhow::anyhow!("cannot open {path}: {e}"))?;
 
     let headers: Vec<String> = rdr.headers()?.iter().map(str::to_owned).collect();
     let mut records = Vec::new();
@@ -745,14 +933,15 @@ fn load_ground_truth(
     let mut rdr = csv::Reader::from_path(path)
         .map_err(|e| anyhow::anyhow!("cannot open ground truth {path}: {e}"))?;
 
-    let mut pairs   = HashMap::new();
+    let mut pairs = HashMap::new();
     let mut skipped = 0usize;
 
     for result in rdr.records() {
         let row = result?;
         let raw_a = row.get(0).unwrap_or("");
         let raw_b = row.get(1).unwrap_or("");
-        let is_match: bool = row.get(2)
+        let is_match: bool = row
+            .get(2)
             .map(|s| matches!(s.to_lowercase().as_str(), "true" | "1" | "yes"))
             .unwrap_or(false);
 
@@ -768,12 +957,16 @@ fn load_ground_truth(
                 let match_type = row.get(3).unwrap_or("").to_owned();
                 pairs.insert(canonical_pair(a, b), match_type);
             }
-            _ => { skipped += 1; }
+            _ => {
+                skipped += 1;
+            }
         }
     }
 
     if skipped > 0 {
-        eprintln!("warning: ground-truth rows had unresolvable IDs and were skipped  skipped={skipped}");
+        eprintln!(
+            "warning: ground-truth rows had unresolvable IDs and were skipped  skipped={skipped}"
+        );
     }
     Ok(pairs)
 }
@@ -791,8 +984,8 @@ fn resolve_id(raw: &str, id_map: &HashMap<String, u64>) -> Option<u64> {
 fn infer_schema_from_headers(paths: &[String]) -> anyhow::Result<Schema> {
     let mut names: Vec<String> = Vec::new();
     for path in paths {
-        let mut rdr = csv::Reader::from_path(path)
-            .map_err(|e| anyhow::anyhow!("cannot open {path}: {e}"))?;
+        let mut rdr =
+            csv::Reader::from_path(path).map_err(|e| anyhow::anyhow!("cannot open {path}: {e}"))?;
         for h in rdr.headers()?.iter() {
             let s = h.to_owned();
             if !names.contains(&s) {
@@ -805,7 +998,10 @@ fn infer_schema_from_headers(paths: &[String]) -> anyhow::Result<Schema> {
         builder = builder.field(name.as_str(), infer_field_kind(name));
     }
     Ok(builder.build().unwrap_or_else(|_| {
-        SchemaBuilder::new().field("id", FieldKind::Id).build().unwrap()
+        SchemaBuilder::new()
+            .field("id", FieldKind::Id)
+            .build()
+            .unwrap()
     }))
 }
 
@@ -818,16 +1014,28 @@ fn infer_field_kind(name: &str) -> FieldKind {
         FieldKind::Categorical
     // Address patterns before "naam": "straatnaam" contains both "straat" and "naam";
     // the address check must win so it doesn't end up as the phonetic surname field.
-    } else if n.contains("straat") || n.contains("adres") || n.contains("street")
-           || n.contains("address") || n.contains("city") || n.contains("place")
-           || n.contains("woon") {
+    } else if n.contains("straat")
+        || n.contains("adres")
+        || n.contains("street")
+        || n.contains("address")
+        || n.contains("city")
+        || n.contains("place")
+        || n.contains("woon")
+    {
         FieldKind::Address
-    } else if n.contains("naam") || n.contains("name") || n.contains("nomen") || n.contains("alias") {
+    } else if n.contains("naam") || n.contains("name") || n.contains("nomen") || n.contains("alias")
+    {
         FieldKind::Name
-    } else if n.contains("datum") || n.contains("date") || n.contains("dob") || n.contains("birth") {
+    } else if n.contains("datum") || n.contains("date") || n.contains("dob") || n.contains("birth")
+    {
         FieldKind::Date
-    } else if n.contains("id") || n.contains("nummer") || n.contains("bsn")
-           || n.contains("number") || n.contains("code") || n.contains("postcode") {
+    } else if n.contains("id")
+        || n.contains("nummer")
+        || n.contains("bsn")
+        || n.contains("number")
+        || n.contains("code")
+        || n.contains("postcode")
+    {
         FieldKind::Id
     } else {
         FieldKind::Categorical
@@ -838,8 +1046,8 @@ fn infer_field_kind(name: &str) -> FieldKind {
 
 fn parse_link_mode(s: &str) -> anyhow::Result<LinkMode> {
     match s.to_lowercase().replace('-', "_").as_str() {
-        "deduplicate" | "dedupe"                               => Ok(LinkMode::Deduplicate),
-        "link_only"   | "link-only"                           => Ok(LinkMode::LinkOnly),
+        "deduplicate" | "dedupe" => Ok(LinkMode::Deduplicate),
+        "link_only" | "link-only" => Ok(LinkMode::LinkOnly),
         "link_and_dedupe" | "link-and-dedupe" | "link_dedupe" => Ok(LinkMode::LinkAndDedupe),
         other => anyhow::bail!(
             "unknown link mode: {other:?}; valid: deduplicate, link-only, link-and-dedupe"
@@ -862,18 +1070,22 @@ fn make_run_id(library: &str, mode: &str, dataset: &str) -> String {
         .unwrap_or_default()
         .as_secs();
     let mode_clean = mode.replace('-', "_");
-    let lib_clean  = library.replace('+', "_plus_");
+    let lib_clean = library.replace('+', "_plus_");
     format!("{lib_clean}_{mode_clean}_{dataset}_{ts}")
 }
 
 fn canonical_pair(a: u64, b: u64) -> (u64, u64) {
-    if a <= b { (a, b) } else { (b, a) }
+    if a <= b {
+        (a, b)
+    } else {
+        (b, a)
+    }
 }
 
 struct AllMetrics {
     pr_auc: f32,
     f1_max: f32,
-    best:   ThresholdMetrics,
+    best: ThresholdMetrics,
 }
 
 /// Single-pass computation of PR-AUC, max-F1, and best-threshold metrics.
@@ -885,22 +1097,38 @@ fn compute_all_metrics(
     if n_pos == 0 || pair_records.is_empty() {
         return None;
     }
-    let mut tagged: Vec<(f32, bool)> = pair_records.iter().map(|p| {
-        let key = canonical_pair(p.record_id_a, p.record_id_b);
-        (p.match_probability, gt_map.contains_key(&key))
-    }).collect();
+    let mut tagged: Vec<(f32, bool)> = pair_records
+        .iter()
+        .map(|p| {
+            let key = canonical_pair(p.record_id_a, p.record_id_b);
+            (p.match_probability, gt_map.contains_key(&key))
+        })
+        .collect();
     tagged.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
     let (mut tp, mut fp) = (0usize, 0usize);
     let mut fn_ = n_pos;
     let (mut auc, mut prev_recall) = (0.0f32, 0.0f32);
     let mut best_f1 = 0.0f32;
-    let mut best = ThresholdMetrics { f1: 0.0, precision: 0.0, recall: 0.0, threshold: 1.0, tp: 0, fp: 0, fn_: n_pos };
+    let mut best = ThresholdMetrics {
+        f1: 0.0,
+        precision: 0.0,
+        recall: 0.0,
+        threshold: 1.0,
+        tp: 0,
+        fp: 0,
+        fn_: n_pos,
+    };
 
     for (score, is_match) in &tagged {
-        if *is_match { tp += 1; fn_ -= 1; } else { fp += 1; }
+        if *is_match {
+            tp += 1;
+            fn_ -= 1;
+        } else {
+            fp += 1;
+        }
         let precision = tp as f32 / (tp + fp) as f32;
-        let recall    = tp as f32 / n_pos as f32;
+        let recall = tp as f32 / n_pos as f32;
         auc += (recall - prev_recall) * precision;
         prev_recall = recall;
         let denom = 2 * tp + fp + fn_;
@@ -908,33 +1136,49 @@ fn compute_all_metrics(
             let f1 = 2.0 * tp as f32 / denom as f32;
             if f1 > best_f1 {
                 best_f1 = f1;
-                best = ThresholdMetrics { f1, precision, recall, threshold: *score, tp, fp, fn_ };
+                best = ThresholdMetrics {
+                    f1,
+                    precision,
+                    recall,
+                    threshold: *score,
+                    tp,
+                    fp,
+                    fn_,
+                };
             }
         }
     }
-    Some(AllMetrics { pr_auc: auc.clamp(0.0, 1.0), f1_max: best_f1, best })
+    Some(AllMetrics {
+        pr_auc: auc.clamp(0.0, 1.0),
+        f1_max: best_f1,
+        best,
+    })
 }
 
 struct ThresholdMetrics {
-    f1:        f32,
+    f1: f32,
     precision: f32,
-    recall:    f32,
+    recall: f32,
     threshold: f32,
-    tp:        usize,
-    fp:        usize,
-    fn_:       usize,
+    tp: usize,
+    fp: usize,
+    fn_: usize,
 }
 
 /// Cluster recall: fraction of GT pairs whose two records ended up in the same cluster.
 ///
 /// Computed from the entity-store view (all intra-cluster pairs), not raw blocking
 /// candidates, so it reflects how many true matches survived comparison and clustering.
-fn compute_cluster_recall(pair_records: &[PairRecord], gt_map: &HashMap<(u64, u64), String>) -> f32 {
+fn compute_cluster_recall(
+    pair_records: &[PairRecord],
+    gt_map: &HashMap<(u64, u64), String>,
+) -> f32 {
     let n_pos = gt_map.len();
     if n_pos == 0 {
         return 1.0;
     }
-    let candidate_set: HashSet<(u64, u64)> = pair_records.iter()
+    let candidate_set: HashSet<(u64, u64)> = pair_records
+        .iter()
         .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
         .collect();
     let found = gt_map.keys().filter(|k| candidate_set.contains(k)).count();
@@ -943,17 +1187,18 @@ fn compute_cluster_recall(pair_records: &[PairRecord], gt_map: &HashMap<(u64, u6
 
 struct StratRow {
     match_type: String,
-    count_gt:   usize,
-    true_pos:   usize,
-    false_neg:  usize,
-    recall:     f32,
+    count_gt: usize,
+    true_pos: usize,
+    false_neg: usize,
+    recall: f32,
 }
 
 fn compute_stratified_metrics(
     pair_records: &[PairRecord],
     gt_map: &HashMap<(u64, u64), String>,
 ) -> Vec<StratRow> {
-    let predicted: HashSet<(u64, u64)> = pair_records.iter()
+    let predicted: HashSet<(u64, u64)> = pair_records
+        .iter()
         .filter(|p| p.predicted_match)
         .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
         .collect();
@@ -963,13 +1208,26 @@ fn compute_stratified_metrics(
         gt_by_type.entry(mt.clone()).or_default().push(*pair);
     }
 
-    let mut rows: Vec<StratRow> = gt_by_type.into_iter().map(|(mt, gt_pairs)| {
-        let count_gt = gt_pairs.len();
-        let true_pos = gt_pairs.iter().filter(|p| predicted.contains(p)).count();
-        let false_neg = count_gt - true_pos;
-        let recall = if count_gt == 0 { 0.0 } else { true_pos as f32 / count_gt as f32 };
-        StratRow { match_type: mt, count_gt, true_pos, false_neg, recall }
-    }).collect();
+    let mut rows: Vec<StratRow> = gt_by_type
+        .into_iter()
+        .map(|(mt, gt_pairs)| {
+            let count_gt = gt_pairs.len();
+            let true_pos = gt_pairs.iter().filter(|p| predicted.contains(p)).count();
+            let false_neg = count_gt - true_pos;
+            let recall = if count_gt == 0 {
+                0.0
+            } else {
+                true_pos as f32 / count_gt as f32
+            };
+            StratRow {
+                match_type: mt,
+                count_gt,
+                true_pos,
+                false_neg,
+                recall,
+            }
+        })
+        .collect();
     rows.sort_by(|a, b| a.match_type.cmp(&b.match_type));
     rows
 }
@@ -992,24 +1250,24 @@ fn write_strat_csv(path: &std::path::Path, rows: &[StratRow]) -> anyhow::Result<
 }
 
 struct BenchmarkJsonArgs<'a> {
-    path:             &'a std::path::Path,
-    run_id:           &'a str,
-    library:          &'a str,
-    scenario:         Option<&'a str>,
-    mode:             &'a str,
-    dataset:          &'a str,
-    target:           &'a str,
-    total_records:    usize,
-    candidate_pairs:  usize,
-    auto_matched:     usize,
-    borderline:       usize,
-    auto_rejected:    usize,
-    opt_metrics:      Option<&'a ThresholdMetrics>,
-    pipeline_acc:     Option<&'a AccuracyMetrics>,
-    pr_auc:           Option<f32>,
-    f1_max:           Option<f32>,
-    cluster_recall:   Option<f32>,
-    strat_rows:       &'a [StratRow],
+    path: &'a std::path::Path,
+    run_id: &'a str,
+    library: &'a str,
+    scenario: Option<&'a str>,
+    mode: &'a str,
+    dataset: &'a str,
+    target: &'a str,
+    total_records: usize,
+    candidate_pairs: usize,
+    auto_matched: usize,
+    borderline: usize,
+    auto_rejected: usize,
+    opt_metrics: Option<&'a ThresholdMetrics>,
+    pipeline_acc: Option<&'a AccuracyMetrics>,
+    pr_auc: Option<f32>,
+    f1_max: Option<f32>,
+    cluster_recall: Option<f32>,
+    strat_rows: &'a [StratRow],
     scored_pairs_csv: Option<&'a str>,
 }
 
@@ -1020,18 +1278,26 @@ fn write_benchmark_json(a: BenchmarkJsonArgs<'_>) -> anyhow::Result<()> {
         .unwrap_or_default()
         .as_secs();
 
-    let stem = a.path.file_stem().and_then(|s| s.to_str()).unwrap_or(a.run_id);
+    let stem = a
+        .path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(a.run_id);
     let has_strat = a.strat_rows.iter().any(|r| !r.match_type.is_empty());
 
-    let strat_json: Vec<serde_json::Value> = a.strat_rows.iter().map(|r| {
-        serde_json::json!({
-            "match_type": r.match_type,
-            "count_gt":   r.count_gt,
-            "true_pos":   r.true_pos,
-            "false_neg":  r.false_neg,
-            "recall":     (r.recall * 10000.0).round() / 10000.0,
+    let strat_json: Vec<serde_json::Value> = a
+        .strat_rows
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "match_type": r.match_type,
+                "count_gt":   r.count_gt,
+                "true_pos":   r.true_pos,
+                "false_neg":  r.false_neg,
+                "recall":     (r.recall * 10000.0).round() / 10000.0,
+            })
         })
-    }).collect();
+        .collect();
 
     let round4 = |v: f32| (v * 10000.0).round() / 10000.0;
     let round3 = |v: f32| (v * 1000.0).round() / 1000.0;
@@ -1119,9 +1385,9 @@ use zer_core::entity::ResolutionMethod;
 
 fn resolution_to_band(m: ResolutionMethod) -> MatchBand {
     match m {
-        ResolutionMethod::AutoMatch     => MatchBand::AutoMatch,
+        ResolutionMethod::AutoMatch => MatchBand::AutoMatch,
         ResolutionMethod::JudgePromoted => MatchBand::AutoMatch,
-        ResolutionMethod::JudgeDemoted  => MatchBand::AutoReject,
-        ResolutionMethod::Manual        => MatchBand::Borderline,
+        ResolutionMethod::JudgeDemoted => MatchBand::AutoReject,
+        ResolutionMethod::Manual => MatchBand::Borderline,
     }
 }

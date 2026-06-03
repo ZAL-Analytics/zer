@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use zer_blocking::BlockerFactory;
 use zer_cluster::ConnectedComponentsClusterer;
-use zer_compare::{FieldComparator, FellegiSunterScorer};
+use zer_compare::{FellegiSunterScorer, FieldComparator};
 use zer_core::{
     error::ZerError,
     schema::Schema,
@@ -11,7 +11,9 @@ use zer_core::{
 };
 use zer_schema::SchemaRegistry;
 
-use crate::{cluster_view::ClusterView, config::PipelineConfig, ingester::Ingester, progress::PipelineEvent};
+use crate::{
+    cluster_view::ClusterView, config::PipelineConfig, ingester::Ingester, progress::PipelineEvent,
+};
 
 /// Fully wired entity-resolution pipeline.
 ///
@@ -19,21 +21,21 @@ use crate::{cluster_view::ClusterView, config::PipelineConfig, ingester::Ingeste
 /// are `pub(crate)` so they can be accessed from `batch.rs` and `ingester.rs`
 /// without exposing them in the public API.
 pub struct Pipeline {
-    pub(crate) schema:             Schema,
-    pub(crate) blocker:            Arc<dyn Blocker>,
-    pub(crate) comparator:         Arc<dyn Comparator>,
+    pub(crate) schema: Schema,
+    pub(crate) blocker: Arc<dyn Blocker>,
+    pub(crate) comparator: Arc<dyn Comparator>,
     /// Non-None when `config.field_mappings` is non-empty.  Used by `batch.rs`
     /// to compare cross-schema pairs via `compare_batch_mapped` instead of the
     /// union-schema pool path.
-    pub(crate) mapped_comparator:  Option<Arc<FieldComparator>>,
-    pub(crate) scorer:             Arc<dyn Scorer>,
-    pub(crate) clusterer:          Arc<dyn Clusterer>,
-    pub(crate) store:              Arc<dyn EntityStore>,
-    pub(crate) record_store:       Arc<dyn RecordStore>,
-    pub(crate) registry:           Arc<SchemaRegistry>,
-    pub(crate) judge:              Option<Arc<dyn Judge>>,
-    pub(crate) config:             PipelineConfig,
-    pub(crate) progress:           Option<tokio::sync::mpsc::UnboundedSender<PipelineEvent>>,
+    pub(crate) mapped_comparator: Option<Arc<FieldComparator>>,
+    pub(crate) scorer: Arc<dyn Scorer>,
+    pub(crate) clusterer: Arc<dyn Clusterer>,
+    pub(crate) store: Arc<dyn EntityStore>,
+    pub(crate) record_store: Arc<dyn RecordStore>,
+    pub(crate) registry: Arc<SchemaRegistry>,
+    pub(crate) judge: Option<Arc<dyn Judge>>,
+    pub(crate) config: PipelineConfig,
+    pub(crate) progress: Option<tokio::sync::mpsc::UnboundedSender<PipelineEvent>>,
 }
 
 impl Pipeline {
@@ -73,7 +75,6 @@ impl Pipeline {
     pub fn schema(&self) -> &Schema {
         &self.schema
     }
-
 }
 
 // ── PipelineBuilder ───────────────────────────────────────────────────────────
@@ -82,34 +83,18 @@ impl Pipeline {
 ///
 /// Required: [`PipelineBuilder::schema`] and [`PipelineBuilder::store`].
 /// Everything else defaults to CPU implementations.
+#[derive(Default)]
 pub struct PipelineBuilder {
-    schema:       Option<Schema>,
-    blocker:      Option<Arc<dyn Blocker>>,
-    comparator:   Option<Arc<dyn Comparator>>,
-    scorer:       Option<Arc<dyn Scorer>>,
-    clusterer:    Option<Arc<dyn Clusterer>>,
-    store:        Option<Arc<dyn EntityStore>>,
+    schema: Option<Schema>,
+    blocker: Option<Arc<dyn Blocker>>,
+    comparator: Option<Arc<dyn Comparator>>,
+    scorer: Option<Arc<dyn Scorer>>,
+    clusterer: Option<Arc<dyn Clusterer>>,
+    store: Option<Arc<dyn EntityStore>>,
     record_store: Option<Arc<dyn RecordStore>>,
-    judge:        Option<Arc<dyn Judge>>,
-    config:       PipelineConfig,
-    progress:     Option<tokio::sync::mpsc::UnboundedSender<PipelineEvent>>,
-}
-
-impl Default for PipelineBuilder {
-    fn default() -> Self {
-        Self {
-            schema:       None,
-            blocker:      None,
-            comparator:   None,
-            scorer:       None,
-            clusterer:    None,
-            store:        None,
-            record_store: None,
-            judge:        None,
-            config:       PipelineConfig::default(),
-            progress:     None,
-        }
-    }
+    judge: Option<Arc<dyn Judge>>,
+    config: PipelineConfig,
+    progress: Option<tokio::sync::mpsc::UnboundedSender<PipelineEvent>>,
 }
 
 /// Attach a source label to every record in `records` in one call.
@@ -125,7 +110,10 @@ impl Default for PipelineBuilder {
 /// let labelled = label_source(brp_records, "brp");
 /// assert_eq!(labelled[0].source.as_deref(), Some("brp"));
 /// ```
-pub fn label_source(records: Vec<zer_core::record::Record>, source: &str) -> Vec<zer_core::record::Record> {
+pub fn label_source(
+    records: Vec<zer_core::record::Record>,
+    source: &str,
+) -> Vec<zer_core::record::Record> {
     records.into_iter().map(|r| r.with_source(source)).collect()
 }
 
@@ -204,30 +192,32 @@ impl PipelineBuilder {
     /// - `clusterer`: `ConnectedComponentsClusterer::default()`
     pub fn build(self) -> Result<Arc<Pipeline>, ZerError> {
         let schema = self.schema.ok_or(ZerError::EmptySchema)?;
-        let store  = self
+        let store = self
             .store
             .ok_or_else(|| ZerError::Store("no entity store configured".into()))?;
 
-        let blocker = self.blocker.unwrap_or_else(|| {
-            Arc::new(BlockerFactory::from_schema(&schema))
-        });
+        let blocker = self
+            .blocker
+            .unwrap_or_else(|| Arc::new(BlockerFactory::from_schema(&schema)));
         let mapped_comparator: Option<Arc<FieldComparator>> =
             if self.config.field_mappings.is_empty() {
                 None
             } else {
-                Some(Arc::new(FieldComparator::from_mapping(&self.config.field_mappings, &schema)))
+                Some(Arc::new(FieldComparator::from_mapping(
+                    &self.config.field_mappings,
+                    &schema,
+                )))
             };
-        let comparator = self.comparator.unwrap_or_else(|| {
-            Arc::new(FieldComparator::from_schema(&schema))
-        });
-        let scorer = self
-            .scorer
-            .unwrap_or_else(|| Arc::new(FellegiSunterScorer));
+        let comparator = self
+            .comparator
+            .unwrap_or_else(|| Arc::new(FieldComparator::from_schema(&schema)));
+        let scorer = self.scorer.unwrap_or_else(|| Arc::new(FellegiSunterScorer));
         let clusterer = self
             .clusterer
             .unwrap_or_else(|| Arc::new(ConnectedComponentsClusterer::default()));
 
-        let record_store = self.record_store
+        let record_store = self
+            .record_store
             .unwrap_or_else(|| Arc::new(VecRecordStore::new()));
         let registry = Arc::new(SchemaRegistry::open(&self.config.registry_path)?);
 
@@ -241,8 +231,8 @@ impl PipelineBuilder {
             store,
             record_store,
             registry,
-            judge:    self.judge,
-            config:   self.config,
+            judge: self.judge,
+            config: self.config,
             progress: self.progress,
         }))
     }
@@ -259,8 +249,8 @@ mod tests {
 
     fn person_schema() -> Schema {
         SchemaBuilder::new()
-            .field("voornamen",     FieldKind::Name)
-            .field("achternaam",    FieldKind::Name)
+            .field("voornamen", FieldKind::Name)
+            .field("achternaam", FieldKind::Name)
             .field("geboortedatum", FieldKind::Date)
             .build()
             .unwrap()
@@ -318,7 +308,7 @@ mod tests {
     fn store_and_registry_accessors_work() {
         let dir = TempDir::new().unwrap();
         let pipeline = temp_pipeline(&dir);
-        let _store    = pipeline.store();
+        let _store = pipeline.store();
         let _registry = pipeline.registry();
     }
 }

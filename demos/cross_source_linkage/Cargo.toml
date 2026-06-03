@@ -2,7 +2,8 @@
 name    = "cross-source-linkage"
 version     = "1.0.0"
 edition = "2021"
-publish = false
+publish  = false
+license  = "Apache-2.0"
 description = "Cross-source record linkage: linking a municipal register to a benefits register"
 
 [dependencies]
