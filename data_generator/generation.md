@@ -6,15 +6,35 @@ Generator scripts live in `data_generator/` and share `data_generator/_common.py
 
 ---
 
-## One-time setup
+## Prerequisites
+
+**1. Clone the repository** (all commands run from the repo root):
+
+```bash
+git clone https://github.com/ZAL-Analytics/zer
+cd zer
+```
+
+**2. Install Python dependencies:**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install faker
+pip install -r data_generator/requirements.txt
 ```
 
 Subsequent sessions only need `source .venv/bin/activate`.
+
+**3. Download `data/base/` from Hugging Face:**
+
+All generator scripts depend on `data/base/`. **The scripts will not work without this directory present.** Download it using the included helper:
+
+```bash
+pip install huggingface_hub
+./scripts/download_datasets.sh --base
+```
+
+This populates `data/base/` along with all other published subsets. Only needs to be done once.
 
 ---
 
@@ -33,7 +53,7 @@ Subsequent sessions only need `source .venv/bin/activate`.
 
 ## Generating everything at once
 
-The `scripts/generate_data.sh` wrapper runs all generators in dependency order:
+After completing the prerequisites above, the `scripts/generate_data.sh` wrapper runs all generators in dependency order:
 
 ```bash
 ./scripts/generate_data.sh              # all categories
@@ -41,6 +61,8 @@ The `scripts/generate_data.sh` wrapper runs all generators in dependency order:
 ./scripts/generate_data.sh --benchmarks # only benchmark datasets
 ./scripts/generate_data.sh --examples --tests  # crate examples + tests
 ```
+
+> **Note:** Individual Python scripts (shown in the sections below) require `data/base/` to already be present (prerequisite step 3 above).
 
 ---
 

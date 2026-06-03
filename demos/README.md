@@ -2,11 +2,7 @@
 
 These self-contained demos walk you through the key capabilities of the `zer` entity-resolution framework. Work through them in the order listed below, each demo builds on concepts introduced by the previous ones.
 
-All demos read their data from `data/demos/` (git-ignored). Generate the datasets first:
-
-```bash
-./scripts/generate_data.sh --demos
-```
+All demos read their data from `data/demos/` (git-ignored). Generate the datasets first; see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for prerequisites (`data/base/` must be present) and full instructions.
 
 Then run any demo from the repo root:
 

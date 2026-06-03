@@ -51,13 +51,7 @@ bash scripts/download_models.sh
 export ZER_MODEL_DIR=/path/to/your/models
 ```
 
-Download datasets before running tests or examples:
-
-```bash
-bash scripts/generate_data.sh
-# or set the env var:
-export ZER_DATA_DIR=/path/to/your/data
-```
+Datasets for tests and examples must be generated before use. See the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for prerequisites and full instructions.
 
 ## Sub-crates
 

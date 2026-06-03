@@ -194,7 +194,7 @@ hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
     --repo-type dataset --local-dir data/
 ```
 
-Generate demo-specific data and run:
+Generate demo-specific data and run (requires `data/base/`, see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for setup steps):
 
 ```bash
 ./scripts/generate_data.sh --demos
@@ -213,7 +213,7 @@ GPU demos pass a feature flag:
 cargo run -p person-deduplication --features cuda
 ```
 
-See [demos/README.md](demos/README.md) for the recommended reading order and what each demo teaches.
+See [demos/README.md](demos/README.md) for the recommended reading order and what each demo teaches. For full dataset generation prerequisites and options, see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html).
 
 > The datasets contain **synthetic records only**, generated from statistical distributions of Dutch administrative data. No real personal information is included.
 

@@ -25,7 +25,7 @@ Download it with the Hugging Face CLI:
 
 .. code-block:: bash
 
-   pip install huggingface_hub[cli]
+   pip install huggingface_hub
    hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
        --repo-type dataset \
        --local-dir data/benchmarks
@@ -37,32 +37,52 @@ The ``data_generator/`` scripts re-generate all datasets from scratch. This
 is useful when you want to change the noise parameters, increase record counts,
 or generate data for a new benchmark scenario.
 
-One-time setup:
+**Step 1: Clone the repository:**
+
+.. code-block:: bash
+
+   git clone https://github.com/ZAL-Analytics/zer
+   cd zer
+
+**Step 2: Install Python dependencies:**
 
 .. code-block:: bash
 
    python3 -m venv .venv
    source .venv/bin/activate
-   pip install faker
+   pip install -r data_generator/requirements.txt
 
-Generate everything at once:
+**Step 3: Download** ``data/base/`` **from Hugging Face:**
+
+All generator scripts depend on ``data/base/``, which holds the name, address,
+and CDR base datasets. **The scripts will not work without this directory
+present.** Download it together with all other published data using the
+included helper script:
 
 .. code-block:: bash
 
+   pip install huggingface_hub
+   ./scripts/download_datasets.sh --base
+
+This populates ``data/base/``
+
+**Step 4: Run the generator(s):**
+
+.. code-block:: bash
+
+   # All categories at once
    ./scripts/generate_data.sh
 
-Or generate only what you need:
+   # Or only what you need:
+   ./scripts/generate_data.sh --demos          # tutorial and demo datasets
+   ./scripts/generate_data.sh --benchmarks     # all benchmark scenarios
+   ./scripts/generate_data.sh --examples --tests  # crate examples + tests
 
-.. code-block:: bash
+.. note::
 
-   # Tutorial and demo datasets
-   ./scripts/generate_data.sh --demos
-
-   # Benchmark datasets (all eight scenarios)
-   ./scripts/generate_data.sh --benchmarks
-
-   # Datasets for crate examples and integration tests
-   ./scripts/generate_data.sh --examples --tests
+   Individual generator scripts (shown in the table below) can also be invoked
+   directly, but they require ``data/base/`` to already be present (step 3
+   above).
 
 Individual generator scripts
 ------------------------------

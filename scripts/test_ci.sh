@@ -99,22 +99,26 @@ step "clippy" cargo clippy --workspace "${EXCLUDE[@]}" --features cpu --release 
 
 _ensure_datasets() {
     local tests_data="$REPO_ROOT/data/tests"
+    local examples_data="$REPO_ROOT/data/examples"
 
-    if [[ -d "$tests_data" ]] && [[ -n "$(ls -A "$tests_data" 2>/dev/null)" ]]; then
-        echo "already present in data/tests/ — skipping"
+    if [[ -d "$tests_data" ]] && [[ -n "$(ls -A "$tests_data" 2>/dev/null)" ]] &&
+       [[ -d "$examples_data" ]] && [[ -n "$(ls -A "$examples_data" 2>/dev/null)" ]]; then
+        echo "already present in data/tests/ and data/examples/ — skipping"
         return 0
     fi
 
-    if command -v hf &>/dev/null; then
-        echo "downloading from HuggingFace…"
-        if bash "$REPO_ROOT/scripts/download_dataset.sh"; then
-            return 0
-        fi
-        echo "download failed, falling back to local generation…"
+    if ! command -v hf &>/dev/null; then
+        echo "error: hf not found — install with: pip install huggingface_hub" >&2
+        return 1
     fi
 
-    echo "generating locally via scripts/generate_data.sh --tests…"
-    bash "$REPO_ROOT/scripts/generate_data.sh" --tests
+    echo "downloading from HuggingFace…"
+    for i in 1 2 3; do
+        bash "$REPO_ROOT/scripts/download_datasets.sh" --tests --examples && return 0
+        echo "Attempt $i failed, retrying in 30s..."
+        sleep 30
+    done
+    return 1
 }
 
 step "datasets" _ensure_datasets
