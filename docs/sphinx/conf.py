@@ -1,7 +1,8 @@
 project   = "zer"
 copyright = "2026, ZAL Analytics"
 author    = "ZAL Analytics"
-release   = "1.0.8"
+version   = "1.0"
+release   = "1.0.9"
 
 extensions = [
     "sphinx_design",
