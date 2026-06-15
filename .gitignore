@@ -42,4 +42,6 @@ models/**
 
 bench_results/
 
-docs/sphinx/out/**
+docs/sphinx/out/
+
+.metadata_cache/
