@@ -53,52 +53,36 @@ rsync \
     "$LOCAL_OUT" \
     "$REMOTE_HOST:$REMOTE_DEST"
 
-if [[ -n "$VERSION" && -z "$DRY_RUN" ]]; then
-    NEW_URL="/docs/zer/$VERSION/"
-
-    echo "==> Updating versions.json on server..."
-    ssh "$REMOTE_HOST" python3 << PYEOF
-import json, os
-
-path = '$REMOTE_PATH/versions.json'
-ver  = '$VERSION'
-url  = '$NEW_URL'
-
-if os.path.exists(path):
-    with open(path) as f:
-        versions = json.load(f)
-else:
-    versions = []
-
-versions = [v for v in versions if v.get('version') != ver]
-versions.append({'version': ver, 'url': url})
-
-def ver_key(v):
-    try:
-        return tuple(int(x) for x in v['version'].split('.'))
-    except ValueError:
-        return (0,)
-
-latest = max(versions, key=ver_key)
-for v in versions:
-    v.pop('latest', None)
-latest['latest'] = True
-versions.sort(key=ver_key, reverse=True)
-
-with open(path, 'w') as f:
-    json.dump(versions, f, indent=2)
-    f.write('\n')
-print('  updated:', path)
-PYEOF
-
-    echo "==> Updating 'latest' symlink -> $VERSION ..."
-    ssh "$REMOTE_HOST" "ln -snf '${VERSION}' '${REMOTE_PATH}latest'"
-
-    echo "==> Ensuring root index.html redirect exists..."
-    ssh "$REMOTE_HOST" "test -f '${REMOTE_PATH}index.html' || echo '<meta http-equiv=\"refresh\" content=\"0;url=/docs/zer/latest/\">' > '${REMOTE_PATH}index.html'"
-fi
-
 if [[ -z "$DRY_RUN" ]]; then
+    VERSIONS_JSON="$REPO_ROOT/docs/sphinx/out/versions.json"
+
+    # In versioned mode versions.json is NOT inside the synced subdirectory,
+    # so upload it separately.
+    if [[ -n "$VERSION" && -f "$VERSIONS_JSON" ]]; then
+        echo "==> Uploading versions.json..."
+        scp "$VERSIONS_JSON" "$REMOTE_HOST:${REMOTE_PATH}versions.json"
+    fi
+
+    # Update the 'latest' symlink and root index.html from the local file.
+    if [[ -f "$VERSIONS_JSON" ]]; then
+        LATEST_VER=$(python3 << PYEOF
+import json
+try:
+    with open('$VERSIONS_JSON') as f:
+        vs = json.load(f)
+    print(next((v['version'] for v in vs if v.get('latest')), ''))
+except Exception:
+    pass
+PYEOF
+)
+        if [[ -n "$LATEST_VER" ]]; then
+            echo "==> Updating 'latest' symlink -> $LATEST_VER ..."
+            ssh "$REMOTE_HOST" "ln -snf '${LATEST_VER}' '${REMOTE_PATH}latest'"
+            echo "==> Ensuring root index.html redirect exists..."
+            ssh "$REMOTE_HOST" "test -f '${REMOTE_PATH}index.html' || echo '<meta http-equiv=\"refresh\" content=\"0;url=/docs/zer/latest/\">' > '${REMOTE_PATH}index.html'"
+        fi
+    fi
+
     echo ""
     echo "Upload complete. Docs live at:"
     if [[ -n "$VERSION" ]]; then
