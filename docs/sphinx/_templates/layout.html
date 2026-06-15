@@ -120,33 +120,36 @@
     btnParent.insertBefore(ghLink, firstEl);
     btnParent.insertBefore(crLink, ghLink.nextSibling);
 
-    // Version picker: fetch versions.json and render a <select> in the toolbar
-    fetch('/docs/zer/versions.json')
-      .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
-      .then(function (versions) {
-        var m       = window.location.pathname.match(/\/docs\/zer\/(\d+\.\d+)\//);
-        var current = m ? m[1] : null;
+    // Version picker: derive the docs root from the URL so the same built
+    // asset works when served locally (/) and deployed under /docs/zer/.
+    var verMatch = window.location.pathname.match(/^(.*\/)(\d+\.\d+)\//);
+    if (verMatch) {
+      var docsRoot = verMatch[1];   // e.g. '/docs/zer/'  or  '/'
+      var current  = verMatch[2];   // e.g. '1.0'
+      fetch(docsRoot + 'versions.json')
+        .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+        .then(function (versions) {
+          var sel = document.createElement('select');
+          sel.id  = 'zer-version-picker';
+          sel.title = 'Switch documentation version';
+          sel.setAttribute('aria-label', 'Switch documentation version');
 
-        var sel = document.createElement('select');
-        sel.id  = 'zer-version-picker';
-        sel.title = 'Switch documentation version';
-        sel.setAttribute('aria-label', 'Switch documentation version');
+          versions.forEach(function (v) {
+            var opt         = document.createElement('option');
+            opt.value       = v.version;
+            opt.textContent = v.version + (v.latest ? ' (latest)' : '');
+            if (v.version === current) { opt.selected = true; }
+            sel.appendChild(opt);
+          });
 
-        versions.forEach(function (v) {
-          var opt         = document.createElement('option');
-          opt.value       = v.url;
-          opt.textContent = v.version + (v.latest ? ' (latest)' : '');
-          if (v.version === current) { opt.selected = true; }
-          sel.appendChild(opt);
-        });
+          sel.addEventListener('change', function () {
+            window.location.href = docsRoot + sel.value + '/';
+          });
 
-        sel.addEventListener('change', function () {
-          window.location.href = sel.value;
-        });
-
-        btnParent.insertBefore(sel, ghLink);
-      })
-      .catch(function () { /* versions.json unavailable; picker omitted */ });
+          btnParent.insertBefore(sel, ghLink);
+        })
+        .catch(function () { /* versions.json unavailable; picker omitted */ });
+    }
   });
 })();
 </script>
