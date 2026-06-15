@@ -176,11 +176,11 @@ You can depend on individual crates if you only need part of the pipeline:
 .. code-block:: toml
 
    [dependencies]
-   zer-core     = "1.0"   # Record, Schema, FieldKind, traits
-   zer-blocking = "1.0"   # Blocker, BlockerFactory, blocking keys
-   zer-compare  = "1.0"   # FieldComparator, FellegiSunterScorer
-   zer-cluster  = "1.0"   # Clusterer, ZalEntityStore
-   zer-pipeline = "1.0"   # Pipeline, PipelineConfig, BatchReport
+   zer-core     = "1.1"   # Record, Schema, FieldKind, traits
+   zer-blocking = "1.1"   # Blocker, BlockerFactory, blocking keys
+   zer-compare  = "1.1"   # FieldComparator, FellegiSunterScorer
+   zer-cluster  = "1.1"   # Clusterer, ZalEntityStore
+   zer-pipeline = "1.1"   # Pipeline, PipelineConfig, BatchReport
 
 ----
 
