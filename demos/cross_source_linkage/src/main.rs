@@ -15,7 +15,7 @@ use zer_core::{
 };
 use zer_pipeline::{LinkMode, Pipeline, PipelineConfig};
 
-const DATA_DIR: &str = "data/demos/linkage";
+const DATA_DIR: &str = "data/v1.1/demos/linkage";
 
 #[derive(Debug, serde::Deserialize)]
 #[allow(dead_code)]
@@ -52,8 +52,8 @@ struct SourceBRow {
 
 #[derive(Debug, serde::Deserialize)]
 struct GroundTruthRow {
-    record_id_a: u64,
-    record_id_b: u64,
+    key_a: String,
+    key_b: String,
 }
 
 fn load_source_a(path: &Path) -> Vec<(SourceARow, Record)> {
@@ -61,7 +61,7 @@ fn load_source_a(path: &Path) -> Vec<(SourceARow, Record)> {
     rdr.deserialize::<SourceARow>()
         .map(|r| {
             let row = r.expect("parse source_a row");
-            let rec = Record::from_key("A", row.record_id.to_string())
+            let rec = Record::from_key("A", &row.bsn)
                 .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
                 .insert("achternaam", row.achternaam.clone())
@@ -96,13 +96,13 @@ fn load_source_b(path: &Path) -> Vec<(SourceBRow, Record)> {
         .collect()
 }
 
-/// Ground truth as a set of (source_a_record_id, source_b_record_id) string pairs.
+/// Ground truth as a set of (source_a_key, source_b_key) string pairs.
 fn load_ground_truth(path: &Path) -> HashSet<(String, String)> {
     let mut rdr = csv::Reader::from_path(path).expect("open ground_truth.csv");
     rdr.deserialize::<GroundTruthRow>()
         .map(|r| {
             let row = r.expect("parse ground truth row");
-            (row.record_id_a.to_string(), row.record_id_b.to_string())
+            (row.key_a, row.key_b)
         })
         .collect()
 }

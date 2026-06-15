@@ -1,6 +1,6 @@
 /// Example: reload entities from a persisted `.zes` file.
 ///
-/// Opens `data/examples/demo_entities.zes` written by `cluster_save` and
+/// Opens `data/v1.1/examples/demo_entities.zes` written by `cluster_save` and
 /// verifies that all entities, member counts, and record-to-entity lookups
 /// are intact after a process restart.
 ///
@@ -14,7 +14,7 @@ use zer_core::traits::EntityStore;
 
 const STORE_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/demo_entities.zes"
+    "/../../data/v1.1/examples/demo_entities.zes"
 );
 
 // Same groups as cluster_save, used to verify lookups.

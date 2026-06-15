@@ -21,15 +21,15 @@ A pipeline that:
 Prepare the data
 -----------------
 
-The demo reads from ``data/demos/persons/``. Download the full dataset bundle
+The demo reads from ``data/v1.1/demos/persons/``. Download the full dataset bundle
 (all tutorials share the same download) as described in
 :doc:`/introduction/installation`, or regenerate locally:
 
 .. code-block:: bash
 
    $ python data_generator/generate_demo_persons.py
-   # Writes:   data/demos/persons/records.csv
-   #           data/demos/persons/ground_truth.csv
+   # Writes:   data/v1.1/demos/persons/records.csv
+   #           data/v1.1/demos/persons/ground_truth.csv
 
 Define the schema
 ------------------
@@ -111,7 +111,7 @@ Build and run the pipeline
        })
        .build()?;
 
-   let records = load_records(Path::new("data/demos/persons/records.csv"));
+   let records = load_records(Path::new("data/v1.1/demos/persons/records.csv"));
    let report  = pipeline.run_batch(records).await?;
 
    println!("total records   : {}", report.total_records);
@@ -141,7 +141,7 @@ Evaluate against ground truth
    struct GroundTruthRow { bsn_a: String, bsn_b: String }
 
    let ground_truth: HashSet<(String, String)> =
-       csv::Reader::from_path("data/demos/persons/ground_truth.csv")
+       csv::Reader::from_path("data/v1.1/demos/persons/ground_truth.csv")
            .unwrap()
            .deserialize::<GroundTruthRow>()
            .map(|r| {

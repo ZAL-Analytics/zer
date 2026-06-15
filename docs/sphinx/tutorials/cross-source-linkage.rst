@@ -21,16 +21,16 @@ A pipeline that:
 Prepare the data
 -----------------
 
-The demo reads from ``data/demos/linkage/``. Download the full dataset bundle
+The demo reads from ``data/v1.1/demos/linkage/``. Download the full dataset bundle
 (all tutorials share the same download) as described in
 :doc:`/introduction/installation`, or regenerate locally:
 
 .. code-block:: bash
 
    $ python data_generator/generate_demo_linkage.py
-   # Writes:   data/demos/linkage/source_a.csv
-   #           data/demos/linkage/source_b.csv
-   #           data/demos/linkage/ground_truth.csv
+   # Writes:   data/v1.1/demos/linkage/source_a.csv
+   #           data/v1.1/demos/linkage/source_b.csv
+   #           data/v1.1/demos/linkage/ground_truth.csv
 
 The two datasets share the same synthetic population. Source A has minimal
 perturbation (the authoritative view). Source B has name variants, address lag,
@@ -50,11 +50,13 @@ from different sources never collide even if the raw key values overlap:
 
    use zer_adapters::{DatasetConfig, PolarsIngest};
 
+   // Source A (authoritative register) is keyed by BSN.
+   // Source B (downstream system) has no authoritative ID, so use record_id.
    let records_a = load_csv("source_a.csv")?
-       .into_records(&DatasetConfig::new("A", "person_id"));
+       .into_records(&DatasetConfig::new("A", "bsn"));
 
    let records_b = load_csv("source_b.csv")?
-       .into_records(&DatasetConfig::new("B", "person_id"));
+       .into_records(&DatasetConfig::new("B", "record_id"));
 
    let all: Vec<Record> = [records_a, records_b].concat();
 

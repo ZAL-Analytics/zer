@@ -38,6 +38,24 @@ let pipeline = PipelineBuilder::new(schema)
 let report = pipeline.run(ingester).await?;
 ```
 
+## Breaking changes
+
+### v1.1
+
+**`LinkedPair`, `record_id_a/b` replaced by `record_key_a/b`**
+
+`LinkedPair` no longer exposes raw numeric record IDs. The fields `record_id_a: RecordId` and `record_id_b: RecordId` are replaced by `record_key_a: String` and `record_key_b: String`, which hold the natural key values (e.g. BSN, KvK number) as supplied via `DatasetConfig` at ingestion time.
+
+```rust
+// v1.0
+println!("{} ↔ {}", pair.record_id_a, pair.record_id_b);
+
+// v1.1
+println!("{} ↔ {}", pair.record_key_a, pair.record_key_b);
+```
+
+Evaluation code that built `HashSet<(u64, u64)>` from ground-truth integer IDs must be updated to `HashSet<(String, String)>` using natural key pairs.
+
 ## License
 
 Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

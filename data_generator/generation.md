@@ -42,12 +42,11 @@ This populates `data/base/` along with all other published subsets. Only needs t
 
 | Script | Primary output | Used by |
 |---|---|---|
-| `generate_demo_persons.py` | `data/demos/persons/` | `person_deduplication` demo |
-| `generate_demo_linkage.py` | `data/demos/linkage/` | `cross_source_linkage` demo |
-| `generate_demo_multi_source.py` | `data/demos/multi_source/` | `multi_source_linkage` demo |
+| `generate_demo_persons.py` | `data/v1.1/demos/persons/` | `person_deduplication` demo |
+| `generate_demo_linkage.py` | `data/v1.1/demos/linkage/` | `cross_source_linkage` demo |
+| `generate_demo_multi_source.py` | `data/v1.1/demos/multi_source/` | `multi_source_linkage` demo |
 | `generate_bench.py` | `data/benchmarks/` | `zer-bench` accuracy / throughput |
-| `generate_examples_tests.py` | `data/examples/`, `data/tests/` | crate examples and integration tests |
-| `generate_raw.py` | `data/raw/` | raw provider export datasets |
+| `generate_examples_tests.py` | `data/v1.1/examples/`, `data/v1.1/tests/` | crate examples and integration tests |
 
 ---
 
@@ -68,7 +67,7 @@ After completing the prerequisites above, the `scripts/generate_data.sh` wrapper
 
 ## Demo datasets
 
-### persons, single-source deduplication (`data/demos/persons/`)
+### persons, single-source deduplication (`data/v1.1/demos/persons/`)
 
 ```bash
 python data_generator/generate_demo_persons.py --records 1000 --seed 42
@@ -76,7 +75,7 @@ python data_generator/generate_demo_persons.py --records 1000 --seed 42
 
 Produces `persons.csv` and `ground_truth.csv` with `within_source` duplicate pairs.
 
-### linkage, two-source cross-source linkage (`data/demos/linkage/`)
+### linkage, two-source cross-source linkage (`data/v1.1/demos/linkage/`)
 
 ```bash
 python data_generator/generate_demo_linkage.py --persons 600 --seed 7
@@ -84,7 +83,7 @@ python data_generator/generate_demo_linkage.py --persons 600 --seed 7
 
 Produces `source_a.csv`, `source_b.csv`, and `ground_truth.csv` with `cross_source` pairs (~40 % overlap).
 
-### multi_source, BRP + KvK, cross-source + within-source (`data/demos/multi_source/`)
+### multi_source, BRP + KvK, cross-source + within-source (`data/v1.1/demos/multi_source/`)
 
 ```bash
 python data_generator/generate_demo_multi_source.py --brp 400 --kvk 300 --seed 11
@@ -137,9 +136,9 @@ Ground truth CSVs use columns: `record_id_a, record_id_b, is_match, match_type`.
 
 ---
 
-## Example and test datasets (`data/examples/`, `data/tests/`)
+## Example and test datasets (`data/v1.1/examples/`, `data/v1.1/tests/`)
 
 ```bash
-python data_generator/generate_examples_tests.py --examples   # data/examples/
-python data_generator/generate_examples_tests.py --tests      # data/tests/
+python data_generator/generate_examples_tests.py --examples   # data/v1.1/examples/
+python data_generator/generate_examples_tests.py --tests      # data/v1.1/tests/
 ```

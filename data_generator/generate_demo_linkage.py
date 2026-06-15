@@ -11,9 +11,9 @@ Perturbation profile per source:
   Source B , downstream system: name variants, address lag, occasional DOB drift
 
 Outputs:
-  data/demos/linkage/source_a.csv     , source A records
-  data/demos/linkage/source_b.csv     , source B records
-  data/demos/linkage/ground_truth.csv , linked pairs (record_id_a from A, record_id_b from B)
+  data/v1.1/demos/linkage/source_a.csv     , source A records
+  data/v1.1/demos/linkage/source_b.csv     , source B records
+  data/v1.1/demos/linkage/ground_truth.csv , linked pairs (record_id_a from A, record_id_b from B)
 
 Usage:
   python data_generator/generate_demo_linkage.py [--persons 600] [--overlap 0.40] [--seed 7]
@@ -29,7 +29,7 @@ from _common import (
     postcode, street_address,
 )
 
-OUTPUT_DIR = Path(__file__).parent.parent / "data" / "demos" / "linkage"
+OUTPUT_DIR = Path(__file__).parent.parent / "data" / "v1.1" / "demos" / "linkage"
 
 CSV_FIELDS_A = [
     "record_id", "bsn", "voornamen", "tussenvoegsel", "achternaam",
@@ -138,10 +138,10 @@ def generate(n_persons: int, overlap: float, seed: int) -> None:
         rec = record_b_from_a(id_b, src, p)
         b_records.append(rec)
         ground_truth.append({
-            "record_id_a": src["record_id"],
-            "record_id_b": id_b,
-            "is_match":    True,
-            "match_type":  "cross_source",
+            "key_a":      src["bsn"],
+            "key_b":      str(id_b),
+            "is_match":   True,
+            "match_type": "cross_source",
         })
         id_b += 1
 
@@ -167,7 +167,7 @@ def generate(n_persons: int, overlap: float, seed: int) -> None:
 
     gt_path = OUTPUT_DIR / "ground_truth.csv"
     with open(gt_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["record_id_a", "record_id_b", "is_match", "match_type"])
+        w = csv.DictWriter(f, fieldnames=["key_a", "key_b", "is_match", "match_type"])
         w.writeheader()
         w.writerows(ground_truth)
 

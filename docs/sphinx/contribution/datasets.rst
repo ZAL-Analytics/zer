@@ -97,24 +97,20 @@ Each script accepts parameters to control record count and random seed:
      - Output
      - Used by
    * - ``generate_demo_persons.py``
-     - ``data/demos/persons/``
+     - ``data/v1.1/demos/persons/``
      - Person deduplication tutorial
    * - ``generate_demo_linkage.py``
-     - ``data/demos/linkage/``
+     - ``data/v1.1/demos/linkage/``
      - Cross-source linkage tutorial
    * - ``generate_demo_multi_source.py``
-     - ``data/demos/multi_source/``
+     - ``data/v1.1/demos/multi_source/``
      - Multi-source linkage tutorial
    * - ``generate_bench.py``
      - ``data/benchmarks/``
      - Accuracy and throughput benchmarks
    * - ``generate_examples_tests.py``
-     - ``data/examples/``, ``data/tests/``
+     - ``data/v1.1/examples/``, ``data/v1.1/tests/``
      - Crate examples and integration tests
-   * - ``generate_raw.py``
-     - ``data/raw/``
-     - Raw provider export format datasets
-
 Example: generate a larger deduplcation dataset with a fixed seed:
 
 .. code-block:: bash
@@ -159,4 +155,4 @@ What to explore next
 ---------------------
 
 * :doc:`running-benchmarks`, use these datasets to run the accuracy and throughput suite.
-* :doc:`/tutorials/deduplication`, the person deduplication tutorial uses the ``data/demos/persons/`` dataset.
+* :doc:`/tutorials/deduplication`, the person deduplication tutorial uses the ``data/v1.1/demos/persons/`` dataset.

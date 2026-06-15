@@ -1,6 +1,6 @@
 /// Example: load a persisted schema registry from a `.zsm` file.
 ///
-/// Reads `data/examples/demo_registry.zsm` written by `registry_save`, then:
+/// Reads `data/v1.1/examples/demo_registry.zsm` written by `registry_save`, then:
 /// 1. Lists every stored artifact.
 /// 2. Recomputes the BRP Q1 fingerprint → expects **WarmLoad** (exact hash match).
 /// 3. Recomputes a BRP Q2 fingerprint (same fields + `verblijfstitel`) → expects
@@ -35,7 +35,7 @@ fn brp_q2_csv() -> std::path::PathBuf {
 
 const REGISTRY_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/demo_registry.zsm"
+    "/../../data/v1.1/examples/demo_registry.zsm"
 );
 
 fn brp_q1_schema() -> zer_core::schema::Schema {

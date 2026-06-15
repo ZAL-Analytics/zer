@@ -2,7 +2,7 @@
 
 These self-contained demos walk you through the key capabilities of the `zer` entity-resolution framework. Work through them in the order listed below, each demo builds on concepts introduced by the previous ones.
 
-All demos read their data from `data/demos/` (git-ignored). Generate the datasets first; see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for prerequisites (`data/base/` must be present) and full instructions.
+All demos read their data from `data/v1.1/demos/` (git-ignored). Generate the datasets first; see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for prerequisites (`data/base/` must be present) and full instructions.
 
 Then run any demo from the repo root:
 
@@ -27,7 +27,7 @@ cargo run -p hello-backend
 ## 2. `person_deduplication`, Single-source deduplication
 
 **Package:** `person-deduplication`  
-**Data:** `data/demos/persons/`
+**Data:** `data/v1.1/demos/persons/`
 
 Deduplicates a synthetic Dutch population register (`~1 000 records`) where roughly 10 % of persons appear more than once with name variants or address changes. Shows how blocking, comparison, and scoring produce deduplicated entity clusters, and prints precision / recall / F1 against a ground-truth file.
 
@@ -40,7 +40,7 @@ cargo run -p person-deduplication
 ## 3. `cross_source_linkage`, Two-source record linkage
 
 **Package:** `cross-source-linkage`  
-**Data:** `data/demos/linkage/`
+**Data:** `data/v1.1/demos/linkage/`
 
 Links a municipal register (source A) to a downstream benefits system (source B). The two sources share ~40 % of persons but use different data-quality profiles (name variants, address lag, occasional DOB drift). Uses `LinkMode::LinkOnly`, only cross-source candidate pairs are considered. Demonstrates ID-offset strategy, `linked_pairs()`, and evaluation against ground truth.
 
@@ -53,7 +53,7 @@ cargo run -p cross-source-linkage
 ## 4. `multi_source_linkage`, LinkOnly vs LinkAndDedupe, side by side
 
 **Package:** `multi-source-linkage`  
-**Data:** `data/demos/multi_source/`
+**Data:** `data/v1.1/demos/multi_source/`
 
 Runs the **same** BRP + KvK dataset through two pipeline modes and compares the results:
 

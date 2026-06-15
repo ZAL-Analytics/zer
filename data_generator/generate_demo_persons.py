@@ -6,8 +6,8 @@ Reads from the base pools in data/base/brp/ (surnames.csv, nl_addresses.csv)
 and generates a realistic Dutch person registry with controlled duplicates.
 
 Outputs:
-  data/demos/persons/records.csv      , one row per person record (originals + dupes)
-  data/demos/persons/ground_truth.csv , known duplicate pairs
+  data/v1.1/demos/persons/records.csv      , one row per person record (originals + dupes)
+  data/v1.1/demos/persons/ground_truth.csv , known duplicate pairs
 
 Usage:
   python data_generator/generate_demo_persons.py [--records 1000] [--seed 42]
@@ -24,7 +24,7 @@ from _common import (
     postcode, street_address,
 )
 
-OUTPUT_DIR = Path(__file__).parent.parent / "data" / "demos" / "persons"
+OUTPUT_DIR = Path(__file__).parent.parent / "data" / "v1.1" / "demos" / "persons"
 
 CSV_FIELDS = [
     "record_id", "bsn", "voornamen", "tussenvoegsel", "achternaam",
@@ -82,7 +82,7 @@ def _perturb_record(src: dict, person: Person, record_id: int) -> dict:
             month = str(random.randint(1, 12)).zfill(2)
             day   = str(random.randint(1, 28)).zfill(2)
             dup["geboortedatum"] = f"{year}-{month}-{day}"
-        dup["bsn"] = ""
+        dup["bsn"] = bsn()  # duplicate gets its own BSN; natural key is preserved
 
     elif style == "partial_update":
         name_patch = perturb_name(person)
@@ -124,10 +124,10 @@ def generate(n_records: int, duplicate_fraction: float, seed: int) -> None:
         dup_rec    = _perturb_record(src_rec, src_person, next_id)
         records.append(dup_rec)
         ground_truth.append({
-            "record_id_a": src_rec["record_id"],
-            "record_id_b": next_id,
-            "is_match":    True,
-            "match_type":  "duplicate",
+            "bsn_a":      src_rec["bsn"],
+            "bsn_b":      dup_rec["bsn"],
+            "is_match":   True,
+            "match_type": "duplicate",
         })
         next_id += 1
 
@@ -142,7 +142,7 @@ def generate(n_records: int, duplicate_fraction: float, seed: int) -> None:
 
     gt_path = OUTPUT_DIR / "ground_truth.csv"
     with open(gt_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["record_id_a", "record_id_b", "is_match", "match_type"])
+        w = csv.DictWriter(f, fieldnames=["bsn_a", "bsn_b", "is_match", "match_type"])
         w.writeheader()
         w.writerows(ground_truth)
 

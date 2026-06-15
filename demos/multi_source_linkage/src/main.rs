@@ -19,11 +19,9 @@ use zer_core::{
     record::Record,
     schema::{FieldKind, SchemaBuilder},
 };
-use zer_pipeline::{label_source, LinkMode, Pipeline, PipelineConfig};
+use zer_pipeline::{LinkMode, Pipeline, PipelineConfig};
 
-const DATA_DIR: &str = "data/demos/multi_source";
-// Must match the offset used in the Python generator.
-const KVK_ID_OFFSET: u64 = 10_000_000;
+const DATA_DIR: &str = "data/v1.1/demos/multi_source";
 
 // ── CSV row types ─────────────────────────────────────────────────────────────
 
@@ -31,6 +29,7 @@ const KVK_ID_OFFSET: u64 = 10_000_000;
 #[allow(dead_code)]
 struct BrpRow {
     record_id: u64,
+    bsn: String,
     voornamen: String,
     #[serde(default)]
     tussenvoegsel: String,
@@ -61,8 +60,8 @@ struct KvkRow {
 
 #[derive(Debug, serde::Deserialize)]
 struct GroundTruthRow {
-    record_id_a: u64,
-    record_id_b: u64,
+    key_a: String,
+    key_b: String,
     #[allow(dead_code)]
     is_match: String,
     match_type: String,
@@ -75,7 +74,7 @@ fn load_brp(path: &Path) -> Vec<(BrpRow, Record)> {
     rdr.deserialize::<BrpRow>()
         .map(|r| {
             let row = r.expect("parse BRP row");
-            let rec = Record::new(row.record_id)
+            let rec = Record::from_key("brp", &row.bsn)
                 .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
                 .insert("achternaam", row.achternaam.clone())
@@ -92,7 +91,7 @@ fn load_kvk(path: &Path) -> Vec<(KvkRow, Record)> {
     rdr.deserialize::<KvkRow>()
         .map(|r| {
             let row = r.expect("parse KvK row");
-            let rec = Record::new(row.record_id)
+            let rec = Record::from_key("kvk", &row.kvk_nummer)
                 .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
                 .insert("achternaam", row.achternaam.clone())
@@ -103,21 +102,22 @@ fn load_kvk(path: &Path) -> Vec<(KvkRow, Record)> {
         .collect()
 }
 
-fn load_ground_truth(path: &Path) -> (HashSet<(u64, u64)>, HashSet<(u64, u64)>) {
+fn load_ground_truth(path: &Path) -> (HashSet<(String, String)>, HashSet<(String, String)>) {
     let mut rdr = csv::Reader::from_path(path).expect("open ground_truth.csv");
-    let mut cross: HashSet<(u64, u64)> = HashSet::new();
-    let mut within: HashSet<(u64, u64)> = HashSet::new();
+    let mut cross: HashSet<(String, String)> = HashSet::new();
+    let mut within: HashSet<(String, String)> = HashSet::new();
     for r in rdr.deserialize::<GroundTruthRow>() {
         let row = r.expect("parse ground truth row");
-        let pair = (
-            row.record_id_a.min(row.record_id_b),
-            row.record_id_a.max(row.record_id_b),
-        );
         match row.match_type.as_str() {
             "cross_source" => {
-                cross.insert(pair);
+                cross.insert((row.key_a, row.key_b));
             }
-            "within_source" => {
+            "within_source_brp" | "within_source_kvk" => {
+                let pair = if row.key_a <= row.key_b {
+                    (row.key_a, row.key_b)
+                } else {
+                    (row.key_b, row.key_a)
+                };
                 within.insert(pair);
             }
             _ => {}
@@ -141,7 +141,7 @@ fn build_schema() -> zer_core::schema::Schema {
 
 // ── Evaluation helpers ────────────────────────────────────────────────────────
 
-fn evaluate(predicted: &HashSet<(u64, u64)>, truth: &HashSet<(u64, u64)>, label: &str) {
+fn evaluate(predicted: &HashSet<(String, String)>, truth: &HashSet<(String, String)>, label: &str) {
     let tp = predicted.intersection(truth).count();
     let fp = predicted.difference(truth).count();
     let fn_ = truth.difference(predicted).count();
@@ -207,31 +207,29 @@ async fn main() {
     println!("GT within-src  : {}", gt_within.len());
 
     // Build name lookup tables for the pair display table.
-    let brp_names: HashMap<u64, String> = brp_rows
+    let brp_names: HashMap<String, String> = brp_rows
         .iter()
         .map(|(row, _)| {
             (
-                row.record_id,
+                row.bsn.clone(),
                 format!("{} {}", row.voornamen, row.achternaam),
             )
         })
         .collect();
-    let kvk_names: HashMap<u64, String> = kvk_rows
+    let kvk_names: HashMap<String, String> = kvk_rows
         .iter()
         .map(|(row, _)| {
             (
-                row.record_id,
+                row.kvk_nummer.clone(),
                 format!("{} {}", row.voornamen, row.achternaam),
             )
         })
         .collect();
 
-    // Helper: combine BRP + KvK records into one Vec<Record> with source labels.
+    // Helper: combine BRP + KvK records. Source is already set via Record::from_key.
     let all_records = || -> Vec<Record> {
-        let brp: Vec<Record> =
-            label_source(brp_rows.iter().map(|(_, r)| r.clone()).collect(), "brp");
-        let kvk: Vec<Record> =
-            label_source(kvk_rows.iter().map(|(_, r)| r.clone()).collect(), "kvk");
+        let brp: Vec<Record> = brp_rows.iter().map(|(_, r)| r.clone()).collect();
+        let kvk: Vec<Record> = kvk_rows.iter().map(|(_, r)| r.clone()).collect();
         [brp, kvk].concat()
     };
 
@@ -272,21 +270,14 @@ async fn main() {
     let view_link = pipeline_link.cluster_view();
     let pairs_link = view_link.linked_pairs();
 
-    let predicted_cross_link: HashSet<(u64, u64)> = pairs_link
+    let predicted_cross_link: HashSet<(String, String)> = pairs_link
         .iter()
         .map(|lp| {
-            let (a, b) = if lp.source_a.as_deref() == Some("brp") {
-                (
-                    lp.record_key_a.parse::<u64>().unwrap_or(0),
-                    lp.record_key_b.parse::<u64>().unwrap_or(0),
-                )
+            if lp.source_a.as_deref() == Some("brp") {
+                (lp.record_key_a.clone(), lp.record_key_b.clone())
             } else {
-                (
-                    lp.record_key_b.parse::<u64>().unwrap_or(0),
-                    lp.record_key_a.parse::<u64>().unwrap_or(0),
-                )
-            };
-            (a.min(b), a.max(b))
+                (lp.record_key_b.clone(), lp.record_key_a.clone())
+            }
         })
         .collect();
 
@@ -303,22 +294,20 @@ async fn main() {
             } else {
                 (lp.record_key_b.as_str(), lp.record_key_a.as_str())
             };
-            let brp_id: u64 = brp_key.parse().unwrap_or(0);
-            let kvk_id: u64 = kvk_key.parse().unwrap_or(0);
             PairRow {
                 score: lp.score,
                 a_fields: vec![
-                    ("id".into(), brp_id.to_string()),
+                    ("bsn".into(), brp_key.to_string()),
                     (
                         "name".into(),
-                        brp_names.get(&brp_id).cloned().unwrap_or_default(),
+                        brp_names.get(brp_key).cloned().unwrap_or_default(),
                     ),
                 ],
                 b_fields: vec![
-                    ("id".into(), (kvk_id - KVK_ID_OFFSET).to_string()),
+                    ("kvk_nr".into(), kvk_key.to_string()),
                     (
                         "name".into(),
-                        kvk_names.get(&kvk_id).cloned().unwrap_or_default(),
+                        kvk_names.get(kvk_key).cloned().unwrap_or_default(),
                     ),
                 ],
             }
@@ -363,21 +352,14 @@ async fn main() {
     let pairs_lad = view_lad.linked_pairs();
 
     // Cross-source evaluation (same logic as LinkOnly).
-    let predicted_cross_lad: HashSet<(u64, u64)> = pairs_lad
+    let predicted_cross_lad: HashSet<(String, String)> = pairs_lad
         .iter()
         .map(|lp| {
-            let (a, b) = if lp.source_a.as_deref() == Some("brp") {
-                (
-                    lp.record_key_a.parse::<u64>().unwrap_or(0),
-                    lp.record_key_b.parse::<u64>().unwrap_or(0),
-                )
+            if lp.source_a.as_deref() == Some("brp") {
+                (lp.record_key_a.clone(), lp.record_key_b.clone())
             } else {
-                (
-                    lp.record_key_b.parse::<u64>().unwrap_or(0),
-                    lp.record_key_a.parse::<u64>().unwrap_or(0),
-                )
-            };
-            (a.min(b), a.max(b))
+                (lp.record_key_b.clone(), lp.record_key_a.clone())
+            }
         })
         .collect();
 
@@ -388,29 +370,35 @@ async fn main() {
     );
 
     // Within-source evaluation: scan clusters for records sharing the same source.
-    let mut predicted_within: HashSet<(u64, u64)> = HashSet::new();
+    let mut predicted_within: HashSet<(String, String)> = HashSet::new();
     for (_, members) in &view_lad {
-        let brp_ids: Vec<u64> = members
+        let brp_keys: Vec<&str> = members
             .iter()
             .filter(|r| r.source.as_deref() == Some("brp"))
-            .map(|r| r.id)
+            .map(|r| r.key.as_str())
             .collect();
-        let kvk_ids: Vec<u64> = members
+        let kvk_keys: Vec<&str> = members
             .iter()
             .filter(|r| r.source.as_deref() == Some("kvk"))
-            .map(|r| r.id)
+            .map(|r| r.key.as_str())
             .collect();
-        for i in 0..brp_ids.len() {
-            for j in (i + 1)..brp_ids.len() {
-                let a = brp_ids[i].min(brp_ids[j]);
-                let b = brp_ids[i].max(brp_ids[j]);
+        for i in 0..brp_keys.len() {
+            for j in (i + 1)..brp_keys.len() {
+                let (a, b) = if brp_keys[i] <= brp_keys[j] {
+                    (brp_keys[i].to_string(), brp_keys[j].to_string())
+                } else {
+                    (brp_keys[j].to_string(), brp_keys[i].to_string())
+                };
                 predicted_within.insert((a, b));
             }
         }
-        for i in 0..kvk_ids.len() {
-            for j in (i + 1)..kvk_ids.len() {
-                let a = kvk_ids[i].min(kvk_ids[j]);
-                let b = kvk_ids[i].max(kvk_ids[j]);
+        for i in 0..kvk_keys.len() {
+            for j in (i + 1)..kvk_keys.len() {
+                let (a, b) = if kvk_keys[i] <= kvk_keys[j] {
+                    (kvk_keys[i].to_string(), kvk_keys[j].to_string())
+                } else {
+                    (kvk_keys[j].to_string(), kvk_keys[i].to_string())
+                };
                 predicted_within.insert((a, b));
             }
         }

@@ -1,7 +1,7 @@
 /// Integration tests: SchemaRegistry warm-load / warm-start / cold-start behaviour.
 ///
 /// Uses the synthetic BRP (population register) and SIM (subscriber) datasets
-/// from `data/examples/` to verify the three startup modes:
+/// from `data/v1.1/examples/` to verify the three startup modes:
 ///
 /// 1. `WarmLoad` , BRP Q1 artifact → lookup with Q2 (same schema)
 /// 2. `WarmStart`, BRP Q1 artifact → lookup with Q2 + one extra field

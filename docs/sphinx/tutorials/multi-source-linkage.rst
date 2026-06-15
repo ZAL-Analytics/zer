@@ -19,16 +19,16 @@ The full runnable demo lives in ``demos/multi_source_linkage/``.
 Prepare the data
 -----------------
 
-The demo reads from ``data/demos/multi_source/``. Download the full dataset
+The demo reads from ``data/v1.1/demos/multi_source/``. Download the full dataset
 bundle (all tutorials share the same download) as described in
 :doc:`/introduction/installation`, or regenerate locally:
 
 .. code-block:: bash
 
    $ python data_generator/generate_demo_multi_source.py
-   # Writes:   data/demos/multi_source/source_brp.csv
-   #           data/demos/multi_source/source_kvk.csv
-   #           data/demos/multi_source/ground_truth.csv
+   # Writes:   data/v1.1/demos/multi_source/source_brp.csv
+   #           data/v1.1/demos/multi_source/source_kvk.csv
+   #           data/v1.1/demos/multi_source/ground_truth.csv
 
 Load both sources
 ------------------
@@ -45,7 +45,7 @@ never collide even if the raw key values overlap. no manual offset needed:
        .into_records(&DatasetConfig::new("brp", "bsn"));
 
    let kvk_records = load_csv("source_kvk.csv")?
-       .into_records(&DatasetConfig::new("kvk", "kvk_nr"));
+       .into_records(&DatasetConfig::new("kvk", "kvk_nummer"));
 
    let all_records: Vec<Record> = [brp_records, kvk_records].concat();
 

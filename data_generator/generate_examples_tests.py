@@ -3,7 +3,7 @@
 Generate all example and test datasets for zer crates.
 
 Replaces the phase-* datasets used by crate-level examples and tests.
-Outputs go to data/examples/ and data/tests/ at the workspace root.
+Outputs go to data/v1.1/examples/ and data/v1.1/tests/ at the workspace root.
 
 Run from the data_generator/ directory:
     cd data_generator && python generate_examples_tests.py
@@ -112,7 +112,7 @@ def generate_brp_examples():
         random.seed(seed)
         Faker.seed(seed)
 
-        out_dir = mkdir(ROOT / "data" / "examples" / snapshot)
+        out_dir = mkdir(ROOT / "data" / "v1.1" / "examples" / snapshot)
         rows = [_brp14_row(generate_person()) for _ in range(1_500)]
 
         path = out_dir / "brp_persons.csv"
@@ -146,7 +146,7 @@ def generate_sim_examples():
     random.seed(3003)
     Faker.seed(3003)
 
-    out_dir = mkdir(ROOT / "data" / "examples" / "sim")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "examples" / "sim")
     rows = []
     for _ in range(500):
         p = generate_person()
@@ -249,7 +249,7 @@ def generate_brp_tests():
     random.seed(4004)
     Faker.seed(4004)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "brp")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "brp")
 
     # 1800 base persons
     base: list[tuple[dict, Person]] = []
@@ -315,7 +315,7 @@ def generate_hks_tests():
     random.seed(5005)
     Faker.seed(5005)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "hks")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "hks")
 
     records = []
     ground_truth = []
@@ -450,7 +450,7 @@ def generate_anpr_tests():
     random.seed(6006)
     Faker.seed(6006)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "anpr")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "anpr")
 
     passages = []   # rows for anpr_passages.csv
     gt_blocking = []  # rows for ground_truth_vehicle_pairs.csv
@@ -543,7 +543,7 @@ def generate_kvk_tests():
     random.seed(7007)
     Faker.seed(7007)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "kvk")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "kvk")
 
     records = []
     ground_truth_rows = []  # positional: [kvk_a, kvk_b, "True"]
@@ -633,7 +633,7 @@ def generate_sis_tests():
     random.seed(8008)
     Faker.seed(8008)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "sis")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "sis")
 
     records = []
     ground_truth = []
@@ -771,7 +771,7 @@ def generate_cdr_tests():
     """CDR cluster ground truth: ~200 MSISDNs in ~30 clusters."""
     random.seed(9009)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "cdr")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "cdr")
     rows = []
 
     cluster_id = 1
@@ -803,7 +803,7 @@ def generate_fiu_tests():
     """FIU cluster ground truth: ~200 IBANs in ~30 clusters."""
     random.seed(10010)
 
-    out_dir = mkdir(ROOT / "data" / "tests" / "fiu")
+    out_dir = mkdir(ROOT / "data" / "v1.1" / "tests" / "fiu")
     rows = []
 
     cluster_id = 1
@@ -831,11 +831,11 @@ def generate_fiu_tests():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("Generating example datasets (data/examples/) ...")
+    print("Generating example datasets (data/v1.1/examples/) ...")
     generate_brp_examples()
     generate_sim_examples()
 
-    print("\nGenerating test datasets (data/tests/) ...")
+    print("\nGenerating test datasets (data/v1.1/tests/) ...")
     generate_brp_tests()
     generate_hks_tests()
     generate_anpr_tests()

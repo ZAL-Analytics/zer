@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# generate_data.sh, generate datasets used by crate examples, tests, demos, benchmarks, and raw exports.
+# generate_data.sh, generate datasets used by crate examples, tests, demos, and benchmarks.
 #
 # Usage:
 #   ./scripts/generate_data.sh [OPTIONS]
 #
 # Options:
-#   --examples             Generate shared example datasets (data/examples/).
-#   --tests                Generate crate-level test datasets (data/tests/).
-#   --demos                 Generate demos datasets (persons + linkage).
-#   --benchmarks            Generate benchmarks scenarios.
-#   --raw                  Generate raw provider datasets.
+#   --examples             Generate shared example datasets (data/v1.1/examples/).
+#   --tests                Generate crate-level test datasets (data/v1.1/tests/).
+#   --demos                Generate demo datasets (persons + linkage + multi-source).
+#   --benchmarks           Generate benchmark scenarios.
 #   -h, --help             Show this help and exit.
 #
 # If no flags are given, all categories are generated.
@@ -24,8 +23,8 @@
 #   # Only demos datasets
 #   ./scripts/generate_data.sh --demos
 #
-#   # Benchmarks and raw data
-#   ./scripts/generate_data.sh --benchmarks --raw
+#   # Benchmarks only
+#   ./scripts/generate_data.sh --benchmarks
 #
 set -euo pipefail
 
@@ -37,15 +36,13 @@ DO_EXAMPLES=0
 DO_TESTS=0
 DO_DEMO=0
 DO_BENCHMARK=0
-DO_RAW=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --examples)   DO_EXAMPLES=1;  shift ;;
         --tests)      DO_TESTS=1;     shift ;;
-        --demos)       DO_DEMO=1;      shift ;;
-        --benchmarks)  DO_BENCHMARK=1; shift ;;
-        --raw)        DO_RAW=1;       shift ;;
+        --demos)      DO_DEMO=1;      shift ;;
+        --benchmarks) DO_BENCHMARK=1; shift ;;
         -h|--help)
             sed -n '/^# Usage:/,/^[^#]/p' "$0" | sed 's/^# \?//'
             exit 0 ;;
@@ -57,13 +54,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 # If no flags given, run everything.
-_any_flag=$(( DO_EXAMPLES + DO_TESTS + DO_DEMO + DO_BENCHMARK + DO_RAW ))
+_any_flag=$(( DO_EXAMPLES + DO_TESTS + DO_DEMO + DO_BENCHMARK ))
 if [[ "$_any_flag" -eq 0 ]]; then
     DO_EXAMPLES=1
     DO_TESTS=1
     DO_DEMO=1
     DO_BENCHMARK=1
-    DO_RAW=1
 fi
 
 # ── Environment setup ─────────────────────────────────────────────────────────
@@ -122,18 +118,13 @@ benchmarks() {
     run python data_generator/generate_bench.py --scenario micro/brp_sis/link        --seed 8
 }
 
-raw_data() {
-    echo "--- Raw datasets ---"
-    run python data_generator/generate_raw.py
-}
-
 examples_data() {
-    echo "--- Example datasets (data/examples/) ---"
+    echo "--- Example datasets (data/v1.1/examples/) ---"
     run python data_generator/generate_examples_tests.py --examples
 }
 
 tests_data() {
-    echo "--- Test datasets (data/tests/) ---"
+    echo "--- Test datasets (data/v1.1/tests/) ---"
     run python data_generator/generate_examples_tests.py --tests
 }
 
@@ -143,7 +134,6 @@ tests_data() {
 [[ "$DO_TESTS"     -eq 1 ]] && tests_data
 [[ "$DO_DEMO"      -eq 1 ]] && demos
 [[ "$DO_BENCHMARK" -eq 1 ]] && benchmarks
-[[ "$DO_RAW"       -eq 1 ]] && raw_data
 
 echo ""
 echo "Done."

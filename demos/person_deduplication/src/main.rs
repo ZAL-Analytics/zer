@@ -10,12 +10,12 @@ use demo_common::{
 };
 use zer_cluster::ZalEntityStore;
 use zer_core::{
-    record::{Record, RecordId},
+    record::Record,
     schema::{FieldKind, SchemaBuilder},
 };
 use zer_pipeline::{Pipeline, PipelineConfig};
 
-const DATA_DIR: &str = "data/demos/persons";
+const DATA_DIR: &str = "data/v1.1/demos/persons";
 
 // ── CSV row structs ───────────────────────────────────────────────────────────
 
@@ -41,8 +41,8 @@ struct PersonRow {
 
 #[derive(Debug, serde::Deserialize)]
 struct GroundTruthRow {
-    record_id_a: u64,
-    record_id_b: u64,
+    bsn_a: String,
+    bsn_b: String,
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -52,8 +52,7 @@ fn load_records(path: &Path) -> Vec<(PersonRow, Record)> {
     rdr.deserialize::<PersonRow>()
         .map(|r| {
             let row = r.expect("parse record row");
-            let id = row.record_id;
-            let rec = Record::new(id)
+            let rec = Record::from_key("brp", &row.bsn)
                 .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
                 .insert("achternaam", row.achternaam.clone())
@@ -68,21 +67,18 @@ fn load_records(path: &Path) -> Vec<(PersonRow, Record)> {
         .collect()
 }
 
-fn load_ground_truth(path: &Path) -> HashSet<(u64, u64)> {
+fn load_ground_truth(path: &Path) -> HashSet<(String, String)> {
     let mut rdr = csv::Reader::from_path(path).expect("open ground_truth.csv");
     rdr.deserialize::<GroundTruthRow>()
         .map(|r| {
             let row = r.expect("parse ground truth row");
-            (
-                row.record_id_a.min(row.record_id_b),
-                row.record_id_a.max(row.record_id_b),
-            )
+            if row.bsn_a <= row.bsn_b {
+                (row.bsn_a, row.bsn_b)
+            } else {
+                (row.bsn_b, row.bsn_a)
+            }
         })
         .collect()
-}
-
-fn normalise_pair(a: RecordId, b: RecordId) -> (u64, u64) {
-    (a.min(b), a.max(b))
 }
 
 #[tokio::main]
@@ -178,12 +174,21 @@ async fn main() {
         .filter(|(e, _)| e.members.len() > 1)
         .collect();
 
-    let mut predicted: HashSet<(u64, u64)> = HashSet::new();
+    let mut predicted: HashSet<(String, String)> = HashSet::new();
     for (entity, _) in &multi_member {
-        let ids: Vec<RecordId> = entity.members.iter().map(|m| m.record_id).collect();
-        for i in 0..ids.len() {
-            for j in (i + 1)..ids.len() {
-                predicted.insert(normalise_pair(ids[i], ids[j]));
+        let keys: Vec<&str> = entity
+            .members
+            .iter()
+            .map(|m| m.record_key.as_str())
+            .collect();
+        for i in 0..keys.len() {
+            for j in (i + 1)..keys.len() {
+                let (a, b) = if keys[i] <= keys[j] {
+                    (keys[i].to_string(), keys[j].to_string())
+                } else {
+                    (keys[j].to_string(), keys[i].to_string())
+                };
+                predicted.insert((a, b));
             }
         }
     }

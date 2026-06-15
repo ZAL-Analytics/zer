@@ -181,7 +181,7 @@ converting:
        .select([col("kvk_nr"), col("voornamen"), col("achternaam"), col("geboortedatum"), col("postcode")])
        .collect()?;
 
-   let records = df.into_records(&DatasetConfig::new("kvk", "kvk_nr"));
+   let records = df.into_records(&DatasetConfig::new("kvk", "kvk_nummer"));
 
 What to explore next
 ---------------------

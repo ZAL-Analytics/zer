@@ -102,7 +102,7 @@ link mode, the EM scorer settings, and the path of the model registry file
        })
        .build()?;
 
-   // Each source gets its own DatasetConfig — source label and natural-key column.
+   // Each source gets its own DatasetConfig, source label and natural-key column.
    // IDs are derived from FNV-1a(source:key), so sources never collide.
    let brp_records = brp_df.into_records(&DatasetConfig::new("brp", "bsn"));
    let kvk_records = kvk_df.into_records(&DatasetConfig::new("kvk", "kvk_nr"));

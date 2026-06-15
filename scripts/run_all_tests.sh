@@ -391,8 +391,8 @@ run_build_only() {
 
 # ── Data presence check ───────────────────────────────────────────────────────
 
-if ! $LIST_ONLY && [[ ! -f "$REPO_ROOT/data/tests/brp/brp_persons.csv" ]]; then
-    printf "${C_FAIL}error: test datasets not found (data/tests/ is missing or empty).${C_RESET}\n" >&2
+if ! $LIST_ONLY && [[ ! -f "$REPO_ROOT/data/v1.1/tests/brp/brp_persons.csv" ]]; then
+    printf "${C_FAIL}error: test datasets not found (data/v1.1/tests/ is missing or empty).${C_RESET}\n" >&2
     printf "Run first:  ./scripts/generate_data.sh --tests\n" >&2
     exit 1
 fi

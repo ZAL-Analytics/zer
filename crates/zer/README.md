@@ -68,6 +68,46 @@ Datasets for tests and examples must be generated before use. See the [dataset g
 | [`zer-adapters`](https://crates.io/crates/zer-adapters) | Polars / Arrow data-frame adapters |
 | [`zer-prof`](https://crates.io/crates/zer-prof) | NVTX profiling annotations |
 
+## Breaking changes
+
+### v1.1, Natural-key record identity
+
+v1.1 replaces the manual integer-ID pattern with stable hash-derived IDs anchored to each record's natural key. All four changes below are breaking.
+
+**1. `Record::from_key` replaces manual `Record::new` + ID offsets (`zer-core`)**
+
+```rust
+// v1.0, caller manages IDs and must offset multi-source batches
+let r = Record::new(42).with_source("brp");
+
+// v1.1, ID derived from FNV-1a("brp:893479421"), no offset needed
+let r = Record::from_key("brp", "893479421");
+```
+
+**2. `into_records(&DatasetConfig)` replaces `into_records(id_start)` (`zer-adapters`)**
+
+```rust
+// v1.0
+let records = df.into_records(1);
+
+// v1.1
+let records = df.into_records(&DatasetConfig::new("brp", "bsn"));
+```
+
+**3. `LinkedPair::record_key_a/b` replaces `record_id_a/b` (`zer-pipeline`)**
+
+```rust
+// v1.0
+println!("{} ↔ {}", pair.record_id_a, pair.record_id_b);
+
+// v1.1
+println!("{} ↔ {}", pair.record_key_a, pair.record_key_b);
+```
+
+**4. `EntityMember::record_key` added; `.zes` schema changed (`zer-cluster`)**
+
+Existing `.zes` entity store files created with v1.0 are **not compatible** with v1.1, delete and regenerate them.
+
 ## License
 
 Apache-2.0 · [GitHub](https://github.com/ZAL-Analytics/zer)

@@ -5,8 +5,8 @@
 /// Run with `--features=cuda` to exercise the GPU path.
 ///
 /// Phase-04 data:
-///   data/tests/brp/brp_persons.csv       , 2 000 person records
-///   data/tests/brp/ground_truth_pairs.csv, 200 true-match pairs
+///   data/v1.1/tests/brp/brp_persons.csv       , 2 000 person records
+///   data/v1.1/tests/brp/ground_truth_pairs.csv, 200 true-match pairs
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 

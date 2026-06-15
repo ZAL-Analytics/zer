@@ -1,5 +1,5 @@
 /// Integration tests for `ConnectedComponentsClusterer` using the synthetic
-/// CDR and FIU ground-truth datasets from `data/tests/`.
+/// CDR and FIU ground-truth datasets from `data/v1.1/tests/`.
 ///
 /// Test strategy:
 /// 1. Load ground-truth CSV and map identifiers to sequential `RecordId`s.

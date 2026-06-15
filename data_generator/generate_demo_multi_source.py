@@ -11,7 +11,7 @@ Overlap profile:
   - ~8 % within-source duplicates per source     → within_source ground truth
   - Remainder are source-unique records
 
-Outputs in data/demos/multi_source/:
+Outputs in data/v1.1/demos/multi_source/:
   source_brp.csv     , municipal register records
   source_kvk.csv     , company director extract records
   ground_truth.csv   , all match pairs (cross_source | within_source)
@@ -30,13 +30,10 @@ from _common import (
     postcode, street_address,
 )
 
-OUTPUT_DIR = Path(__file__).parent.parent / "data" / "demos" / "multi_source"
-
-# Globally-unique KvK ID space so BRP and KvK IDs never collide in the record store.
-_KVK_ID_OFFSET = 10_000_000
+OUTPUT_DIR = Path(__file__).parent.parent / "data" / "v1.1" / "demos" / "multi_source"
 
 CSV_FIELDS_BRP = [
-    "record_id", "voornamen", "tussenvoegsel", "achternaam",
+    "record_id", "bsn", "voornamen", "tussenvoegsel", "achternaam",
     "geboortedatum", "geslacht", "straatnaam", "huisnummer", "postcode", "woonplaats",
 ]
 
@@ -77,6 +74,7 @@ def record_brp(record_id: int, p: Person) -> dict:
     addr = _make_address()
     return {
         "record_id":      record_id,
+        "bsn":            bsn(),
         "voornamen":      p.voornamen,
         "tussenvoegsel":  p.tussenvoegsel or "",
         "achternaam":     p.achternaam,
@@ -90,6 +88,7 @@ def perturb_brp(record_id: int, src: dict, p: Person) -> dict:
     """Create a within-source BRP duplicate with light perturbation."""
     dup = dict(src)
     dup["record_id"] = record_id
+    dup["bsn"] = bsn()  # duplicate gets its own BSN
     style = random.choice(["name_variant", "address_move", "name_variant"])
     if style == "name_variant":
         patch = perturb_name(p)
@@ -178,7 +177,7 @@ def generate(n_brp: int, n_kvk: int, overlap: float, dup_frac: float, seed: int)
     ground_truth: list[dict] = []
 
     id_brp = 1
-    id_kvk = _KVK_ID_OFFSET + 1
+    id_kvk = 1
 
     # ── BRP: source-unique persons ────────────────────────────────────────────
     for p in brp_only_persons:
@@ -197,10 +196,10 @@ def generate(n_brp: int, n_kvk: int, overlap: float, dup_frac: float, seed: int)
         rec = record_kvk_from_brp(id_kvk, p, brp_rec)
         kvk_records.append(rec)
         ground_truth.append({
-            "record_id_a": brp_rec["record_id"],
-            "record_id_b": rec["record_id"],
-            "is_match":    True,
-            "match_type":  "cross_source",
+            "key_a":      brp_rec["bsn"],
+            "key_b":      rec["kvk_nummer"],
+            "is_match":   True,
+            "match_type": "cross_source",
         })
         id_kvk += 1
 
@@ -224,10 +223,10 @@ def generate(n_brp: int, n_kvk: int, overlap: float, dup_frac: float, seed: int)
         dup = perturb_brp(id_brp, src_rec, p)
         brp_records.append(dup)
         ground_truth.append({
-            "record_id_a": min(src_rec["record_id"], id_brp),
-            "record_id_b": max(src_rec["record_id"], id_brp),
-            "is_match":    True,
-            "match_type":  "within_source",
+            "key_a":      src_rec["bsn"],
+            "key_b":      dup["bsn"],
+            "is_match":   True,
+            "match_type": "within_source_brp",
         })
         id_brp += 1
 
@@ -249,10 +248,10 @@ def generate(n_brp: int, n_kvk: int, overlap: float, dup_frac: float, seed: int)
         dup = perturb_kvk(id_kvk, src_rec, p)
         kvk_records.append(dup)
         ground_truth.append({
-            "record_id_a": min(src_rec["record_id"], id_kvk),
-            "record_id_b": max(src_rec["record_id"], id_kvk),
-            "is_match":    True,
-            "match_type":  "within_source",
+            "key_a":      src_rec["kvk_nummer"],
+            "key_b":      dup["kvk_nummer"],
+            "is_match":   True,
+            "match_type": "within_source_kvk",
         })
         id_kvk += 1
 
@@ -273,12 +272,12 @@ def generate(n_brp: int, n_kvk: int, overlap: float, dup_frac: float, seed: int)
 
     gt_path = OUTPUT_DIR / "ground_truth.csv"
     with open(gt_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["record_id_a", "record_id_b", "is_match", "match_type"])
+        w = csv.DictWriter(f, fieldnames=["key_a", "key_b", "is_match", "match_type"])
         w.writeheader()
         w.writerows(ground_truth)
 
     cross_count  = sum(1 for g in ground_truth if g["match_type"] == "cross_source")
-    within_count = sum(1 for g in ground_truth if g["match_type"] == "within_source")
+    within_count = sum(1 for g in ground_truth if g["match_type"].startswith("within_source"))
     print(f"[generate_demo_multi_source] BRP : {len(brp_records)} records → {path_brp}")
     print(f"[generate_demo_multi_source] KvK : {len(kvk_records)} records → {path_kvk}")
     print(f"[generate_demo_multi_source] GT  : {len(ground_truth)} pairs "

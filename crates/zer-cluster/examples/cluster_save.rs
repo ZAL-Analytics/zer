@@ -2,7 +2,7 @@
 ///
 /// Generates 5 known entity groups from synthetic scored pairs, runs
 /// `ConnectedComponentsClusterer`, and saves the resulting entities to
-/// `data/examples/demo_entities.zes`.
+/// `data/v1.1/examples/demo_entities.zes`.
 ///
 /// Run order:
 ///   cargo run --example cluster_save -p zer-cluster
@@ -18,7 +18,7 @@ use zer_core::{
 
 const STORE_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/demo_entities.zes"
+    "/../../data/v1.1/examples/demo_entities.zes"
 );
 
 // Known entity groups, record IDs are meaningful across both examples.

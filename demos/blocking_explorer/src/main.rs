@@ -16,7 +16,7 @@ use zer_core::{
     schema::{FieldKind, SchemaBuilder},
 };
 
-const DATA_DIR: &str = "data/demos/persons";
+const DATA_DIR: &str = "data/v1.1/demos/persons";
 
 #[derive(Debug, serde::Deserialize)]
 #[allow(dead_code)]
@@ -43,7 +43,7 @@ fn load_records(path: &Path) -> Vec<Record> {
     rdr.deserialize::<PersonRow>()
         .map(|r| {
             let row = r.expect("parse record row");
-            Record::new(row.record_id)
+            Record::from_key("brp", &row.bsn)
                 .insert("voornamen", row.voornamen)
                 .insert("tussenvoegsel", row.tussenvoegsel)
                 .insert("achternaam", row.achternaam)

@@ -2,7 +2,7 @@
 ///
 /// Loads BRP Q1 records, computes a realistic `SchemaFingerprint` from the
 /// actual data distribution, simulates EM training, and writes the resulting
-/// `ModelArtifact` to `data/examples/demo_registry.zsm`.
+/// `ModelArtifact` to `data/v1.1/examples/demo_registry.zsm`.
 ///
 /// Run `registry_load` afterwards to verify the file survives a process
 /// restart and that warm-start lookup returns the correct startup mode.
@@ -30,7 +30,7 @@ fn brp_q1_csv() -> std::path::PathBuf {
 
 const REGISTRY_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../data/examples/demo_registry.zsm"
+    "/../../data/v1.1/examples/demo_registry.zsm"
 );
 
 fn brp_schema() -> zer_core::schema::Schema {

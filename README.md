@@ -27,7 +27,7 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-zer = { version = "1.0", features = ["pipeline"] }
+zer = { version = "1.1", features = ["pipeline"] }
 ```
 
 ```rust
@@ -61,12 +61,12 @@ async fn main() -> anyhow::Result<()> {
         .build()?;
 
     let records: Vec<Record> = vec![
-        Record::new(1)
+        Record::from_key("brp", "893479421")
             .insert("voornamen",     FieldValue::Text("Jan".into()))
             .insert("achternaam",    FieldValue::Text("de Vries".into()))
             .insert("geboortedatum", FieldValue::Text("1985-03-15".into()))
             .insert("postcode",      FieldValue::Text("1011AB".into())),
-        Record::new(2)
+        Record::from_key("brp", "891234567")
             .insert("voornamen",     FieldValue::Text("J.".into()))
             .insert("achternaam",    FieldValue::Text("De Vries".into()))
             .insert("geboortedatum", FieldValue::Text("1985-03-15".into()))

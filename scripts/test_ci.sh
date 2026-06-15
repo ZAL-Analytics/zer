@@ -98,12 +98,12 @@ step "clippy" cargo clippy --workspace "${EXCLUDE[@]}" --features cpu --release 
 # ── Test dataset setup ────────────────────────────────────────────────────────
 
 _ensure_datasets() {
-    local tests_data="$REPO_ROOT/data/tests"
-    local examples_data="$REPO_ROOT/data/examples"
+    local tests_data="$REPO_ROOT/data/v1.1/tests"
+    local examples_data="$REPO_ROOT/data/v1.1/examples"
 
     if [[ -d "$tests_data" ]] && [[ -n "$(ls -A "$tests_data" 2>/dev/null)" ]] &&
        [[ -d "$examples_data" ]] && [[ -n "$(ls -A "$examples_data" 2>/dev/null)" ]]; then
-        echo "already present in data/tests/ and data/examples/. skipping"
+        echo "already present in data/v1.1/tests/ and data/v1.1/examples/. skipping"
         return 0
     fi
 
