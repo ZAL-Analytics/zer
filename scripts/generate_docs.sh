@@ -5,8 +5,6 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SPHINX_SRC="$REPO_ROOT/docs/sphinx"
-OUT_DIR="$REPO_ROOT/docs/sphinx/out"
-API_DIR="$OUT_DIR/api"
 RUSTDOC_CSS="$SPHINX_SRC/_static/rustdoc-override.css"
 
 # --------------------------------------------------------------------------- #
@@ -15,12 +13,22 @@ RUSTDOC_CSS="$SPHINX_SRC/_static/rustdoc-override.css"
 
 WITH_BENCH_FIGURES=0
 OPEN_AFTER=0
-for arg in "$@"; do
-  case "$arg" in
-    --with-benchmarks-figures) WITH_BENCH_FIGURES=1 ;;
-    --open)                    OPEN_AFTER=1 ;;
+VERSION=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --with-benchmarks-figures) WITH_BENCH_FIGURES=1; shift ;;
+    --open)                    OPEN_AFTER=1; shift ;;
+    --version)                 VERSION="${2:?'--version requires an argument'}"; shift 2 ;;
+    *)                         shift ;;
   esac
 done
+
+if [[ -n "$VERSION" ]]; then
+  OUT_DIR="$REPO_ROOT/docs/sphinx/out/$VERSION"
+else
+  OUT_DIR="$REPO_ROOT/docs/sphinx/out"
+fi
+API_DIR="$OUT_DIR/api"
 
 # --------------------------------------------------------------------------- #
 # Benchmark figures helper
