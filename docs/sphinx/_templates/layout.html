@@ -122,10 +122,10 @@
 
     // Version picker: derive the docs root from the URL so the same built
     // asset works when served locally (/) and deployed under /docs/zer/.
-    var verMatch = window.location.pathname.match(/^(.*\/)(\d+\.\d+)\//);
+    var verMatch = window.location.pathname.match(/^(.*\/)(\d+\.\d+|latest)\//);
     if (verMatch) {
-      var docsRoot = verMatch[1];   // e.g. '/docs/zer/'  or  '/'
-      var current  = verMatch[2];   // e.g. '1.0'
+      var docsRoot = verMatch[1];   // e.g. '/zer/'  or  '/'
+      var current  = verMatch[2];   // e.g. '1.0', '1.1', or 'latest'
       fetch(docsRoot + 'versions.json')
         .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
         .then(function (versions) {
@@ -138,7 +138,7 @@
             var opt         = document.createElement('option');
             opt.value       = v.version;
             opt.textContent = v.version + (v.latest ? ' (latest)' : '');
-            if (v.version === current) { opt.selected = true; }
+            if (v.version === current || (current === 'latest' && v.latest)) { opt.selected = true; }
             sel.appendChild(opt);
           });
 

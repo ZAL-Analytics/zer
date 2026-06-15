@@ -111,6 +111,7 @@ Each script accepts parameters to control record count and random seed:
    * - ``generate_examples_tests.py``
      - ``data/v1.1/examples/``, ``data/v1.1/tests/``
      - Crate examples and integration tests
+
 Example: generate a larger deduplcation dataset with a fixed seed:
 
 .. code-block:: bash

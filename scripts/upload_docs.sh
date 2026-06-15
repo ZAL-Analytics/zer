@@ -57,8 +57,38 @@ if [[ -z "$DRY_RUN" ]]; then
     VERSIONS_JSON="$REPO_ROOT/docs/sphinx/out/versions.json"
 
     # In versioned mode versions.json is NOT inside the synced subdirectory,
-    # so upload it separately.
+    # so merge with the server copy (to keep all known versions) and upload.
     if [[ -n "$VERSION" && -f "$VERSIONS_JSON" ]]; then
+        echo "==> Merging versions.json with server copy..."
+        REMOTE_JSON=$(ssh "$REMOTE_HOST" "cat '${REMOTE_PATH}versions.json' 2>/dev/null || echo '[]'")
+        REMOTE_VERSIONS_TMP=$(mktemp)
+        echo "$REMOTE_JSON" > "$REMOTE_VERSIONS_TMP"
+        python3 << PYEOF
+import json
+
+with open('$VERSIONS_JSON') as f:
+    local_vs = json.load(f)
+with open('$REMOTE_VERSIONS_TMP') as f:
+    remote_vs = json.load(f)
+
+local_keys = {v['version'] for v in local_vs}
+merged = local_vs + [v for v in remote_vs if v.get('version') not in local_keys]
+
+def ver_key(v):
+    try:    return tuple(int(x) for x in v['version'].split('.'))
+    except: return (0,)
+
+latest = max(merged, key=ver_key)
+for v in merged:
+    v.pop('latest', None)
+latest['latest'] = True
+merged.sort(key=ver_key, reverse=True)
+
+with open('$VERSIONS_JSON', 'w') as f:
+    json.dump(merged, f, indent=2)
+    f.write('\n')
+PYEOF
+        rm -f "$REMOTE_VERSIONS_TMP"
         echo "==> Uploading versions.json..."
         scp "$VERSIONS_JSON" "$REMOTE_HOST:${REMOTE_PATH}versions.json"
     fi
@@ -78,8 +108,8 @@ PYEOF
         if [[ -n "$LATEST_VER" ]]; then
             echo "==> Updating 'latest' symlink -> $LATEST_VER ..."
             ssh "$REMOTE_HOST" "ln -snf '${LATEST_VER}' '${REMOTE_PATH}latest'"
-            echo "==> Ensuring root index.html redirect exists..."
-            ssh "$REMOTE_HOST" "test -f '${REMOTE_PATH}index.html' || echo '<meta http-equiv=\"refresh\" content=\"0;url=/docs/zer/latest/\">' > '${REMOTE_PATH}index.html'"
+            echo "==> Writing root index.html redirect..."
+            ssh "$REMOTE_HOST" "echo '<meta http-equiv=\"refresh\" content=\"0;url=latest/\">' > '${REMOTE_PATH}index.html'"
         fi
     fi
 

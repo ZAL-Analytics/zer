@@ -151,7 +151,7 @@ import json, os
 
 path = '$VERSIONS_JSON'
 ver  = '$VERSION'
-url  = '/docs/zer/$VERSION/'
+url  = '/zer/$VERSION/'
 
 if os.path.exists(path):
     with open(path) as f:
