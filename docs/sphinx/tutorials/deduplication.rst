@@ -138,27 +138,36 @@ Evaluate against ground truth
 .. code-block:: rust
 
    #[derive(serde::Deserialize)]
-   struct GroundTruthRow { record_id_a: u64, record_id_b: u64 }
+   struct GroundTruthRow { bsn_a: String, bsn_b: String }
 
-   let ground_truth: HashSet<(u64, u64)> =
+   let ground_truth: HashSet<(String, String)> =
        csv::Reader::from_path("data/demos/persons/ground_truth.csv")
            .unwrap()
            .deserialize::<GroundTruthRow>()
            .map(|r| {
                let row = r.unwrap();
-               (row.record_id_a.min(row.record_id_b),
-                row.record_id_a.max(row.record_id_b))
+               // canonical order so (a,b) == (b,a)
+               if row.bsn_a <= row.bsn_b {
+                   (row.bsn_a, row.bsn_b)
+               } else {
+                   (row.bsn_b, row.bsn_a)
+               }
            })
            .collect();
 
    // Collect all within-cluster pairs as predictions
    let view = pipeline.cluster_view();
-   let mut predicted: HashSet<(u64, u64)> = HashSet::new();
+   let mut predicted: HashSet<(String, String)> = HashSet::new();
    for (entity, _) in &view {
-       let ids: Vec<u64> = entity.members.iter().map(|m| m.record_id).collect();
-       for i in 0..ids.len() {
-           for j in (i + 1)..ids.len() {
-               predicted.insert((ids[i].min(ids[j]), ids[i].max(ids[j])));
+       let keys: Vec<&str> = entity.members.iter().map(|m| m.record_key.as_str()).collect();
+       for i in 0..keys.len() {
+           for j in (i + 1)..keys.len() {
+               let (a, b) = if keys[i] <= keys[j] {
+                   (keys[i].to_string(), keys[j].to_string())
+               } else {
+                   (keys[j].to_string(), keys[i].to_string())
+               };
+               predicted.insert((a, b));
            }
        }
    }

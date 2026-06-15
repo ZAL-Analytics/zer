@@ -127,18 +127,20 @@ comparing results across different pipeline configurations or library versions.
 Ground-truth format
 ---------------------
 
-Every dataset directory contains a ``ground_truth.csv`` with two columns:
+Every dataset directory contains a ``ground_truth.csv`` with two columns
+holding the natural keys of records that refer to the same underlying entity:
 
 .. code-block:: text
 
-   record_id_a,record_id_b
-   1,42
-   1,87
-   42,87
+   key_a,key_b
+   893479421,891234567
+   893479421,899876543
+   891234567,899876543
 
-Each row is a pair of ``RecordId`` values that refer to the same underlying
-entity. The benchmark runner loads this file and computes precision and recall
-against the clusters produced by the pipeline.
+Each row is a pair of natural key values (e.g. BSN, UUID, or primary-key
+column) as produced by the dataset generator. The benchmark runner loads this
+file and computes precision and recall against the ``record_key`` values in the
+clusters produced by the pipeline.
 
 Contributing new datasets
 --------------------------

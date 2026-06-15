@@ -61,15 +61,16 @@ See :doc:`/reference/field-kind` for the full ``FieldKind`` table.
 Step 2: Create Records
 -----------------------
 
-A ``Record`` is a bag of named ``FieldValue`` entries. IDs must be unique across all
-sources you plan to link.
+A ``Record`` is a bag of named ``FieldValue`` entries. Use ``Record::from_key``
+to anchor each record to its natural key (e.g. BSN, UUID). The internal ID is
+derived deterministically via ``FNV-1a(source:key)`` so it is stable across runs
+and never collides across sources.
 
 .. code-block:: rust
 
    use zer_core::record::{FieldValue, Record};
 
-   let record = Record::new(1)
-       .with_source("brp")
+   let record = Record::from_key("brp", "893479421")
        .insert("voornamen",     FieldValue::Text("Jan".into()))
        .insert("achternaam",    FieldValue::Text("de Vries".into()))
        .insert("geboortedatum", FieldValue::Text("1985-03-15".into()))
@@ -84,10 +85,10 @@ link mode, the EM scorer settings, and the path of the model registry file
 
 .. code-block:: rust
 
+   use zer_adapters::{DatasetConfig, PolarsIngest};
    use zer_cluster::ZalEntityStore;
    use zer_pipeline::{
        config::{LinkMode, PipelineConfig},
-       label_source,
        pipeline::Pipeline,
    };
 
@@ -101,10 +102,11 @@ link mode, the EM scorer settings, and the path of the model registry file
        })
        .build()?;
 
-   // Label each source so the pipeline can filter cross-source vs within-source pairs
-   let brp = label_source(brp_records, "brp");
-   let kvk = label_source(kvk_records, "kvk");
-   let all: Vec<Record> = [brp, kvk].concat();
+   // Each source gets its own DatasetConfig — source label and natural-key column.
+   // IDs are derived from FNV-1a(source:key), so sources never collide.
+   let brp_records = brp_df.into_records(&DatasetConfig::new("brp", "bsn"));
+   let kvk_records = kvk_df.into_records(&DatasetConfig::new("kvk", "kvk_nr"));
+   let all: Vec<Record> = [brp_records, kvk_records].concat();
 
    let report = pipeline.run_batch(all).await?;
 
@@ -132,8 +134,8 @@ over resolved entities and their member records.
    for pair in view.linked_pairs() {
        println!(
            "{} ({}) ↔ {} ({})  score={:.3}",
-           pair.record_id_a, pair.source_a.as_deref().unwrap_or("?"),
-           pair.record_id_b, pair.source_b.as_deref().unwrap_or("?"),
+           pair.record_key_a, pair.source_a.as_deref().unwrap_or("?"),
+           pair.record_key_b, pair.source_b.as_deref().unwrap_or("?"),
            pair.score,
        );
    }

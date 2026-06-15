@@ -72,11 +72,12 @@ Add the dependencies:
 
    consumer.subscribe(&["persons"])?;
 
-   let mut batch: Vec<Record>  = Vec::with_capacity(BATCH_SIZE);
-   let mut id_cursor: u64      = 1;
+   let mut batch: Vec<Record> = Vec::with_capacity(BATCH_SIZE);
 
    loop {
-       // Collect up to BATCH_SIZE messages (or flush after a timeout)
+       // Collect up to BATCH_SIZE messages (or flush after a timeout).
+       // Records arriving from Kafka carry their ID already derived from the
+       // natural key (FNV-1a(source:key)), so no cursor arithmetic is needed.
        while batch.len() < BATCH_SIZE {
            match tokio::time::timeout(
                std::time::Duration::from_secs(5),
@@ -86,7 +87,6 @@ Add the dependencies:
                    if let Some(payload) = msg.payload() {
                        let record: Record = serde_json::from_slice(payload)?;
                        batch.push(record);
-                       id_cursor += 1;
                    }
                }
                Ok(Err(e))   => return Err(e.into()),

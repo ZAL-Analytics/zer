@@ -63,24 +63,22 @@ Create the records
 
    use zer_core::record::Record;
 
-   let true_passage = Record::new(1)
-       .with_source("anpr")
+   // The license plate is the natural key for each passage observation.
+   let true_passage = Record::from_key("anpr", "CX-180-W")
        .insert("kenteken",  "CX-180-W")
        .insert("camera_id", "CAM-A12-001")
        .insert("tijdstip",  "2025-06-01T10:04:00")
        .insert("lat",       "52.345")
        .insert("lon",       "4.901");
 
-   let ocr_passage = Record::new(2)
-       .with_source("anpr")
+   let ocr_passage = Record::from_key("anpr", "CX-I80-W")
        .insert("kenteken",  "CX-I80-W")      // 1 → I confusion
        .insert("camera_id", "CAM-A12-001")
        .insert("tijdstip",  "2025-06-01T10:07:00")
        .insert("lat",       "52.346")
        .insert("lon",       "4.902");
 
-   let unrelated = Record::new(3)
-       .with_source("anpr")
+   let unrelated = Record::from_key("anpr", "25-XKL-9")
        .insert("kenteken",  "25-XKL-9")      // different vehicle
        .insert("camera_id", "CAM-A20-003")
        .insert("tijdstip",  "2025-06-01T14:00:00")

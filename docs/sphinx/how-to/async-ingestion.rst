@@ -136,9 +136,9 @@ classified into one of three bands:
 Sending multiple records
 -------------------------
 
-``Ingester::send_all`` accepts any iterator whose items implement
-``IntoRecord`` and assigns ``RecordId``s sequentially from ``id_start``.
-Results are returned in the same order as the input:
+``Ingester::send_all`` accepts any iterator of ``Record`` objects and processes
+them in order. Each record's ID should already be derived via ``Record::from_key``
+or ``into_records(&config)``. Results are returned in the same order as the input:
 
 .. code-block:: rust
 
