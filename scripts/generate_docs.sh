@@ -139,6 +139,48 @@ rsync -a --delete \
     "$API_DIR/"
 echo "    rustdoc output: $API_DIR"
 
+# --------------------------------------------------------------------------- #
+# 3. Update out/versions.json (versioned builds only)
+# --------------------------------------------------------------------------- #
+
+if [[ -n "$VERSION" ]]; then
+  echo "==> Updating docs/sphinx/out/versions.json ..."
+  VERSIONS_JSON="$REPO_ROOT/docs/sphinx/out/versions.json"
+  python3 << PYEOF
+import json, os
+
+path = '$VERSIONS_JSON'
+ver  = '$VERSION'
+url  = '/docs/zer/$VERSION/'
+
+if os.path.exists(path):
+    with open(path) as f:
+        versions = json.load(f)
+else:
+    versions = []
+
+versions = [v for v in versions if v.get('version') != ver]
+versions.append({'version': ver, 'url': url})
+
+def ver_key(v):
+    try:
+        return tuple(int(x) for x in v['version'].split('.'))
+    except ValueError:
+        return (0,)
+
+latest = max(versions, key=ver_key)
+for v in versions:
+    v.pop('latest', None)
+latest['latest'] = True
+versions.sort(key=ver_key, reverse=True)
+
+with open(path, 'w') as f:
+    json.dump(versions, f, indent=2)
+    f.write('\n')
+print('  updated:', path)
+PYEOF
+fi
+
 echo ""
 echo "Done. Serve locally with:"
-echo "  python -m http.server 8080 --directory \"$OUT_DIR\""
+echo "  python -m http.server 8081 --directory \"$REPO_ROOT/docs/sphinx/out/\""
