@@ -5,6 +5,28 @@ use ahash::AHashMap;
 pub type RecordId = u64;
 pub type FieldName = String;
 
+/// Derive a stable `RecordId` from a `(source, key)` pair using FNV-1a.
+///
+/// The hash is deterministic across runs. same source and key always produce
+/// the same u64.  Use this when loading records from external datasets so that
+/// each record's identity is anchored to its natural key rather than a
+/// caller-managed sequential integer.
+pub fn derive_record_id(source: &str, key: &str) -> RecordId {
+    const OFFSET: u64 = 14695981039346656037;
+    const PRIME: u64 = 1099511628211;
+    let mut h = OFFSET;
+    for &b in source
+        .as_bytes()
+        .iter()
+        .chain(b":".iter())
+        .chain(key.as_bytes())
+    {
+        h ^= b as u64;
+        h = h.wrapping_mul(PRIME);
+    }
+    h
+}
+
 /// Typed value stored in a record field.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum FieldValue {
@@ -77,19 +99,56 @@ impl<T: Into<FieldValue>> From<Option<T>> for FieldValue {
 }
 
 /// A single data record with a unique ID and a map of field values.
+///
+/// `id` is an internal u64 used for fast indexing and joins. treat it as
+/// opaque.  `key` is the user-visible natural key: the value of whichever
+/// column was nominated as the identity column when loading the dataset (e.g.
+/// BSN, UUID, or primary-key value).  The `.zes` output references records by
+/// `(source, key)`, not by `id`.
+///
+/// # Construction
+///
+/// * [`Record::from_key`]. preferred when loading real data via a
+///   `zer_adapters::DatasetConfig`.  Derives `id` from `hash(source:key)`.
+/// * [`Record::new`]. for synthetic/test records; sets `key = id.to_string()`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Record {
     pub id: RecordId,
+    pub key: String,
     pub fields: AHashMap<FieldName, FieldValue>,
     pub source: Option<String>,
 }
 
 impl Record {
+    /// Create a record with an explicit numeric ID.
+    ///
+    /// `key` is set to `id.to_string()`.  Use this only for synthetic or test
+    /// records.  For real data use [`Record::from_key`] so that the natural
+    /// key is preserved in the `.zes` output.
     pub fn new(id: RecordId) -> Self {
         Self {
             id,
+            key: id.to_string(),
             fields: AHashMap::new(),
             source: None,
+        }
+    }
+
+    /// Create a record whose identity comes from a natural key column.
+    ///
+    /// `id` is derived deterministically via `FNV-1a(source:key)` so that the
+    /// same `(source, key)` pair always produces the same internal ID.  The
+    /// `source` label is stored on the record, so calling [`Record::with_source`]
+    /// afterwards is not required (but is a no-op).
+    pub fn from_key(source: impl Into<String>, key: impl Into<String>) -> Self {
+        let source = source.into();
+        let key = key.into();
+        let id = derive_record_id(&source, &key);
+        Self {
+            id,
+            key,
+            fields: AHashMap::new(),
+            source: Some(source),
         }
     }
 
@@ -133,7 +192,7 @@ impl Record {
     /// use zer_core::record::{Record, FieldValue};
     /// let r = Record::new(1).insert("lat", 52.37f64);
     /// let lat: Option<f64> = r.field_as::<f64>("lat");
-    /// assert_eq!(lat, Some(52.37));
+    /// assert_eq!(lat, Some(52.37f64));
     /// ```
     pub fn field_as<T: FromFieldValue>(&self, name: &str) -> Option<T> {
         self.fields.get(name).and_then(T::from_field_value)
@@ -268,10 +327,32 @@ mod tests {
             .insert("age", 30i64);
 
         assert_eq!(r.id, 42);
+        assert_eq!(r.key, "42");
         assert_eq!(r.source.as_deref(), Some("kvk"));
         assert_eq!(r.text("name"), Some("Alice"));
         assert_eq!(r.get("age"), Some(&FieldValue::Int(30)));
         assert_eq!(r.get("missing"), None);
+    }
+
+    #[test]
+    fn from_key_derives_id_deterministically() {
+        use super::derive_record_id;
+        let r = Record::from_key("brp", "893479421");
+        assert_eq!(r.key, "893479421");
+        assert_eq!(r.source.as_deref(), Some("brp"));
+        assert_eq!(r.id, derive_record_id("brp", "893479421"));
+
+        // Same source+key always gives the same id.
+        let r2 = Record::from_key("brp", "893479421");
+        assert_eq!(r.id, r2.id);
+
+        // Different key gives different id.
+        let r3 = Record::from_key("brp", "999999999");
+        assert_ne!(r.id, r3.id);
+
+        // Different source gives different id even for the same key.
+        let r4 = Record::from_key("kvk", "893479421");
+        assert_ne!(r.id, r4.id);
     }
 
     #[test]

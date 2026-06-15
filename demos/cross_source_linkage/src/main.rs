@@ -61,9 +61,7 @@ fn load_source_a(path: &Path) -> Vec<(SourceARow, Record)> {
     rdr.deserialize::<SourceARow>()
         .map(|r| {
             let row = r.expect("parse source_a row");
-            let id = row.record_id;
-            let rec = Record::new(id)
-                .with_source("A")
+            let rec = Record::from_key("A", row.record_id.to_string())
                 .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
                 .insert("achternaam", row.achternaam.clone())
@@ -78,15 +76,12 @@ fn load_source_a(path: &Path) -> Vec<(SourceARow, Record)> {
         .collect()
 }
 
-fn load_source_b(path: &Path, id_offset: u64) -> Vec<(SourceBRow, Record)> {
+fn load_source_b(path: &Path) -> Vec<(SourceBRow, Record)> {
     let mut rdr = csv::Reader::from_path(path).expect("open source_b.csv");
     rdr.deserialize::<SourceBRow>()
         .map(|r| {
             let row = r.expect("parse source_b row");
-            // Offset IDs to avoid collisions with source A in the same record store.
-            let id = row.record_id + id_offset;
-            let rec = Record::new(id)
-                .with_source("B")
+            let rec = Record::from_key("B", row.record_id.to_string())
                 .insert("voornamen", row.voornamen.clone())
                 .insert("tussenvoegsel", row.tussenvoegsel.clone())
                 .insert("achternaam", row.achternaam.clone())
@@ -101,12 +96,13 @@ fn load_source_b(path: &Path, id_offset: u64) -> Vec<(SourceBRow, Record)> {
         .collect()
 }
 
-fn load_ground_truth(path: &Path) -> HashSet<(u64, u64)> {
+/// Ground truth as a set of (source_a_record_id, source_b_record_id) string pairs.
+fn load_ground_truth(path: &Path) -> HashSet<(String, String)> {
     let mut rdr = csv::Reader::from_path(path).expect("open ground_truth.csv");
     rdr.deserialize::<GroundTruthRow>()
         .map(|r| {
             let row = r.expect("parse ground truth row");
-            (row.record_id_a, row.record_id_b)
+            (row.record_id_a.to_string(), row.record_id_b.to_string())
         })
         .collect()
 }
@@ -132,9 +128,7 @@ async fn main() {
     }
 
     let a_rows = load_source_a(&path_a);
-    // Source B record IDs are offset so they do not collide with A.
-    let id_offset = a_rows.len() as u64 + 1;
-    let b_rows = load_source_b(&path_b, id_offset);
+    let b_rows = load_source_b(&path_b);
     let ground_truth = load_ground_truth(&path_gt);
 
     println!("source A: {} records", a_rows.len());
@@ -191,27 +185,18 @@ async fn main() {
     // ── Evaluate ──────────────────────────────────────────────────────────────
     section("Evaluation");
 
-    // Build a lookup: original source B id → offset id
-    let _b_id_map: std::collections::HashMap<u64, u64> = b_rows
-        .iter()
-        .map(|(row, rec)| (row.record_id, rec.id))
-        .collect();
-
     let view = pipeline.cluster_view();
     let linked = view.linked_pairs();
 
-    // Normalise predicted pairs to (original_a_id, original_b_id)
-    let predicted: HashSet<(u64, u64)> = linked
+    // Normalise predicted pairs to (source_a_key, source_b_key).
+    let predicted: HashSet<(String, String)> = linked
         .iter()
         .map(|lp| {
-            // Determine which of the two IDs is from source A and which from B.
-            // Source A IDs fit in [1..=|A|]; source B IDs are offset.
-            let (raw_a, raw_b) = if lp.source_a.as_deref() == Some("A") {
-                (lp.record_id_a, lp.record_id_b - id_offset)
+            if lp.source_a.as_deref() == Some("A") {
+                (lp.record_key_a.clone(), lp.record_key_b.clone())
             } else {
-                (lp.record_id_b, lp.record_id_a - id_offset)
-            };
-            (raw_a, raw_b)
+                (lp.record_key_b.clone(), lp.record_key_a.clone())
+            }
         })
         .collect();
 
@@ -245,20 +230,20 @@ async fn main() {
     // ── Pair table (sample) ───────────────────────────────────────────────────
     section("Linked pairs (sample)");
 
-    // Build quick name lookups for display.
-    let a_names: std::collections::HashMap<u64, String> = a_rows
-        .iter()
-        .map(|(row, _)| {
-            let name = format!("{} {}", row.voornamen, row.achternaam);
-            (row.record_id, name)
-        })
-        .collect();
-
-    let b_names: std::collections::HashMap<u64, String> = b_rows
+    // Build quick name lookups: record_key → name.
+    let a_names: std::collections::HashMap<String, String> = a_rows
         .iter()
         .map(|(row, rec)| {
             let name = format!("{} {}", row.voornamen, row.achternaam);
-            (rec.id, name)
+            (rec.key.clone(), name)
+        })
+        .collect();
+
+    let b_names: std::collections::HashMap<String, String> = b_rows
+        .iter()
+        .map(|(row, rec)| {
+            let name = format!("{} {}", row.voornamen, row.achternaam);
+            (rec.key.clone(), name)
         })
         .collect();
 
@@ -266,25 +251,25 @@ async fn main() {
         .iter()
         .take(30)
         .map(|lp| {
-            let (aid, bid) = if lp.source_a.as_deref() == Some("A") {
-                (lp.record_id_a, lp.record_id_b)
+            let (akey, bkey) = if lp.source_a.as_deref() == Some("A") {
+                (lp.record_key_a.as_str(), lp.record_key_b.as_str())
             } else {
-                (lp.record_id_b, lp.record_id_a)
+                (lp.record_key_b.as_str(), lp.record_key_a.as_str())
             };
             PairRow {
                 score: lp.score,
                 a_fields: vec![
-                    ("id".into(), aid.to_string()),
+                    ("key".into(), akey.to_string()),
                     (
                         "name".into(),
-                        a_names.get(&aid).cloned().unwrap_or_default(),
+                        a_names.get(akey).cloned().unwrap_or_default(),
                     ),
                 ],
                 b_fields: vec![
-                    ("id".into(), (bid - id_offset).to_string()),
+                    ("key".into(), bkey.to_string()),
                     (
                         "name".into(),
-                        b_names.get(&bid).cloned().unwrap_or_default(),
+                        b_names.get(bkey).cloned().unwrap_or_default(),
                     ),
                 ],
             }

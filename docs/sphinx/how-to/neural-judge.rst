@@ -24,12 +24,12 @@ The neural judge is gated behind a feature flag in ``Cargo.toml``:
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline", "judge_cpu"] }
+   zer = { version = "1.1", features = ["pipeline", "judge_cpu"] }
 
    # GPU variants (mutually exclusive; pick one):
-   # zer = { version = "1.0", features = ["pipeline", "judge_cuda"] }
-   # zer = { version = "1.0", features = ["pipeline", "judge_tensorrt"] }
-   # zer = { version = "1.0", features = ["pipeline", "judge_rocm"] }
+   # zer = { version = "1.1", features = ["pipeline", "judge_cuda"] }
+   # zer = { version = "1.1", features = ["pipeline", "judge_tensorrt"] }
+   # zer = { version = "1.1", features = ["pipeline", "judge_rocm"] }
 
 These flags are **separate** from ``zer-compute``'s ``cuda``/``avx2`` flags.
 ``judge_*`` selects the ONNX Runtime execution provider; ``cuda`` selects the

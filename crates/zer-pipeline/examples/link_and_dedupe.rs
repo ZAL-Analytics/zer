@@ -95,11 +95,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nCross-source linked pairs ({}):", pairs.len());
     for lp in &pairs {
         println!(
-            "  entity={} | record_a={} ({}) <-> record_b={} ({}) | score={:.3}",
+            "  entity={} | key_a={} ({}) <-> key_b={} ({}) | score={:.3}",
             lp.entity_id,
-            lp.record_id_a,
+            lp.record_key_a,
             lp.source_a.as_deref().unwrap_or("?"),
-            lp.record_id_b,
+            lp.record_key_b,
             lp.source_b.as_deref().unwrap_or("?"),
             lp.score,
         );

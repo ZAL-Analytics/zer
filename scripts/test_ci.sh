@@ -10,9 +10,9 @@
 #   cargo install cargo-deny
 #
 # Excluded crates (match CI):
-#   zer-judge  — requires ORT binary download + ONNX model files not in the repo
-#   zer-bench  — benchmarking CLI, not unit-testable
-#   demos/*    — require runtime data files
+#   zer-judge . requires ORT binary download + ONNX model files not in the repo
+#   zer-bench . benchmarking CLI, not unit-testable
+#   demos/*   . require runtime data files
 
 set -euo pipefail
 
@@ -103,12 +103,12 @@ _ensure_datasets() {
 
     if [[ -d "$tests_data" ]] && [[ -n "$(ls -A "$tests_data" 2>/dev/null)" ]] &&
        [[ -d "$examples_data" ]] && [[ -n "$(ls -A "$examples_data" 2>/dev/null)" ]]; then
-        echo "already present in data/tests/ and data/examples/ — skipping"
+        echo "already present in data/tests/ and data/examples/. skipping"
         return 0
     fi
 
     if ! command -v hf &>/dev/null; then
-        echo "error: hf not found — install with: pip install huggingface_hub" >&2
+        echo "error: hf not found. install with: pip install huggingface_hub" >&2
         return 1
     fi
 
@@ -131,13 +131,13 @@ if command -v cargo-audit &>/dev/null; then
         --ignore RUSTSEC-2025-0141 \
         --ignore RUSTSEC-2024-0436
 else
-    step_skip "audit" "cargo-audit not installed — run: cargo install cargo-audit"
+    step_skip "audit" "cargo-audit not installed. run: cargo install cargo-audit"
 fi
 
 if command -v cargo-deny &>/dev/null; then
     step "deny" cargo deny check
 else
-    step_skip "deny" "cargo-deny not installed — run: cargo install cargo-deny"
+    step_skip "deny" "cargo-deny not installed. run: cargo install cargo-deny"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────

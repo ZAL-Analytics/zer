@@ -4,7 +4,13 @@ How to Ingest from Polars and Arrow
 zer works with ``Vec<Record>`` at its ingestion boundary. The
 ``zer-adapters`` crate provides ``PolarsIngest``, an extension trait on
 Polars ``DataFrame`` that converts each row into a ``Record`` in one call.
-If you are working directly with Apache Arrow, see the Arrow section below.
+If you are working directly with Apache Arrow ``RecordBatch`` objects, see
+the Arrow section below.
+
+Both adapters require a ``DatasetConfig`` that names the source label and
+the column to use as the record's natural key. The adapter derives each
+record's internal ``RecordId`` via ``FNV-1a(source:key)``, so IDs are
+stable across runs and you never need to manage integer offsets manually.
 
 Add the dependency
 -------------------
@@ -12,30 +18,34 @@ Add the dependency
 .. code-block:: toml
 
    [dependencies]
-   zer          = { version = "1.0", features = ["pipeline"] }
-   zer-adapters = { version = "1.0", features = ["polars"] }
+   zer          = { version = "1.1", features = ["pipeline"] }
+   zer-adapters = { version = "1.1", features = ["polars"] }
    polars       = { version = "0.46", features = ["lazy", "csv"] }
 
 Ingest from a DataFrame
 ------------------------
 
-``DataFrame::into_records(id_start)`` converts every row into a
-``Record``. The ``id_start`` argument sets the ``RecordId`` of the first
-row; each subsequent row increments by one.
+Create a ``DatasetConfig`` with the source label and the name of the
+column that holds the record's natural key (e.g. a BSN, UUID, or
+primary-key column), then pass it to ``into_records``:
 
 .. code-block:: rust
 
    use polars::prelude::*;
-   use zer_adapters::PolarsIngest;
+   use zer_adapters::{DatasetConfig, PolarsIngest};
 
-   // Load a CSV via Polars
    let df = CsvReadOptions::default()
        .with_has_header(true)
        .try_into_reader_with_file_path(Some("data/brp.csv".into()))?
        .finish()?;
 
-   // Convert: row 0 → Record(1), row 1 → Record(2), …
-   let records = df.into_records(1);
+   let config  = DatasetConfig::new("brp", "bsn");
+   let records = df.into_records(&config);
+
+Each record's ``id`` is derived from ``FNV-1a("brp:bsn_value")`` and its
+``key`` field holds the raw value from the ``bsn`` column. Both are
+stored in the ``.zes`` entity output, so cluster results map directly to
+your own identifiers.
 
 Column-to-field mapping
 ------------------------
@@ -88,61 +98,61 @@ column's name. The Polars type is converted to ``FieldValue`` as follows:
 Multi-source ingestion
 -----------------------
 
-When linking two DataFrames, offset the second frame's IDs to avoid
-namespace collisions and apply source labels:
+When linking two DataFrames, give each source its own ``DatasetConfig``.
+Because IDs are derived from ``FNV-1a(source:key)``, records from
+different sources with the same natural key value will still get distinct
+IDs. no manual offset management is needed:
 
 .. code-block:: rust
 
-   use zer_adapters::PolarsIngest;
-   use zer_pipeline::label_source;
+   use zer_adapters::{DatasetConfig, PolarsIngest};
 
    let df_a = load_csv("source_a.csv")?;
    let df_b = load_csv("source_b.csv")?;
 
-   let n_a = df_a.height() as u64;
+   let records_a = df_a.into_records(&DatasetConfig::new("A", "person_id"));
+   let records_b = df_b.into_records(&DatasetConfig::new("B", "person_id"));
 
-   // Source A IDs: 1 … n_a
-   let records_a = df_a.into_records(1);
-   // Source B IDs: n_a+1 … n_a+n_b (no overlap)
-   let records_b = df_b.into_records(n_a + 1);
-
-   let all = [
-       label_source(records_a, "A"),
-       label_source(records_b, "B"),
-   ].concat();
+   let all = [records_a, records_b].concat();
 
 Ingesting from Apache Arrow
 -----------------------------
 
-If you have an Arrow ``RecordBatch`` or ``Schema``, convert it to a Polars
-``DataFrame`` first, then use ``into_records``:
+``ArrowIngest`` works directly with an Arrow ``RecordBatch`` and has the
+same ``DatasetConfig``-based API:
 
 .. code-block:: rust
 
-   use polars::prelude::*;
-   use zer_adapters::PolarsIngest;
+   use zer_adapters::{ArrowIngest, DatasetConfig};
+   use arrow_array::{RecordBatch, Int64Array, StringArray};
+   use arrow_schema::{DataType, Field, Schema};
+   use std::sync::Arc;
 
-   // From an Arrow RecordBatch (e.g. from Parquet, IPC, or Flight)
-   let df = DataFrame::try_from(arrow_record_batch)?;
-   let records = df.into_records(1);
+   let schema = Arc::new(Schema::new(vec![
+       Field::new("bsn",  DataType::Utf8,  false),
+       Field::new("name", DataType::Utf8,  false),
+       Field::new("age",  DataType::Int64, false),
+   ]));
+
+   // ... build or receive a RecordBatch ...
+
+   let config  = DatasetConfig::new("brp", "bsn");
+   let records = batch.into_records(&config);
 
 For streaming Arrow (e.g. large Parquet files), read in chunks and
-accumulate a ``Vec<Record>`` with growing ID offsets:
+accumulate a ``Vec<Record>``. no cursor arithmetic needed:
 
 .. code-block:: rust
 
-   use polars::prelude::*;
-   use zer_adapters::PolarsIngest;
+   use zer_adapters::{DatasetConfig, PolarsIngest};
 
+   let config = DatasetConfig::new("brp", "bsn");
    let mut all_records: Vec<Record> = Vec::new();
-   let mut id_cursor: u64 = 1;
 
    for path in parquet_files {
        let df = LazyFrame::scan_parquet(path, Default::default())?
            .collect()?;
-       let n = df.height() as u64;
-       all_records.extend(df.into_records(id_cursor));
-       id_cursor += n;
+       all_records.extend(df.into_records(&config));
    }
 
 Selecting and renaming columns
@@ -155,7 +165,7 @@ converting:
 .. code-block:: rust
 
    use polars::prelude::*;
-   use zer_adapters::PolarsIngest;
+   use zer_adapters::{DatasetConfig, PolarsIngest};
 
    let df = CsvReadOptions::default()
        .try_into_reader_with_file_path(Some("kvk_export.csv".into()))?
@@ -168,10 +178,10 @@ converting:
            true,
        )
        // Drop columns zer doesn't need
-       .select([col("voornamen"), col("achternaam"), col("geboortedatum"), col("postcode")])
+       .select([col("kvk_nr"), col("voornamen"), col("achternaam"), col("geboortedatum"), col("postcode")])
        .collect()?;
 
-   let records = df.into_records(1);
+   let records = df.into_records(&DatasetConfig::new("kvk", "kvk_nr"));
 
 What to explore next
 ---------------------

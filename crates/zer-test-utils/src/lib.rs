@@ -68,6 +68,10 @@ pub fn brp_schema() -> Schema {
 // ── Record builders ───────────────────────────────────────────────────────────
 
 /// Build a person record with the 3 fields from [`person_schema`].
+///
+/// Uses [`Record::new`] so the `key` defaults to `id.to_string()`.  For
+/// records loaded from real data use [`Record::from_key`] together with a
+/// [`zer_adapters::DatasetConfig`] instead.
 pub fn make_person_record(id: u64, first: &str, last: &str, dob: &str) -> Record {
     Record::new(id)
         .insert("voornamen", text(first))

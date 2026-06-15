@@ -155,15 +155,17 @@ async fn linked_pairs_record_ids_match_input() {
         !pairs.is_empty(),
         "cross-source pairs must be produced for linked_pairs_record_ids_match_input"
     );
+    let brp_keys: Vec<String> = (10..=14u64).map(|i| i.to_string()).collect();
+    let kvk_keys: Vec<String> = (20..=24u64).map(|i| i.to_string()).collect();
     for lp in &pairs {
-        let ids = [lp.record_id_a, lp.record_id_b];
+        let keys = [lp.record_key_a.as_str(), lp.record_key_b.as_str()];
         assert!(
-            ids.iter().any(|&id| (10..=14).contains(&id)),
-            "one record in each pair must come from brp (ids 10-14)"
+            keys.iter().any(|k| brp_keys.iter().any(|b| b == k)),
+            "one record in each pair must come from brp (keys 10-14)"
         );
         assert!(
-            ids.iter().any(|&id| (20..=24).contains(&id)),
-            "one record in each pair must come from kvk (ids 20-24)"
+            keys.iter().any(|k| kvk_keys.iter().any(|b| b == k)),
+            "one record in each pair must come from kvk (keys 20-24)"
         );
     }
 }

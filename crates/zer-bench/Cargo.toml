@@ -1,6 +1,6 @@
 [package]
 name        = "zer-bench"
-version     = "1.0.8"
+version     = "1.1.0"
 edition     = "2021"
 description = "Benchmark harness for zer: throughput, accuracy, and competitor-library comparison"
 license     = "Apache-2.0"
@@ -33,11 +33,11 @@ perf-metrics   = []
 collect-pairs  = ["zer-pipeline/collect-pairs"]
 
 [dependencies]
-zer          = { path = "../zer",          version = "1.0", features = ["pipeline"] }
-zer-core     = { path = "../zer-core",     version = "1.0" }
-zer-pipeline = { path = "../zer-pipeline", version = "1.0" }
-zer-adapters = { path = "../zer-adapters", version = "1.0" }
-zer-judge    = { path = "../zer-judge",    version = "1.0" }
+zer          = { path = "../zer",          version = "1.1", features = ["pipeline"] }
+zer-core     = { path = "../zer-core",     version = "1.1" }
+zer-pipeline = { path = "../zer-pipeline", version = "1.1" }
+zer-adapters = { path = "../zer-adapters", version = "1.1" }
+zer-judge    = { path = "../zer-judge",    version = "1.1" }
 
 anyhow              = "1"
 clap                = { version = "4", features = ["derive", "env"] }

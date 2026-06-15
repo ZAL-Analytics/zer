@@ -28,3 +28,38 @@ pub use polars::PolarsIngest;
 
 #[cfg(feature = "arrow")]
 pub use arrow::ArrowIngest;
+
+/// Configuration for loading a dataset from an external source.
+///
+/// Specifies which column holds the record's natural key (e.g. BSN, UUID,
+/// or any primary-key column) and what source label to attach.
+///
+/// The adapter uses `key_column` to extract the natural key from each row,
+/// then derives a stable `RecordId` via `FNV-1a(source:key)`.  This removes
+/// the need for users to maintain sequential integer offsets across datasets.
+///
+/// # Example
+///
+/// ```rust
+/// use zer_adapters::DatasetConfig;
+///
+/// let cfg = DatasetConfig::new("brp", "bsn");
+/// assert_eq!(cfg.source, "brp");
+/// assert_eq!(cfg.key_column, "bsn");
+/// ```
+#[derive(Debug, Clone)]
+pub struct DatasetConfig {
+    /// Source label attached to every record (e.g. `"brp"`, `"kvk"`).
+    pub source: String,
+    /// Name of the column whose value is the record's natural key.
+    pub key_column: String,
+}
+
+impl DatasetConfig {
+    pub fn new(source: impl Into<String>, key_column: impl Into<String>) -> Self {
+        Self {
+            source: source.into(),
+            key_column: key_column.into(),
+        }
+    }
+}

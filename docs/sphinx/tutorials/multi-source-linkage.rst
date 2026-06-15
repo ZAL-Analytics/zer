@@ -33,40 +33,21 @@ bundle (all tutorials share the same download) as described in
 Load both sources
 ------------------
 
-KvK record IDs are offset by ``10_000_000`` to avoid namespace collisions with
-BRP IDs.
+Each source gets its own ``DatasetConfig`` naming its source label and natural-key
+column. IDs are derived from ``FNV-1a(source:key)``, so BRP and KvK records
+never collide even if the raw key values overlap. no manual offset needed:
 
 .. code-block:: rust
 
-   use zer_pipeline::label_source;
+   use zer_adapters::{DatasetConfig, PolarsIngest};
 
-   const KVK_ID_OFFSET: u64 = 10_000_000;
+   let brp_records = load_csv("source_brp.csv")?
+       .into_records(&DatasetConfig::new("brp", "bsn"));
 
-   let brp_records: Vec<Record> = brp_rows.into_iter().map(|row| {
-       Record::new(row.record_id)
-           .insert("voornamen",     row.voornamen)
-           .insert("tussenvoegsel", row.tussenvoegsel)
-           .insert("achternaam",    row.achternaam)
-           .insert("geboortedatum", row.geboortedatum)
-           .insert("geslacht",      row.geslacht)
-           .insert("postcode",      row.postcode)
-   }).collect();
+   let kvk_records = load_csv("source_kvk.csv")?
+       .into_records(&DatasetConfig::new("kvk", "kvk_nr"));
 
-   let kvk_records: Vec<Record> = kvk_rows.into_iter().map(|row| {
-       Record::new(row.record_id + KVK_ID_OFFSET)
-           .insert("voornamen",     row.voornamen)
-           .insert("tussenvoegsel", row.tussenvoegsel)
-           .insert("achternaam",    row.achternaam)
-           .insert("geboortedatum", row.geboortedatum)
-           .insert("postcode",      row.postcode)
-   }).collect();
-
-   // Apply source labels, then merge into one batch
-   let all_records: Vec<Record> = {
-       let brp = label_source(brp_records, "brp");
-       let kvk = label_source(kvk_records, "kvk");
-       [brp, kvk].concat()
-   };
+   let all_records: Vec<Record> = [brp_records, kvk_records].concat();
 
 Mode 1: LinkOnly (cross-source only)
 --------------------------------------
@@ -138,14 +119,14 @@ Evaluate cross-source linkage
    let view       = pipeline.cluster_view();
    let linked     = view.linked_pairs();
 
-   let predicted: HashSet<(u64, u64)> = linked.iter()
+   let predicted: HashSet<(String, String)> = linked.iter()
        .map(|p| {
-           let (brp_id, kvk_id) = if p.source_a.as_deref() == Some("brp") {
-               (p.record_id_a, p.record_id_b)
+           let (brp_key, kvk_key) = if p.source_a.as_deref() == Some("brp") {
+               (p.record_key_a.clone(), p.record_key_b.clone())
            } else {
-               (p.record_id_b, p.record_id_a)
+               (p.record_key_b.clone(), p.record_key_a.clone())
            };
-           (brp_id.min(kvk_id), brp_id.max(kvk_id))
+           (brp_key, kvk_key)
        })
        .collect();
 
@@ -165,22 +146,22 @@ clusters for members from the same source:
 .. code-block:: rust
 
    let view_lad = pipeline_lad.cluster_view();
-   let mut predicted_within: HashSet<(u64, u64)> = HashSet::new();
+   let mut predicted_within: HashSet<(String, String)> = HashSet::new();
 
    for (_, members) in &view_lad {
-       let brp_ids: Vec<u64> = members.iter()
-           .filter(|r| r.source.as_deref() == Some("brp"))
-           .map(|r| r.id)
+       let brp_keys: Vec<&str> = members.iter()
+           .filter(|m| m.source.as_deref() == Some("brp"))
+           .map(|m| m.record_key.as_str())
            .collect();
        // Enumerate all within-source pairs in this cluster
-       for i in 0..brp_ids.len() {
-           for j in (i + 1)..brp_ids.len() {
-               let a = brp_ids[i].min(brp_ids[j]);
-               let b = brp_ids[i].max(brp_ids[j]);
+       for i in 0..brp_keys.len() {
+           for j in (i + 1)..brp_keys.len() {
+               let a = brp_keys[i].min(brp_keys[j]).to_string();
+               let b = brp_keys[i].max(brp_keys[j]).to_string();
                predicted_within.insert((a, b));
            }
        }
-       // Do the same for kvk_ids...
+       // Do the same for kvk_keys...
    }
 
 Mode comparison

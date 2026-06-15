@@ -339,14 +339,20 @@ impl Pipeline {
         emit!(self, PipelineEvent::PersistingEntities);
         let mut entities = self.clusterer.cluster(&scored, &params);
 
-        // Enrich entity members with source labels, the clusterer doesn't carry
-        // per-record metadata, so we fill it in here from the input records.
+        // Enrich entity members with source labels and natural keys, the
+        // clusterer doesn't carry per-record metadata, so we fill it in here
+        // from the input records.
         let id_to_source: HashMap<RecordId, Option<String>> =
             records.iter().map(|r| (r.id, r.source.clone())).collect();
+        let id_to_key: HashMap<RecordId, String> =
+            records.iter().map(|r| (r.id, r.key.clone())).collect();
         for entity in &mut entities {
             for member in &mut entity.members {
                 if let Some(src) = id_to_source.get(&member.record_id) {
                     member.source = src.clone();
+                }
+                if let Some(key) = id_to_key.get(&member.record_id) {
+                    member.record_key = key.clone();
                 }
             }
         }

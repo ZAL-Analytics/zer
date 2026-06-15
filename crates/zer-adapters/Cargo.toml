@@ -1,6 +1,6 @@
 [package]
 name        = "zer-adapters"
-version     = "1.0.8"
+version     = "1.1.0"
 edition     = "2021"
 description = "Type adapters for zer, bridging Polars, Arrow, and other data-frame libraries to zer-core Records without a string round-trip."
 license     = "Apache-2.0"
@@ -15,7 +15,7 @@ polars  = ["dep:polars-core"]
 arrow   = ["dep:arrow-array", "dep:arrow-schema"]
 
 [dependencies]
-zer-core   = { path = "../zer-core", version = "1.0" }
+zer-core   = { path = "../zer-core", version = "1.1" }
 serde      = { workspace = true }
 serde_json = "1"
 csv        = "1"

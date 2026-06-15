@@ -42,47 +42,21 @@ Label and load the sources
 Source labels tell zer which records belong to which dataset.
 ``LinkOnly`` mode then skips any pair where both records share the same label.
 
+Each source gets its own ``DatasetConfig`` naming the source label and the
+natural-key column. IDs are derived from ``FNV-1a(source:key)``, so records
+from different sources never collide even if the raw key values overlap:
+
 .. code-block:: rust
 
-   use zer_pipeline::label_source;
+   use zer_adapters::{DatasetConfig, PolarsIngest};
 
-   // Source B IDs are offset to avoid collisions with Source A in the
-   // same record store.
-   let id_offset: u64 = source_a_rows.len() as u64 + 1;
+   let records_a = load_csv("source_a.csv")?
+       .into_records(&DatasetConfig::new("A", "person_id"));
 
-   let records_a: Vec<Record> = source_a_rows
-       .into_iter()
-       .map(|row| {
-           Record::new(row.record_id)
-               .with_source("A")
-               .insert("voornamen",     row.voornamen)
-               .insert("achternaam",    row.achternaam)
-               .insert("geboortedatum", row.geboortedatum)
-               .insert("postcode",      row.postcode)
-               // ... other fields
-       })
-       .collect();
+   let records_b = load_csv("source_b.csv")?
+       .into_records(&DatasetConfig::new("B", "person_id"));
 
-   let records_b: Vec<Record> = source_b_rows
-       .into_iter()
-       .map(|row| {
-           Record::new(row.record_id + id_offset)
-               .with_source("B")
-               .insert("voornamen",     row.voornamen)
-               .insert("achternaam",    row.achternaam)
-               .insert("geboortedatum", row.geboortedatum)
-               .insert("postcode",      row.postcode)
-       })
-       .collect();
-
-   // Alternatively, use label_source() to apply the same label to a whole Vec
    let all: Vec<Record> = [records_a, records_b].concat();
-
-.. note::
-
-   ID namespaces must not overlap. If Source A uses IDs 1–500, start Source B
-   IDs at 501 or higher. An ID collision will silently merge two unrelated
-   records into the same slot in the entity store.
 
 Build the pipeline with ``LinkOnly``
 --------------------------------------
@@ -118,6 +92,9 @@ the same source are never compared.
 Read the linked pairs
 ----------------------
 
+``LinkedPair`` now exposes ``record_key_a`` and ``record_key_b``. the natural
+key values from the source datasets. instead of raw numeric IDs:
+
 .. code-block:: rust
 
    let view   = pipeline.cluster_view();
@@ -125,15 +102,14 @@ Read the linked pairs
 
    println!("Linked pairs ({}):", linked.len());
    for pair in linked.iter().take(20) {
-       // Identify which side is A and which is B
-       let (a_id, b_id) = if pair.source_a.as_deref() == Some("A") {
-           (pair.record_id_a, pair.record_id_b - id_offset)
+       let (key_a, key_b) = if pair.source_a.as_deref() == Some("A") {
+           (&pair.record_key_a, &pair.record_key_b)
        } else {
-           (pair.record_id_b, pair.record_id_a - id_offset)
+           (&pair.record_key_b, &pair.record_key_a)
        };
        println!(
-           "  A:{:<6} ↔ B:{:<6}  score={:.3}",
-           a_id, b_id, pair.score
+           "  A:{:<12} ↔ B:{:<12}  score={:.3}",
+           key_a, key_b, pair.score
        );
    }
 
@@ -142,13 +118,13 @@ Evaluate
 
 .. code-block:: rust
 
-   // Build set of predicted pairs in (original_a_id, original_b_id) form
-   let predicted: HashSet<(u64, u64)> = linked.iter()
+   // Build set of predicted pairs as (key_a, key_b) string tuples
+   let predicted: HashSet<(String, String)> = linked.iter()
        .map(|p| {
            if p.source_a.as_deref() == Some("A") {
-               (p.record_id_a, p.record_id_b - id_offset)
+               (p.record_key_a.clone(), p.record_key_b.clone())
            } else {
-               (p.record_id_b, p.record_id_a - id_offset)
+               (p.record_key_b.clone(), p.record_key_a.clone())
            }
        })
        .collect();

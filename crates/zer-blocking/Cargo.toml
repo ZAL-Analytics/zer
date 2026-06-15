@@ -1,6 +1,6 @@
 [package]
 name        = "zer-blocking"
-version     = "1.0.8"
+version     = "1.1.0"
 edition     = "2021"
 description = "Blocking strategies and inverted index for candidate pair generation in zer"
 license     = "Apache-2.0"
@@ -10,7 +10,7 @@ categories  = ["algorithms", "text-processing"]
 readme      = "README.md"
 
 [dependencies]
-zer-core           = { path = "../zer-core", version = "1.0" }
+zer-core           = { path = "../zer-core", version = "1.1" }
 rphonetic            = "3"
 unicode-normalization = "0.1"
 any_ascii            = "0.3"

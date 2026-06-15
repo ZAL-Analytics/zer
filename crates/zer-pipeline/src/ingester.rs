@@ -150,6 +150,7 @@ async fn run_ingester(pipeline: Arc<Pipeline>, mut rx: mpsc::Receiver<IngesterMs
 
 fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestResult, ZerError> {
     let record_id = record.id;
+    let record_key = record.key.clone();
     state.rate_adapter.tick();
 
     // Candidates BEFORE indexing so the record isn't its own candidate.
@@ -166,7 +167,7 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
         .index_record(&record, &state.pipeline.schema, &mut state.index);
 
     if cand_ids.is_empty() {
-        return singleton_result(&*state.pipeline.store, record_id);
+        return singleton_result(&*state.pipeline.store, record_id, &record_key);
     }
 
     // Build a mini-pool: new record at position 0, candidates at 1..N.
@@ -178,7 +179,7 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
     let pair_indices: Vec<(usize, usize)> = (1..pool.len()).map(|i| (0, i)).collect();
 
     if pair_indices.is_empty() {
-        return singleton_result(&*state.pipeline.store, record_id);
+        return singleton_result(&*state.pipeline.store, record_id, &record_key);
     }
 
     let batch = state.pipeline.comparator.compare_batch_from_pool(
@@ -214,15 +215,19 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
                 };
                 merge_into_entity(
                     &*state.pipeline.store,
+                    &*state.record_store,
                     record_id,
+                    &record_key,
                     partner_id,
                     sp.match_probability,
                 )?
             } else {
-                singleton_entity_id(&*state.pipeline.store, record_id)?
+                singleton_entity_id(&*state.pipeline.store, record_id, &record_key)?
             }
         }
-        MatchBand::AutoReject => singleton_entity_id(&*state.pipeline.store, record_id)?,
+        MatchBand::AutoReject => {
+            singleton_entity_id(&*state.pipeline.store, record_id, &record_key)?
+        }
         MatchBand::Borderline => {
             // Leave unresolved, caller can call flush_borderlines or handle externally.
             return Ok(IngestResult {
@@ -247,8 +252,9 @@ fn process_record(state: &mut IngesterState, record: Record) -> Result<IngestRes
 fn singleton_result(
     store: &dyn zer_core::traits::EntityStore,
     record_id: RecordId,
+    record_key: &str,
 ) -> Result<IngestResult, ZerError> {
-    let entity_id = singleton_entity_id(store, record_id)?;
+    let entity_id = singleton_entity_id(store, record_id, record_key)?;
     Ok(IngestResult {
         record_id,
         entity_id: Some(entity_id),
@@ -260,6 +266,7 @@ fn singleton_result(
 fn singleton_entity_id(
     store: &dyn zer_core::traits::EntityStore,
     record_id: RecordId,
+    record_key: &str,
 ) -> Result<EntityId, ZerError> {
     // If this record already belongs to an entity, return that entity.
     if let Some(eid) = store.record_to_entity(record_id)? {
@@ -269,6 +276,7 @@ fn singleton_entity_id(
         id: record_id,
         members: vec![EntityMember {
             record_id,
+            record_key: record_key.to_string(),
             score: 1.0,
             method: ResolutionMethod::Manual,
             source: None,
@@ -279,7 +287,9 @@ fn singleton_entity_id(
 
 fn merge_into_entity(
     store: &dyn zer_core::traits::EntityStore,
+    record_store: &dyn zer_core::traits::RecordStore,
     record_id: RecordId,
+    record_key: &str,
     partner_id: RecordId,
     score: f32,
 ) -> Result<EntityId, ZerError> {
@@ -287,10 +297,15 @@ fn merge_into_entity(
     let mut entity = if let Some(eid) = existing_eid {
         store.get_entity(eid)?
     } else {
+        let partner_key = record_store
+            .get(partner_id)
+            .map(|r| r.key.clone())
+            .unwrap_or_else(|| partner_id.to_string());
         Entity {
             id: partner_id,
             members: vec![EntityMember {
                 record_id: partner_id,
+                record_key: partner_key,
                 score,
                 method: ResolutionMethod::AutoMatch,
                 source: None,
@@ -301,6 +316,7 @@ fn merge_into_entity(
     if !entity.members.iter().any(|m| m.record_id == record_id) {
         entity.members.push(EntityMember {
             record_id,
+            record_key: record_key.to_string(),
             score,
             method: ResolutionMethod::AutoMatch,
             source: None,

@@ -1,6 +1,6 @@
 [package]
 name        = "zer-judge"
-version     = "1.0.8"
+version     = "1.1.0"
 edition     = "2021"
 description = "ONNX-based neural judge for zer, runs DeBERTa/MiniLM NLI models via ORT to adjudicate borderline record pairs"
 license     = "Apache-2.0"
@@ -26,7 +26,7 @@ judge_directml = ["ort/directml"]
 judge_openvino = ["ort/openvino"]
 
 [dependencies]
-zer-core    = { path = "../zer-core", version = "1.0" }
+zer-core    = { path = "../zer-core", version = "1.1" }
 
 ort         = { version = "2.0.0-rc.12", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-native", "copy-dylibs"] }
 tokenizers  = { version = "0.21", default-features = false, features = ["onig"] }

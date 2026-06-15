@@ -24,7 +24,7 @@ Both APIs require a Tokio runtime. Add the dependency:
 .. code-block:: toml
 
    [dependencies]
-   zer   = { version = "1.0", features = ["pipeline"] }
+   zer   = { version = "1.1", features = ["pipeline"] }
    tokio = { version = "1", features = ["full"] }
 
 Mark your entry point:
@@ -77,7 +77,7 @@ the background task has processed it:
 
    use zer_core::record::{FieldValue, Record};
 
-   let record = Record::new(42)
+   let record = Record::from_key("brp", "893479421")
        .insert("voornamen",     FieldValue::Text("Jan".into()))
        .insert("achternaam",    FieldValue::Text("de Vries".into()))
        .insert("geboortedatum", FieldValue::Text("1985-03-15".into()));
@@ -195,6 +195,7 @@ Full streaming example
        let mut borderline    = 0usize;
        let mut auto_rejected = 0usize;
 
+       // incoming_records() yields Record objects built with Record::from_key
        for record in incoming_records() {
            let result = ingester.send(record).await?;
            match result.band {
@@ -228,10 +229,9 @@ over pages. EM parameters accumulate across calls:
 
 .. code-block:: rust
 
-   let mut id_cursor: u64 = 1;
+   let config = DatasetConfig::new("brp", "bsn");
    for page in data_source.pages() {
-       let records   = page.into_records(id_cursor);
-       id_cursor    += records.len() as u64;
+       let records = page.into_records(&config);
        pipeline.run_batch(records).await?;
    }
 

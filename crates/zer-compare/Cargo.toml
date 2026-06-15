@@ -1,6 +1,6 @@
 [package]
 name        = "zer-compare"
-version     = "1.0.8"
+version     = "1.1.0"
 edition     = "2021"
 description = "Fellegi-Sunter field comparison, similarity functions, and EM scoring for zer"
 license     = "Apache-2.0"
@@ -10,7 +10,7 @@ categories  = ["algorithms", "text-processing"]
 readme      = "README.md"
 
 [dependencies]
-zer-core = { path = "../zer-core", version = "1.0" }
+zer-core = { path = "../zer-core", version = "1.1" }
 strsim               = "0.11"
 rphonetic            = "3"
 unicode-normalization = "0.1"

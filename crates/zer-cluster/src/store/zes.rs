@@ -48,13 +48,14 @@ fn init_schema(conn: &Connection) -> Result<()> {
         );
 
         CREATE TABLE IF NOT EXISTS entity_members (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            entity_id INTEGER NOT NULL REFERENCES entities(entity_id),
-            record_id INTEGER NOT NULL,
-            score     REAL    NOT NULL,
-            method    TEXT    NOT NULL,
-            source    TEXT,
-            added_at  INTEGER NOT NULL
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_id  INTEGER NOT NULL REFERENCES entities(entity_id),
+            record_id  INTEGER NOT NULL,
+            record_key TEXT    NOT NULL DEFAULT '',
+            score      REAL    NOT NULL,
+            method     TEXT    NOT NULL,
+            source     TEXT,
+            added_at   INTEGER NOT NULL
         );
         CREATE UNIQUE INDEX IF NOT EXISTS idx_record_entity ON entity_members(record_id);
 
@@ -107,11 +108,12 @@ impl EntityStore for ZalEntityStore {
             for member in &entity.members {
                 conn.execute(
                     "INSERT OR IGNORE INTO entity_members
-                         (entity_id, record_id, score, method, source, added_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                         (entity_id, record_id, record_key, score, method, source, added_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                     rusqlite::params![
                         eid as i64,
                         member.record_id as i64,
+                        &member.record_key,
                         member.score,
                         method_to_str(member.method),
                         member.source.as_deref(),
@@ -149,11 +151,12 @@ impl EntityStore for ZalEntityStore {
             for member in &entity.members {
                 conn.execute(
                     "INSERT INTO entity_members
-                         (entity_id, record_id, score, method, source, added_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                         (entity_id, record_id, record_key, score, method, source, added_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                     rusqlite::params![
                         eid as i64,
                         member.record_id as i64,
+                        &member.record_key,
                         member.score,
                         method_to_str(member.method),
                         member.source.as_deref(),
@@ -179,7 +182,7 @@ impl EntityStore for ZalEntityStore {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
             .prepare(
-                "SELECT record_id, score, method, source
+                "SELECT record_id, record_key, score, method, source
                  FROM entity_members WHERE entity_id = ?1",
             )
             .map_err(|e| ZerError::Store(e.to_string()))?;
@@ -188,20 +191,23 @@ impl EntityStore for ZalEntityStore {
             .query_map([id as i64], |row| {
                 Ok((
                     row.get::<_, i64>(0)? as RecordId,
-                    row.get::<_, f32>(1)?,
-                    row.get::<_, String>(2)?,
-                    row.get::<_, Option<String>>(3)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, f32>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, Option<String>>(4)?,
                 ))
             })
             .map_err(|e| ZerError::Store(e.to_string()))?
             .map(|r| {
-                r.map_err(|e| ZerError::Store(e.to_string()))
-                    .map(|(rid, score, method, source)| EntityMember {
+                r.map_err(|e| ZerError::Store(e.to_string())).map(
+                    |(rid, record_key, score, method, source)| EntityMember {
                         record_id: rid,
+                        record_key,
                         score,
                         method: method_from_str(&method),
                         source,
-                    })
+                    },
+                )
             })
             .collect::<Result<_>>()?;
 
@@ -225,7 +231,7 @@ impl EntityStore for ZalEntityStore {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
             .prepare(
-                "SELECT em.entity_id, em.record_id, em.score, em.method, em.source
+                "SELECT em.entity_id, em.record_id, em.record_key, em.score, em.method, em.source
                  FROM entity_members em
                  ORDER BY em.entity_id",
             )
@@ -236,9 +242,10 @@ impl EntityStore for ZalEntityStore {
                 Ok((
                     row.get::<_, i64>(0)? as EntityId,
                     row.get::<_, i64>(1)? as RecordId,
-                    row.get::<_, f32>(2)?,
-                    row.get::<_, String>(3)?,
-                    row.get::<_, Option<String>>(4)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, f32>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, Option<String>>(5)?,
                 ))
             })
             .map_err(|e| ZerError::Store(e.to_string()))?;
@@ -246,10 +253,11 @@ impl EntityStore for ZalEntityStore {
         let mut entities: Vec<Entity> = Vec::new();
 
         for row in rows {
-            let (eid, rid, score, method, source) =
+            let (eid, rid, record_key, score, method, source) =
                 row.map_err(|e| ZerError::Store(e.to_string()))?;
             let member = EntityMember {
                 record_id: rid,
+                record_key,
                 score,
                 method: method_from_str(&method),
                 source,
@@ -301,6 +309,7 @@ mod tests {
                 .iter()
                 .map(|&rid| EntityMember {
                     record_id: rid,
+                    record_key: rid.to_string(),
                     score: 0.95,
                     method: ResolutionMethod::AutoMatch,
                     source: None,
@@ -367,6 +376,25 @@ mod tests {
 
         let all = store.all_entities().unwrap();
         assert_eq!(all.len(), 3);
+    }
+
+    #[test]
+    fn record_key_survives_round_trip() {
+        let store = ZalEntityStore::open_in_memory().unwrap();
+        let entity = Entity {
+            id: 0,
+            members: vec![EntityMember {
+                record_id: 42,
+                record_key: "893479421".to_string(),
+                score: 0.99,
+                method: ResolutionMethod::AutoMatch,
+                source: Some("brp".to_string()),
+            }],
+        };
+        let eid = store.upsert_entity(&entity).unwrap();
+        let loaded = store.get_entity(eid).unwrap();
+        assert_eq!(loaded.members[0].record_key, "893479421");
+        assert_eq!(loaded.members[0].source.as_deref(), Some("brp"));
     }
 
     #[test]

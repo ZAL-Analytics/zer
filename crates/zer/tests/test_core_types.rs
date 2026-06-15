@@ -70,12 +70,14 @@ fn entity_serde_json_round_trip() {
     let mut e = Entity::new(7);
     e.members.push(EntityMember {
         record_id: 101,
+        record_key: "101".into(),
         score: 0.97,
         method: ResolutionMethod::AutoMatch,
         source: Some("kvk".into()),
     });
     e.members.push(EntityMember {
         record_id: 102,
+        record_key: "102".into(),
         score: 0.88,
         method: ResolutionMethod::JudgePromoted,
         source: None,

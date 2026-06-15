@@ -62,7 +62,7 @@ Here we use the ``csv`` crate:
 
    #[derive(serde::Deserialize)]
    struct PersonRow {
-       record_id:     u64,
+       bsn:           String,
        voornamen:     String,
        tussenvoegsel: String,
        achternaam:    String,
@@ -80,7 +80,7 @@ Here we use the ``csv`` crate:
            .deserialize::<PersonRow>()
            .map(|r| {
                let row = r.unwrap();
-               Record::new(row.record_id)
+               Record::from_key("brp", &row.bsn)
                    .insert("voornamen",     row.voornamen)
                    .insert("achternaam",    row.achternaam)
                    .insert("geboortedatum", row.geboortedatum)

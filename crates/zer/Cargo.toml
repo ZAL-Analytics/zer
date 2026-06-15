@@ -1,6 +1,6 @@
 [package]
 name        = "zer"
-version     = "1.0.9"
+version     = "1.1.0"
 edition     = "2021"
 description = "Zero-shot entity resolution pipeline for Dutch-centric data, with GPU acceleration and neural judging"
 license     = "Apache-2.0"
@@ -29,14 +29,14 @@ judge_directml = ["dep:zer-judge", "zer-judge/judge_directml"]
 judge_openvino = ["dep:zer-judge", "zer-judge/judge_openvino"]
 
 [dependencies]
-zer-core     = { path = "../zer-core",     version = "1.0" }
-zer-blocking = { path = "../zer-blocking", version = "1.0" }
-zer-compare  = { path = "../zer-compare",  version = "1.0" }
-zer-compute  = { path = "../zer-compute",  version = "1.0", optional = true }
-zer-schema   = { path = "../zer-schema",   version = "1.0" }
-zer-cluster  = { path = "../zer-cluster",  version = "1.0" }
-zer-pipeline = { path = "../zer-pipeline", version = "1.0", optional = true }
-zer-judge    = { path = "../zer-judge",    version = "1.0", optional = true }
+zer-core     = { path = "../zer-core",     version = "1.1" }
+zer-blocking = { path = "../zer-blocking", version = "1.1" }
+zer-compare  = { path = "../zer-compare",  version = "1.1" }
+zer-compute  = { path = "../zer-compute",  version = "1.1", optional = true }
+zer-schema   = { path = "../zer-schema",   version = "1.1" }
+zer-cluster  = { path = "../zer-cluster",  version = "1.1" }
+zer-pipeline = { path = "../zer-pipeline", version = "1.1", optional = true }
+zer-judge    = { path = "../zer-judge",    version = "1.1", optional = true }
 serde          = { workspace = true }
 tracing        = { workspace = true }
 

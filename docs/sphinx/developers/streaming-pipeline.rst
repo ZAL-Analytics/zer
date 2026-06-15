@@ -50,7 +50,7 @@ Add the dependencies:
 .. code-block:: toml
 
    [dependencies]
-   zer          = { version = "1.0", features = ["pipeline"] }
+   zer          = { version = "1.1", features = ["pipeline"] }
    rdkafka      = { version = "0.36", features = ["tokio"] }
    serde_json   = { version = "1" }
    tokio        = { version = "1", features = ["full"] }

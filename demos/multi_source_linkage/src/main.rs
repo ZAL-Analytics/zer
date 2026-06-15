@@ -276,9 +276,15 @@ async fn main() {
         .iter()
         .map(|lp| {
             let (a, b) = if lp.source_a.as_deref() == Some("brp") {
-                (lp.record_id_a, lp.record_id_b)
+                (
+                    lp.record_key_a.parse::<u64>().unwrap_or(0),
+                    lp.record_key_b.parse::<u64>().unwrap_or(0),
+                )
             } else {
-                (lp.record_id_b, lp.record_id_a)
+                (
+                    lp.record_key_b.parse::<u64>().unwrap_or(0),
+                    lp.record_key_a.parse::<u64>().unwrap_or(0),
+                )
             };
             (a.min(b), a.max(b))
         })
@@ -292,11 +298,13 @@ async fn main() {
         .iter()
         .take(20)
         .map(|lp| {
-            let (brp_id, kvk_id) = if lp.source_a.as_deref() == Some("brp") {
-                (lp.record_id_a, lp.record_id_b)
+            let (brp_key, kvk_key) = if lp.source_a.as_deref() == Some("brp") {
+                (lp.record_key_a.as_str(), lp.record_key_b.as_str())
             } else {
-                (lp.record_id_b, lp.record_id_a)
+                (lp.record_key_b.as_str(), lp.record_key_a.as_str())
             };
+            let brp_id: u64 = brp_key.parse().unwrap_or(0);
+            let kvk_id: u64 = kvk_key.parse().unwrap_or(0);
             PairRow {
                 score: lp.score,
                 a_fields: vec![
@@ -359,9 +367,15 @@ async fn main() {
         .iter()
         .map(|lp| {
             let (a, b) = if lp.source_a.as_deref() == Some("brp") {
-                (lp.record_id_a, lp.record_id_b)
+                (
+                    lp.record_key_a.parse::<u64>().unwrap_or(0),
+                    lp.record_key_b.parse::<u64>().unwrap_or(0),
+                )
             } else {
-                (lp.record_id_b, lp.record_id_a)
+                (
+                    lp.record_key_b.parse::<u64>().unwrap_or(0),
+                    lp.record_key_a.parse::<u64>().unwrap_or(0),
+                )
             };
             (a.min(b), a.max(b))
         })

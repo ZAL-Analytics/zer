@@ -12,7 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use zer_core::{error::ZerError, record::RecordId, scoring::MatchBand};
+use zer_core::{error::ZerError, scoring::MatchBand};
 
 /// Aggregate accuracy metrics computed against a ground-truth labels file.
 #[derive(Debug, Clone)]
@@ -58,9 +58,9 @@ impl AccuracyMetrics {
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct PairRecord {
     pub run_id: String,
-    pub record_id_a: RecordId,
+    pub record_key_a: String,
     pub source_a: Option<String>,
-    pub record_id_b: RecordId,
+    pub record_key_b: String,
     pub source_b: Option<String>,
     pub match_probability: f32,
     pub predicted_match: bool,
@@ -257,9 +257,9 @@ mod tests {
         let pairs: Vec<PairRecord> = (0..5)
             .map(|i| PairRecord {
                 run_id: "test_run".into(),
-                record_id_a: i,
+                record_key_a: i.to_string(),
                 source_a: Some("brp".into()),
-                record_id_b: i + 100,
+                record_key_b: (i + 100).to_string(),
                 source_b: Some("kvk".into()),
                 match_probability: 0.9,
                 predicted_match: true,

@@ -98,7 +98,7 @@ Minimal (CPU only, full pipeline)
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline"] }
+   zer = { version = "1.1", features = ["pipeline"] }
 
 This brings in ``zer-core``, ``zer-blocking``, ``zer-compare``,
 ``zer-cluster``, ``zer-schema``, and ``zer-pipeline``.
@@ -109,7 +109,7 @@ With CUDA GPU acceleration
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline", "cuda"] }
+   zer = { version = "1.1", features = ["pipeline", "cuda"] }
 
 Requires CUDA Toolkit 13.1+ and an Ampere-class GPU (SM 8.6+). The pipeline
 falls back to the CPU scorer automatically at runtime when no CUDA device is
@@ -121,7 +121,7 @@ With AVX2 SIMD (CPU servers)
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline", "avx2"] }
+   zer = { version = "1.1", features = ["pipeline", "avx2"] }
 
 Good for production x86-64 servers without a GPU. Provides roughly 4 times  the
 throughput of the generic CPU backend.
@@ -132,7 +132,7 @@ With the neural judge (ONNX Runtime, CPU)
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline", "judge_cpu"] }
+   zer = { version = "1.1", features = ["pipeline", "judge_cpu"] }
 
 Enables the DeBERTa/MiniLM NLI cross-encoder for borderline pair adjudication.
 ONNX Runtime is downloaded at build time; no manual install needed.
@@ -143,7 +143,7 @@ With the neural judge (CUDA inference)
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline", "judge_cuda"] }
+   zer = { version = "1.1", features = ["pipeline", "judge_cuda"] }
 
 Runs ORT on the CUDA execution provider. Requires CUDA Toolkit 13.1+.
 
@@ -153,7 +153,7 @@ With the neural judge (TensorRT)
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline", "judge_tensorrt"] }
+   zer = { version = "1.1", features = ["pipeline", "judge_tensorrt"] }
 
 Uses the TensorRT ORT execution provider for FP16 inference with engine
 caching. Requires TensorRT 8.0+ and CUDA Toolkit 13.1+.
@@ -164,8 +164,8 @@ With Polars / Arrow adapters
 .. code-block:: toml
 
    [dependencies]
-   zer      = { version = "1.0", features = ["pipeline"] }
-   zer-adapters = { version = "1.0", features = ["polars"] }
+   zer      = { version = "1.1", features = ["pipeline"] }
+   zer-adapters = { version = "1.1", features = ["polars"] }
    polars       = "0.44"
 
 Individual crates

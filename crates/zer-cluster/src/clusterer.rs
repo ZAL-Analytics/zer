@@ -40,6 +40,10 @@ impl Clusterer for ConnectedComponentsClusterer {
                     .iter()
                     .map(|&rid| EntityMember {
                         record_id: rid,
+                        // Defaults to the numeric ID string; the pipeline's
+                        // batch processor overwrites this with the real natural
+                        // key from the input records after clustering.
+                        record_key: rid.to_string(),
                         score: best_score_in_cluster(rid, &banded.auto_match),
                         method: ResolutionMethod::AutoMatch,
                         source: None,

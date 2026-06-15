@@ -75,18 +75,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\nLinked pairs ({}):", pairs.len());
     println!(
-        "{:<10} {:<12} {:<8} {:<12} {:<8} {:<8}",
-        "entity_id", "record_a", "src_a", "record_b", "src_b", "score"
+        "{:<10} {:<20} {:<8} {:<20} {:<8} {:<8}",
+        "entity_id", "key_a", "src_a", "key_b", "src_b", "score"
     );
-    println!("{}", "-".repeat(62));
+    println!("{}", "-".repeat(78));
 
     for lp in &pairs {
         println!(
-            "{:<10} {:<12} {:<8} {:<12} {:<8} {:.4}",
+            "{:<10} {:<20} {:<8} {:<20} {:<8} {:.4}",
             lp.entity_id,
-            lp.record_id_a,
+            lp.record_key_a,
             lp.source_a.as_deref().unwrap_or("?"),
-            lp.record_id_b,
+            lp.record_key_b,
             lp.source_b.as_deref().unwrap_or("?"),
             lp.score,
         );

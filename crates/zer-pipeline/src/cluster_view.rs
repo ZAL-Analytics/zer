@@ -2,18 +2,23 @@ use std::sync::Arc;
 
 use zer_core::{
     entity::{Entity, EntityId, ResolutionMethod},
-    record::{Record, RecordId},
+    record::Record,
     traits::{EntityStore, RecordStore},
 };
 
 /// A single cross-source link: one record from source A matched to one record
 /// from source B within the same resolved entity.
+///
+/// `record_key_a` and `record_key_b` are the natural keys of the two records
+/// (i.e. the values from the column nominated as the identity column when
+/// loading the dataset).  For records created with `Record::new(id)` the key
+/// is the numeric ID as a string.
 #[derive(Debug, Clone)]
 pub struct LinkedPair {
     pub entity_id: EntityId,
-    pub record_id_a: RecordId,
+    pub record_key_a: String,
     pub source_a: Option<String>,
-    pub record_id_b: RecordId,
+    pub record_key_b: String,
     pub source_b: Option<String>,
     pub score: f32,
     pub method: ResolutionMethod,
@@ -51,8 +56,6 @@ impl ClusterView {
         let mut out = Vec::new();
 
         for entity in entities {
-            // Partition members by source label.
-            // Members with source A ≠ source B are eligible for cross-source output.
             let n = entity.members.len();
             for i in 0..n {
                 for j in (i + 1)..n {
@@ -64,9 +67,9 @@ impl ClusterView {
                     }
                     out.push(LinkedPair {
                         entity_id: entity.id,
-                        record_id_a: ma.record_id,
+                        record_key_a: ma.record_key.clone(),
                         source_a: ma.source.clone(),
-                        record_id_b: mb.record_id,
+                        record_key_b: mb.record_key.clone(),
                         source_b: mb.source.clone(),
                         score: ma.score.min(mb.score),
                         method: ma.method,
@@ -99,9 +102,9 @@ impl ClusterView {
                     let mb = &entity.members[j];
                     out.push(LinkedPair {
                         entity_id: entity.id,
-                        record_id_a: ma.record_id,
+                        record_key_a: ma.record_key.clone(),
                         source_a: ma.source.clone(),
-                        record_id_b: mb.record_id,
+                        record_key_b: mb.record_key.clone(),
                         source_b: mb.source.clone(),
                         score: ma.score.min(mb.score),
                         method: ma.method,
@@ -237,6 +240,16 @@ mod tests {
         }
     }
 
+    fn make_member(record_id: RecordId, record_key: &str, source: Option<&str>) -> EntityMember {
+        EntityMember {
+            record_id,
+            record_key: record_key.to_string(),
+            score: 0.95,
+            method: ResolutionMethod::AutoMatch,
+            source: source.map(str::to_string),
+        }
+    }
+
     #[test]
     fn cluster_view_iterates_entity_with_records() {
         let entity_store = Arc::new(TestEntityStore::new());
@@ -247,12 +260,7 @@ mod tests {
 
         let entity = Entity {
             id: 1,
-            members: vec![EntityMember {
-                record_id: 1,
-                score: 1.0,
-                method: ResolutionMethod::Manual,
-                source: None,
-            }],
+            members: vec![make_member(1, "1", None)],
         };
         entity_store.upsert_entity(&entity).unwrap();
 
@@ -266,7 +274,7 @@ mod tests {
         let (e, recs) = &clusters[0];
         assert_eq!(e.id, 1);
         assert_eq!(recs.len(), 1);
-        assert_eq!(recs[0].id, 1);
+        assert_eq!(recs[0].key, "1");
     }
 
     #[test]
@@ -274,15 +282,9 @@ mod tests {
         let entity_store = Arc::new(TestEntityStore::new());
         let record_store = Arc::new(TestRecordStore::new());
 
-        // Entity member points to record 99 which doesn't exist in the store
         let entity = Entity {
             id: 1,
-            members: vec![EntityMember {
-                record_id: 99,
-                score: 1.0,
-                method: ResolutionMethod::Manual,
-                source: None,
-            }],
+            members: vec![make_member(99, "99", None)],
         };
         entity_store.upsert_entity(&entity).unwrap();
 
@@ -316,22 +318,11 @@ mod tests {
         let entity_store = Arc::new(TestEntityStore::new());
         let record_store = Arc::new(TestRecordStore::new());
 
-        // Entity with two members, both from "brp"
         let entity = Entity {
             id: 1,
             members: vec![
-                EntityMember {
-                    record_id: 1,
-                    score: 0.95,
-                    method: ResolutionMethod::AutoMatch,
-                    source: Some("brp".into()),
-                },
-                EntityMember {
-                    record_id: 2,
-                    score: 0.90,
-                    method: ResolutionMethod::AutoMatch,
-                    source: Some("brp".into()),
-                },
+                make_member(1, "key-001", Some("brp")),
+                make_member(2, "key-002", Some("brp")),
             ],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -353,22 +344,11 @@ mod tests {
         let entity_store = Arc::new(TestEntityStore::new());
         let record_store = Arc::new(TestRecordStore::new());
 
-        // Entity with one brp member and one kvk member
         let entity = Entity {
             id: 1,
             members: vec![
-                EntityMember {
-                    record_id: 10,
-                    score: 0.95,
-                    method: ResolutionMethod::AutoMatch,
-                    source: Some("brp".into()),
-                },
-                EntityMember {
-                    record_id: 20,
-                    score: 0.88,
-                    method: ResolutionMethod::AutoMatch,
-                    source: Some("kvk".into()),
-                },
+                make_member(10, "brp-001", Some("brp")),
+                make_member(20, "kvk-001", Some("kvk")),
             ],
         };
         entity_store.upsert_entity(&entity).unwrap();
@@ -383,8 +363,8 @@ mod tests {
         let lp = &pairs[0];
         assert_eq!(lp.entity_id, 1);
         assert!(
-            (lp.record_id_a == 10 && lp.record_id_b == 20)
-                || (lp.record_id_a == 20 && lp.record_id_b == 10)
+            (lp.record_key_a == "brp-001" && lp.record_key_b == "kvk-001")
+                || (lp.record_key_a == "kvk-001" && lp.record_key_b == "brp-001")
         );
         assert_ne!(lp.source_a, lp.source_b);
     }
@@ -394,23 +374,9 @@ mod tests {
         let entity_store = Arc::new(TestEntityStore::new());
         let record_store = Arc::new(TestRecordStore::new());
 
-        // Members with no source labels, treated as same source
         let entity = Entity {
             id: 1,
-            members: vec![
-                EntityMember {
-                    record_id: 1,
-                    score: 0.95,
-                    method: ResolutionMethod::AutoMatch,
-                    source: None,
-                },
-                EntityMember {
-                    record_id: 2,
-                    score: 0.90,
-                    method: ResolutionMethod::AutoMatch,
-                    source: None,
-                },
-            ],
+            members: vec![make_member(1, "k1", None), make_member(2, "k2", None)],
         };
         entity_store.upsert_entity(&entity).unwrap();
 

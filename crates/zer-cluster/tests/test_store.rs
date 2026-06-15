@@ -14,6 +14,7 @@ fn make_entity(record_ids: &[RecordId]) -> Entity {
             .iter()
             .map(|&rid| EntityMember {
                 record_id: rid,
+                record_key: rid.to_string(),
                 score: 0.95,
                 method: ResolutionMethod::AutoMatch,
                 source: None,
@@ -102,18 +103,21 @@ fn resolution_method_round_trips_correctly() {
         members: vec![
             EntityMember {
                 record_id: 1,
+                record_key: "1".into(),
                 score: 0.9,
                 method: ResolutionMethod::JudgePromoted,
                 source: None,
             },
             EntityMember {
                 record_id: 2,
+                record_key: "2".into(),
                 score: 0.8,
                 method: ResolutionMethod::JudgeDemoted,
                 source: None,
             },
             EntityMember {
                 record_id: 3,
+                record_key: "3".into(),
                 score: 0.7,
                 method: ResolutionMethod::Manual,
                 source: None,

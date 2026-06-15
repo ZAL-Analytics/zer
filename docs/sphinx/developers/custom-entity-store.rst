@@ -72,7 +72,7 @@ Add the dependencies:
 .. code-block:: toml
 
    [dependencies]
-   zer          = { version = "1.0", features = ["pipeline"] }
+   zer          = { version = "1.1", features = ["pipeline"] }
    surrealdb    = { version = "2" }
    tokio        = { version = "1", features = ["full"] }
 

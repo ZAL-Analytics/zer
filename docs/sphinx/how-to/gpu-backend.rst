@@ -20,9 +20,9 @@ Feature flags in ``Cargo.toml`` control which backends are compiled in:
 .. code-block:: toml
 
    [dependencies]
-   zer = { version = "1.0", features = ["pipeline"] }          # CPU only
-   zer = { version = "1.0", features = ["pipeline", "avx2"] }  # + AVX2 SIMD
-   zer = { version = "1.0", features = ["pipeline", "cuda"] }  # + NVIDIA CUDA
+   zer = { version = "1.1", features = ["pipeline"] }          # CPU only
+   zer = { version = "1.1", features = ["pipeline", "avx2"] }  # + AVX2 SIMD
+   zer = { version = "1.1", features = ["pipeline", "cuda"] }  # + NVIDIA CUDA
 
 Multiple flags can be combined. ``auto_detect`` selects the best compiled-in
 backend at runtime.

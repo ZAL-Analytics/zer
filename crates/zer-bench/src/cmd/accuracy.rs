@@ -53,7 +53,7 @@ use clap::Args;
 use tempfile::TempDir;
 
 use zer::prelude::*;
-use zer_core::field_mapping::FieldMapping;
+use zer_core::{field_mapping::FieldMapping, record::derive_record_id};
 
 use super::scenarios::{
     datasets_for_scenario, find_scenario, find_scenario_by_preset, full_size_scenarios,
@@ -646,13 +646,17 @@ async fn run_pass(
     let wall_elapsed_ms = wall_start.elapsed().as_millis() as u64;
     println!("wall time  wall_elapsed_ms={wall_elapsed_ms}");
 
+    // Build a reverse map from internal RecordId to natural key for scored_pairs lookups.
+    let rec_id_to_key: HashMap<u64, String> =
+        all_records.iter().map(|r| (r.id, r.key.clone())).collect();
+
     let pair_records: Vec<PairRecord> = pairs
         .iter()
         .map(|lp| PairRecord {
             run_id: run_id.clone(),
-            record_id_a: lp.record_id_a,
+            record_key_a: lp.record_key_a.clone(),
             source_a: lp.source_a.clone(),
-            record_id_b: lp.record_id_b,
+            record_key_b: lp.record_key_b.clone(),
             source_b: lp.source_b.clone(),
             match_probability: lp.score,
             predicted_match: band_to_match(resolution_to_band(lp.method)),
@@ -668,9 +672,15 @@ async fn run_pass(
             .iter()
             .map(|&(a, b, prob)| PairRecord {
                 run_id: run_id.clone(),
-                record_id_a: a,
+                record_key_a: rec_id_to_key
+                    .get(&a)
+                    .cloned()
+                    .unwrap_or_else(|| a.to_string()),
                 source_a: None,
-                record_id_b: b,
+                record_key_b: rec_id_to_key
+                    .get(&b)
+                    .cloned()
+                    .unwrap_or_else(|| b.to_string()),
                 source_b: None,
                 match_probability: prob,
                 predicted_match: false,
@@ -687,13 +697,13 @@ async fn run_pass(
             let gt_map = load_ground_truth(gt_path, &id_map)?;
             println!("ground truth loaded  pairs={}", gt_map.len());
 
-            let predicted: HashSet<(u64, u64)> = pair_records
+            let predicted: HashSet<(String, String)> = pair_records
                 .iter()
                 .filter(|p| p.predicted_match)
-                .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
+                .map(|p| canonical_pair(&p.record_key_a, &p.record_key_b))
                 .collect();
 
-            let gt_set: HashSet<(u64, u64)> = gt_map.keys().copied().collect();
+            let gt_set: HashSet<(String, String)> = gt_map.keys().cloned().collect();
             let true_pos = predicted.intersection(&gt_set).count();
             let false_pos = predicted.difference(&gt_set).count();
             let false_neg = gt_set.difference(&predicted).count();
@@ -730,7 +740,7 @@ async fn run_pass(
             let tagged: Vec<(f32, bool)> = pr_auc_pairs
                 .iter()
                 .map(|p| {
-                    let key = canonical_pair(p.record_id_a, p.record_id_b);
+                    let key = canonical_pair(&p.record_key_a, &p.record_key_b);
                     (p.match_probability, gt_map.contains_key(&key))
                 })
                 .collect();
@@ -875,9 +885,13 @@ async fn run_pass(
 
 /// Load records from a CSV file.
 ///
-/// `id_map` is shared across all source files so that sequential u64s
-/// assigned to non-numeric IDs (e.g. UUIDs) are globally unique.
-/// For numeric IDs (e.g. BSN) the parsed decimal value is used directly.
+/// When `source` is `Some`, each record is created via [`Record::from_key`] so
+/// that the natural key (column 0) is preserved in the `.zes` output.  The
+/// `id_map` is populated with `raw_id → derived_hash` entries so that
+/// [`load_ground_truth`] can resolve the same string IDs to the same u64s.
+///
+/// When `source` is `None`, the old numeric-or-sequential behaviour is kept
+/// for backward compatibility.
 fn load_csv_records(
     path: &str,
     source: Option<&str>,
@@ -894,22 +908,35 @@ fn load_csv_records(
         let row = result?;
         let raw_id = row.get(0).unwrap_or("").to_string();
 
-        let id: u64 = if let Ok(n) = raw_id.parse::<u64>() {
-            n
+        let rec = if let Some(src) = source {
+            // Natural-key path: hash(source:raw_id) → stable RecordId.
+            let hash = derive_record_id(src, &raw_id);
+            id_map.insert(raw_id.clone(), hash);
+            let mut r = Record::from_key(src, &raw_id);
+            for (j, header) in headers.iter().enumerate() {
+                if let Some(val) = row.get(j) {
+                    r = r.insert(header.as_str(), FieldValue::Text(val.to_string()));
+                }
+            }
+            r
         } else {
-            let next = id_map.len() as u64 + 1;
-            *id_map.entry(raw_id.clone()).or_insert(next)
+            // No source label: parse as u64 or assign a sequential id.
+            let id: u64 = if let Ok(n) = raw_id.parse::<u64>() {
+                n
+            } else {
+                let next = id_map.len() as u64 + 1;
+                *id_map.entry(raw_id.clone()).or_insert(next)
+            };
+            id_map.insert(raw_id.clone(), id);
+            let mut r = Record::new(id);
+            for (j, header) in headers.iter().enumerate() {
+                if let Some(val) = row.get(j) {
+                    r = r.insert(header.as_str(), FieldValue::Text(val.to_string()));
+                }
+            }
+            r
         };
 
-        let mut rec = Record::new(id);
-        for (j, header) in headers.iter().enumerate() {
-            if let Some(val) = row.get(j) {
-                rec = rec.insert(header.as_str(), FieldValue::Text(val.to_string()));
-            }
-        }
-        if let Some(src) = source {
-            rec = rec.with_source(src);
-        }
         records.push(rec);
     }
     Ok(records)
@@ -919,64 +946,37 @@ fn load_csv_records(
 
 /// Load a ground truth CSV and return the map of canonical positive pairs to their `match_type`.
 ///
-/// `id_map` must be the map returned by [`load_csv_records`] for the same
-/// dataset.  String IDs not found in `id_map` are tried as decimal u64; IDs
-/// that match neither are skipped with a warning so one bad row never silently
-/// corrupts the whole evaluation.
-///
 /// Column layout: `record_id_a, record_id_b, is_match[, match_type]`.
+/// IDs are stored as raw strings so they match the natural keys from
+/// [`load_csv_records`] directly. no numeric conversion needed.
 /// The optional `match_type` column (index 3) enables stratified recall reporting.
 fn load_ground_truth(
     path: &str,
-    id_map: &HashMap<String, u64>,
-) -> anyhow::Result<HashMap<(u64, u64), String>> {
+    _id_map: &HashMap<String, u64>,
+) -> anyhow::Result<HashMap<(String, String), String>> {
     let mut rdr = csv::Reader::from_path(path)
         .map_err(|e| anyhow::anyhow!("cannot open ground truth {path}: {e}"))?;
 
     let mut pairs = HashMap::new();
-    let mut skipped = 0usize;
 
     for result in rdr.records() {
         let row = result?;
-        let raw_a = row.get(0).unwrap_or("");
-        let raw_b = row.get(1).unwrap_or("");
+        let raw_a = row.get(0).unwrap_or("").to_string();
+        let raw_b = row.get(1).unwrap_or("").to_string();
         let is_match: bool = row
             .get(2)
             .map(|s| matches!(s.to_lowercase().as_str(), "true" | "1" | "yes"))
             .unwrap_or(false);
 
-        if !is_match {
+        if !is_match || raw_a.is_empty() || raw_b.is_empty() {
             continue;
         }
 
-        let a = resolve_id(raw_a, id_map);
-        let b = resolve_id(raw_b, id_map);
-
-        match (a, b) {
-            (Some(a), Some(b)) => {
-                let match_type = row.get(3).unwrap_or("").to_owned();
-                pairs.insert(canonical_pair(a, b), match_type);
-            }
-            _ => {
-                skipped += 1;
-            }
-        }
+        let match_type = row.get(3).unwrap_or("").to_owned();
+        pairs.insert(canonical_pair(&raw_a, &raw_b), match_type);
     }
 
-    if skipped > 0 {
-        eprintln!(
-            "warning: ground-truth rows had unresolvable IDs and were skipped  skipped={skipped}"
-        );
-    }
     Ok(pairs)
-}
-
-/// Resolve a raw string ID to a u64: first via the `id_map`, then by decimal parse.
-fn resolve_id(raw: &str, id_map: &HashMap<String, u64>) -> Option<u64> {
-    if let Some(&n) = id_map.get(raw) {
-        return Some(n);
-    }
-    raw.parse::<u64>().ok()
 }
 
 // ── Schema inference ──────────────────────────────────────────────────────────
@@ -1074,11 +1074,11 @@ fn make_run_id(library: &str, mode: &str, dataset: &str) -> String {
     format!("{lib_clean}_{mode_clean}_{dataset}_{ts}")
 }
 
-fn canonical_pair(a: u64, b: u64) -> (u64, u64) {
+fn canonical_pair(a: &str, b: &str) -> (String, String) {
     if a <= b {
-        (a, b)
+        (a.to_string(), b.to_string())
     } else {
-        (b, a)
+        (b.to_string(), a.to_string())
     }
 }
 
@@ -1091,7 +1091,7 @@ struct AllMetrics {
 /// Single-pass computation of PR-AUC, max-F1, and best-threshold metrics.
 fn compute_all_metrics(
     pair_records: &[PairRecord],
-    gt_map: &HashMap<(u64, u64), String>,
+    gt_map: &HashMap<(String, String), String>,
 ) -> Option<AllMetrics> {
     let n_pos = gt_map.len();
     if n_pos == 0 || pair_records.is_empty() {
@@ -1100,7 +1100,7 @@ fn compute_all_metrics(
     let mut tagged: Vec<(f32, bool)> = pair_records
         .iter()
         .map(|p| {
-            let key = canonical_pair(p.record_id_a, p.record_id_b);
+            let key = canonical_pair(&p.record_key_a, &p.record_key_b);
             (p.match_probability, gt_map.contains_key(&key))
         })
         .collect();
@@ -1171,17 +1171,17 @@ struct ThresholdMetrics {
 /// candidates, so it reflects how many true matches survived comparison and clustering.
 fn compute_cluster_recall(
     pair_records: &[PairRecord],
-    gt_map: &HashMap<(u64, u64), String>,
+    gt_map: &HashMap<(String, String), String>,
 ) -> f32 {
     let n_pos = gt_map.len();
     if n_pos == 0 {
         return 1.0;
     }
-    let candidate_set: HashSet<(u64, u64)> = pair_records
+    let candidate_set: HashSet<(String, String)> = pair_records
         .iter()
-        .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
+        .map(|p| canonical_pair(&p.record_key_a, &p.record_key_b))
         .collect();
-    let found = gt_map.keys().filter(|k| candidate_set.contains(k)).count();
+    let found = gt_map.keys().filter(|k| candidate_set.contains(*k)).count();
     found as f32 / n_pos as f32
 }
 
@@ -1195,24 +1195,24 @@ struct StratRow {
 
 fn compute_stratified_metrics(
     pair_records: &[PairRecord],
-    gt_map: &HashMap<(u64, u64), String>,
+    gt_map: &HashMap<(String, String), String>,
 ) -> Vec<StratRow> {
-    let predicted: HashSet<(u64, u64)> = pair_records
+    let predicted: HashSet<(String, String)> = pair_records
         .iter()
         .filter(|p| p.predicted_match)
-        .map(|p| canonical_pair(p.record_id_a, p.record_id_b))
+        .map(|p| canonical_pair(&p.record_key_a, &p.record_key_b))
         .collect();
 
-    let mut gt_by_type: HashMap<String, Vec<(u64, u64)>> = HashMap::new();
+    let mut gt_by_type: HashMap<String, Vec<(String, String)>> = HashMap::new();
     for (pair, mt) in gt_map {
-        gt_by_type.entry(mt.clone()).or_default().push(*pair);
+        gt_by_type.entry(mt.clone()).or_default().push(pair.clone());
     }
 
     let mut rows: Vec<StratRow> = gt_by_type
         .into_iter()
         .map(|(mt, gt_pairs)| {
             let count_gt = gt_pairs.len();
-            let true_pos = gt_pairs.iter().filter(|p| predicted.contains(p)).count();
+            let true_pos = gt_pairs.iter().filter(|p| predicted.contains(*p)).count();
             let false_neg = count_gt - true_pos;
             let recall = if count_gt == 0 {
                 0.0

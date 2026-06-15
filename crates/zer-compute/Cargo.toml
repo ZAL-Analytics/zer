@@ -1,6 +1,6 @@
 [package]
 name        = "zer-compute"
-version     = "1.0.8"
+version     = "1.1.0"
 edition     = "2021"
 description = "Hardware-accelerated backend for zer, pairwise comparison and EM via CUDA, Vulkan, or AVX2"
 license     = "Apache-2.0"
@@ -25,9 +25,9 @@ cpu     = ["zer-prof/cpu"]
 debug-shaders = []
 
 [dependencies]
-zer-core    = { path = "../zer-core",    version = "1.0" }
-zer-compare = { path = "../zer-compare", version = "1.0" }
-zer-prof    = { path = "../zer-prof",    version = "1.0" }
+zer-core    = { path = "../zer-core",    version = "1.1" }
+zer-compare = { path = "../zer-compare", version = "1.1" }
+zer-prof    = { path = "../zer-prof",    version = "1.1" }
 rayon         = { workspace = true, optional = true }
 serde         = { workspace = true }
 thiserror     = { workspace = true }

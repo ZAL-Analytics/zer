@@ -62,7 +62,7 @@ Add the dependencies:
 .. code-block:: toml
 
    [dependencies]
-   zer          = { version = "1.0", features = ["pipeline"] }
+   zer          = { version = "1.1", features = ["pipeline"] }
    rocksdb      = { version = "0.22" }
    rmp-serde    = { version = "1" }
 
