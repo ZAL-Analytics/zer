@@ -56,9 +56,9 @@ zer solves both problems with a two-stage architecture:
 
 **Stage 1: Blocking.** Generate cheap, exact keys from each record, phonetic
 codes, DOB fragments, address initials, postcode suffixes. Two records only
-become a candidate pair if they share at least one key. This reduces O(n²)
-comparisons to O(n · k) where *k* is the average number of matches per key,
-typically 1–100.
+become a candidate pair if they share at least one key. This reduces O(n^2)
+comparisons to O(n * k) where *k* is the average number of matches per key,
+typically 1-100.
 
 **Stage 2: Probabilistic scoring.** For each candidate pair, compare every
 field and produce a ``ComparisonVector`` of ``ComparisonLevel`` values (None /
@@ -72,13 +72,13 @@ The trade-off between stages
 
 Blocking and scoring trade off against each other:
 
-* **More blocking keys** → higher recall (fewer missed matches) but more
+* **More blocking keys** mean higher recall (fewer missed matches) but more
   candidate pairs, which increases comparator work.
-* **Stricter scoring thresholds** → higher precision (fewer false links) but
+* **Stricter scoring thresholds** mean higher precision (fewer false links) but
   more pairs fall into the borderline band, requiring a human review or a
   neural judge.
 
-In practice, zer targets **blocking recall ≥ 0.99**, at most 1% of true
+In practice, zer targets **blocking recall of at least 0.99**, at most 1% of true
 matches are missed at the blocking stage, and lets the scorer handle
 precision tuning.
 

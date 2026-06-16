@@ -282,27 +282,27 @@ BRP deduplication
      - ~488 k
      - 5 498
      - 3 828
-     - 1×
+     - 1x
    * - zer CPU
      - ~628 k
      - 4 275
      - 413
-     - **1.3×**
+     - **1.3x**
    * - zer AVX2
      - ~671 k
      - 3 998
      - 414
-     - **1.4×**
+     - **1.4x**
    * - zer CUDA
      - ~3.6 M
      - 739
      - 523
-     - **7.4×**
+     - **7.4x**
    * - zer Vulkan
      - ~3.5 M
      - 757
      - 553
-     - **7.3×**
+     - **7.3x**
 
 KvK deduplication
 ~~~~~~~~~~~~~~~~~~
@@ -320,27 +320,27 @@ KvK deduplication
      - ~813 k
      - 3 240
      - 3 370
-     - 1×
+     - 1x
    * - zer CPU
      - ~713 k
      - 3 695
      - 410
-     - 0.9×
+     - 0.9x
    * - zer AVX2
      - ~741 k
      - 3 560
      - 410
-     - 0.9×
+     - 0.9x
    * - zer CUDA
      - ~4.0 M
      - 654
      - 521
-     - **5.0×**
+     - **5.0x**
    * - zer Vulkan
      - ~4.0 M
      - 657
      - 551
-     - **4.9×**
+     - **4.9x**
 
 .. raw:: html
 
@@ -405,8 +405,8 @@ KvK deduplication
    </div>
 
 The largest memory gap is the most practical: Splink loads the full
-scored-pair matrix into a Polars/DuckDB DataFrame (~3.4–3.8 GB peak for 2.6–2.7 M
-pairs), whereas zer processes pairs in streaming batches (~410–555 MB
+scored-pair matrix into a Polars/DuckDB DataFrame (~3.4-3.8 GB peak for 2.6-2.7 M
+pairs), whereas zer processes pairs in streaming batches (~410-555 MB
 depending on backend).
 
 ----
@@ -450,7 +450,7 @@ For reference, the zer pipeline cost breakdown on BRP dedupe (AVX2):
      - \
 
 The EM stage dominates on CPU.  CUDA reduces it from ~3.3 s to ~34 ms
-(~97× speedup on that stage alone), yielding a ~5.4× end-to-end speedup
+(~97x speedup on that stage alone), yielding a ~5.4x end-to-end speedup
 after accounting for the fixed blocking and comparison costs.
 
 ----

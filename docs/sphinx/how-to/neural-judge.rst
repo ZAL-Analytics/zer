@@ -13,7 +13,7 @@ When to use it
 * Your dataset has fields that are frequently abbreviated, transliterated, or
   missing, making EM parameters less reliable for borderline cases.
 * You need higher precision than the EM thresholds can deliver alone.
-* You can tolerate the extra latency for borderline pairs (~5–50 ms/pair on
+* You can tolerate the extra latency for borderline pairs (~5-50 ms/pair on
   CPU, <1 ms on GPU).
 
 Enable the feature flag
@@ -104,11 +104,7 @@ Load and run the judge
 .. code-block:: rust
 
    use std::sync::Arc;
-   use zer_judge::{
-       backend::JudgeBackend,
-       judge::{DebertaJudge, DebertaJudgeConfig},
-       spec::MiniLmSpec,
-   };
+   use zer_judge::{JudgeBackend, DebertaJudge, DebertaJudgeConfig, MiniLmSpec};
    use zer_core::VecRecordStore;
 
    // Auto-detects: reads --judge-target= from process args (separate from --target=)
@@ -163,7 +159,7 @@ demotes it to a non-match:
 
 .. code-block:: rust
 
-   use zer_judge::judge::DebertaJudgeConfig;
+   use zer_judge::DebertaJudgeConfig;
 
    let config = DebertaJudgeConfig {
        // Promote to match when entailment probability ≥ 0.75
@@ -188,7 +184,7 @@ the serialized record text, the entailment score, and the verdict:
 .. code-block:: rust
 
    use std::sync::Arc;
-   use zer_judge::{audit::AuditLog, judge::DebertaJudgeConfig};
+   use zer_judge::{audit::AuditLog, DebertaJudgeConfig};
 
    let audit = Arc::new(AuditLog::open("/data/audit/judge_2025.jsonl")?);
 

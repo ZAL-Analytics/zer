@@ -8,7 +8,7 @@ All issues are tracked on the GitHub repository:
 Before opening an issue
 ------------------------
 
-Search the existing issues first,the problem may already have a thread
+Search the existing issues first; the problem may already have a thread
 with a workaround or a fix on the way. The issue tracker is the right
 place for bugs, feature requests, and documentation gaps. For questions
 about using zer in your own project see :doc:`contact`.
@@ -36,7 +36,7 @@ For panics, run with ``RUST_BACKTRACE=1`` to capture the full trace:
 
 If the problem involves incorrect entity resolution results (wrong matches,
 missed matches), attach a small anonymised excerpt of the input data and the
-expected vs. actual ``ClusterView`` output. Even 20–50 records that reproduce
+expected vs. actual ``ClusterView`` output. Even 20-50 records that reproduce
 the error are enough.
 
 Feature requests
@@ -44,7 +44,7 @@ Feature requests
 
 Open an issue with the ``enhancement`` label and describe:
 
-* The use case,what are you trying to do that zer does not currently support?
+* The use case: what are you trying to do that zer does not currently support?
 * Why existing features do not cover it (e.g. the built-in blocking keys do
   not handle your domain, or the ``EntityStore`` trait is missing a method you
   need).

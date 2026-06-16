@@ -147,7 +147,7 @@ is the zero-based field position as declared in the schema.
 
    use zer_core::schema::{FieldKind, SchemaBuilder};
    use zer_compare::FieldComparator;
-   use zer_pipeline::pipeline::Pipeline;
+   use zer_pipeline::Pipeline;
 
    let schema = SchemaBuilder::new()
        .field("voornamen",           FieldKind::Name)     // index 0
@@ -190,10 +190,9 @@ ground truth before and after adding the function:
    println!("baseline entities: {}", report_baseline.entities_created);
    println!("custom   entities: {}", report_custom.entities_created);
 
-If the custom function is not improving results, precision or recall does not
-improve on your labelled sample, the function likely returns similar values
-for both matches and non-matches. Consider a more selective metric or check
-whether the field has low coverage in your data.
+If precision and recall don't improve on your labelled sample, the function
+likely returns similar values for both matches and non-matches. Consider a
+more selective metric or check whether the field has low coverage in your data.
 
 What to explore next
 ---------------------

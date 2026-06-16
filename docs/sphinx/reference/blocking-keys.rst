@@ -18,7 +18,7 @@ birth year. Strips tussenvoegsels and diacritics before encoding.
    * - **Key format**
      - ``"<phonetic_code>:<year>"``
    * - **Example**
-     - "van den Berg" + "1978-03-15" → ``"PRK:1978"``
+     - "van den Berg" + "1978-03-15" gives ``"PRK:1978"``
    * - **Domains**
      - BRP, KvK, any person registry
    * - **Handles**
@@ -39,7 +39,7 @@ name. Used when two Name fields are present. Falls back to
    * - **Key format**
      - ``"<phonetic_code>_<initial>_<year>"``
    * - **Example**
-     - "Berg" + "Johannes" + "1978" → ``"PRK_J_1978"``
+     - "Berg" + "Johannes" + "1978" gives ``"PRK_J_1978"``
    * - **Domains**
      - BRP, KvK, multi-field name schemas
    * - **Handles**
@@ -60,7 +60,7 @@ and appends the DOB year.
    * - **Key format**
      - One key per alias: ``"alias:<phonetic_code>:<year>"``
    * - **Example**
-     - ``"Hassan|Mohamed"`` + "1999" → ``["alias:HSN:1999", "alias:MHMT:1999"]``
+     - ``"Hassan|Mohamed"`` + "1999" gives ``["alias:HSN:1999", "alias:MHMT:1999"]``
    * - **Domains**
      - SIS II wanted/missing persons
    * - **Handles**
@@ -80,7 +80,7 @@ Double Metaphone + DOB year combination.
    * - **Key format**
      - ``"translit:<phonetic_code>:<year>"``
    * - **Example**
-     - Arabic "محمد" → transliterate → "mhmd" → encode → ``"translit:MMT:1978"``
+     - Arabic "محمد" transliterates to "mhmd", which encodes to ``"translit:MMT:1978"``
    * - **Domains**
      - SIS II (Arabic, Cyrillic, Greek input)
    * - **Handles**
@@ -89,7 +89,7 @@ Double Metaphone + DOB year combination.
 FuzzyYearKey
 -------------
 
-Generates keys for DOB year ± *n* to catch year transcription errors.
+Generates keys for DOB year +/- *n* to catch year transcription errors.
 
 .. list-table::
    :widths: 30 70
@@ -99,7 +99,7 @@ Generates keys for DOB year ± *n* to catch year transcription errors.
    * - **Key format**
      - One key per year in range: ``"<phonetic_code>:<year-delta>"`` through ``"<phonetic_code>:<year+delta>"``
    * - **Example**
-     - ``FuzzyYearKey(year_delta=1)`` on "Berg" + "1978" → keys for 1977, 1978, 1979
+     - ``FuzzyYearKey(year_delta=1)`` on "Berg" + "1978" gives keys for 1977, 1978, 1979
    * - **Domains**
      - SIS II (estimated DOBs), historical registers
    * - **Handles**
@@ -119,9 +119,9 @@ alphanumeric depending on field kind) as the blocking key.
    * - **Key format**
      - ``"suffix:<last_n_chars>"``
    * - **Example**
-     - ``SuffixKey("postcode", 4)`` on "1011AB" → ``"suffix:1011"``
+     - ``SuffixKey("postcode", 4)`` on "1011AB" gives ``"suffix:1011"``
    * - **Example**
-     - ``SuffixKey("telefoon", 7)`` on "0612345678" → ``"suffix:2345678"``
+     - ``SuffixKey("telefoon", 7)`` on "0612345678" gives ``"suffix:2345678"``
    * - **Domains**
      - Postcodes (n=4), phone numbers (n=7), BSN (n=4)
    * - **Handles**
@@ -141,7 +141,7 @@ before extracting the suffix. Suitable for document numbers and IBANs.
    * - **Key format**
      - ``"doc_suffix:<last_n_alphanumeric>"``
    * - **Example**
-     - ``DocumentSuffixKey("iban", 6)`` on "NL91 ABNA 0417 1643 00" → ``"doc_suffix:164300"``
+     - ``DocumentSuffixKey("iban", 6)`` on "NL91 ABNA 0417 1643 00" gives ``"doc_suffix:164300"``
    * - **Domains**
      - IBANs, passport numbers, SIS II document IDs
 
@@ -159,7 +159,7 @@ records that share the exact same normalized value become candidates.
    * - **Key format**
      - ``"exact:<normalized_value>"``
    * - **Example**
-     - ``ExactFieldKey("geslacht")`` on "M" → ``"exact:M"``
+     - ``ExactFieldKey("geslacht")`` on "M" gives ``"exact:M"``
    * - **Domains**
      - Gender, nationality, camera IDs, rechtsvorm
    * - **Handles**
@@ -180,7 +180,7 @@ Extracts a fragment of the date field at a given granularity.
    * - **Key format**
      - ``"date_frag:<fragment>"``
    * - **Example**
-     - ``DateFragmentKey(YearMonth)`` on "1978-03-15" → ``"date_frag:1978-03"``
+     - ``DateFragmentKey(YearMonth)`` on "1978-03-15" gives ``"date_frag:1978-03"``
    * - **Domains**
      - Secondary key for all person data; primary key for date-only schemas
 
@@ -198,7 +198,7 @@ name field (the first-name initial).
    * - **Key format**
      - ``"addr_initial:<first_address_token>_<first_name_initial>"``
    * - **Example**
-     - "Amsterdam" + "Johannes" → ``"addr_initial:AMSTERDAM_J"``
+     - "Amsterdam" + "Johannes" gives ``"addr_initial:AMSTERDAM_J"``
    * - **Domains**
      - BRP, KvK (secondary blocking path when DOB is missing)
 
@@ -216,7 +216,7 @@ blocking key.
    * - **Key format**
      - ``"plate_norm:<normalized_plate>"``
    * - **Example**
-     - "CX-180-W" → ``"plate_norm:CX180W"``
+     - "CX-180-W" gives ``"plate_norm:CX180W"``
    * - **Domains**
      - ANPR passages
    * - **Handles**
@@ -236,11 +236,11 @@ plate. See :doc:`/explanation/anpr-ocr` for the full confusion table.
    * - **Key format**
      - One key per variant: ``"plate_ocr:<variant>"``
    * - **Example**
-     - "CX180W" → ``["plate_ocr:CX180W", "plate_ocr:CXI80W", "plate_ocr:CX1B0W", "plate_ocr:CX18OW"]``
+     - "CX180W" gives ``["plate_ocr:CX180W", "plate_ocr:CXI80W", "plate_ocr:CX1B0W", "plate_ocr:CX18OW"]``
    * - **Domains**
      - ANPR passages
    * - **Handles**
-     - Single-character OCR confusion: 0↔O, 1↔I, 8↔B, 5↔S, 2↔Z
+     - Single-character OCR confusion: 0/O, 1/I, 8/B, 5/S, 2/Z
 
 CameraTimeWindowKey
 --------------------
@@ -255,7 +255,7 @@ Generates a key from camera ID + date + time window (bucketed to *window_minutes
    * - **Key format**
      - ``"cam_time_window:<camera_id>:<date>:<window_bucket>"``
    * - **Example**
-     - CAM-A12-001 + "2025-06-01T10:04:00" + window=10 → ``"cam_time_window:CAM-A12-001:2025-06-01:0"`` (bucket 0 = 00:00–09:59)
+     - CAM-A12-001 + "2025-06-01T10:04:00" + window=10 gives ``"cam_time_window:CAM-A12-001:2025-06-01:0"`` (bucket 0 = 00:00-09:59)
    * - **Domains**
      - ANPR passages, event logs
 
@@ -273,8 +273,8 @@ grid cell as the blocking key.
    * - **Key format**
      - ``"geo_grid:<lat_bucket>:<lon_bucket>"``
    * - **Example**
-     - lat 52.345, lon 4.901, resolution 0.01 → ``"geo_grid:52.34:4.90"``
+     - lat 52.345, lon 4.901, resolution 0.01 gives ``"geo_grid:52.34:4.90"``
    * - **Domains**
      - ANPR passages, GPS-tagged events
    * - **Handles**
-     - Records within the same ~1 km² grid cell (resolution=0.01°)
+     - Records within the same ~1 sq km grid cell (resolution=0.01 deg)

@@ -31,7 +31,7 @@ Auto-detecting the best backend
 ---------------------------------
 
 ``GpuBackend::auto_detect()`` probes available backends in priority order:
-CUDA → AVX2 → CPU. It returns the first one that is both compiled in and
+CUDA, then AVX2, then CPU. It returns the first one that is both compiled in and
 available at runtime.
 
 .. code-block:: rust
@@ -78,7 +78,7 @@ If you omit it the pipeline defaults to the CPU scorer.
 
    use std::sync::Arc;
    use zer_compute::{GpuBackend, DeviceScorer};
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let backend = Arc::new(GpuBackend::auto_detect());

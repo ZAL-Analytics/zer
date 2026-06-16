@@ -16,7 +16,7 @@ and a *hypothesis* (record B), classify the relationship as:
 * **Contradiction**, A and B are definitely different entities (demote to non-match).
 * **Neutral**, not enough evidence to decide (abstain, pair remains borderline).
 
-The judge maps ``entailment_probability ≥ promote_threshold`` to Promote and
+The judge maps ``entailment_probability >= promote_threshold`` to Promote and
 ``entailment_probability < demote_threshold`` to Demote. Pairs in between
 receive Abstain.
 

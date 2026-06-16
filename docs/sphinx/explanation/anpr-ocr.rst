@@ -37,7 +37,7 @@ zer handles all five pairs bidirectionally:
      - Two vs letter Z; less common but systematic
 
 Only single-character substitutions are generated. Double errors (e.g. both a
-1→I and a 0→O in the same plate) are not covered because they produce an
+1-to-I and a 0-to-O in the same plate) are not covered because they produce an
 exponential key explosion for a very small coverage gain.
 
 How the keys are generated
@@ -82,8 +82,8 @@ inverted index. A pair only needs to share one key to become a candidate.
 
 This means zer correctly handles:
 
-* True plate ``CX-180-W`` → OCR read ``CX-I80-W`` (digit → letter confusion)
-* True plate ``CX-I80-W`` → OCR read ``CX-180-W`` (letter → digit confusion)
+* True plate ``CX-180-W`` read by OCR as ``CX-I80-W`` (digit-to-letter confusion)
+* True plate ``CX-I80-W`` read by OCR as ``CX-180-W`` (letter-to-digit confusion)
 * True plate ``25-XKL-9`` where only ``LicensePlateNormKey`` is needed (no confusion)
 
 LicensePlateNormKey vs. PlateOCRFuzzyKey
@@ -118,8 +118,8 @@ Scaling concern
 -----------------
 
 For a plate with *k* confused characters, ``PlateOCRFuzzyKey`` emits *k + 1*
-keys (1 base + 1 per confused position). Dutch plates typically have 1–3
-confused characters, so 2–4 keys per record. The inverted index lookup for
+keys (1 base + 1 per confused position). Dutch plates typically have 1-3
+confused characters, so 2-4 keys per record. The inverted index lookup for
 a 6-character plate is still O(4) lookups, negligible.
 
 What to explore next

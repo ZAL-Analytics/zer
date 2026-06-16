@@ -51,10 +51,11 @@ The trait lives in ``zer_core::traits``. You need to implement four methods:
    }
 
    pub struct EntityMember {
-       pub record_id: RecordId,        // u64
-       pub score:     f32,
-       pub method:    ResolutionMethod,
-       pub source:    Option<String>,
+       pub record_id:  RecordId,        // u64
+       pub record_key: String,
+       pub score:      f32,
+       pub method:     ResolutionMethod,
+       pub source:     Option<String>,
    }
 
 Wrap external errors as ``ZerError::Store(message.to_string())`` and return
@@ -148,7 +149,7 @@ Wire it into the pipeline:
 
 .. code-block:: rust
 
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
 
    #[tokio::main]
    async fn main() -> anyhow::Result<()> {

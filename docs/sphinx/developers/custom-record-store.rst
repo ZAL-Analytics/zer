@@ -113,7 +113,7 @@ Wire the store into the pipeline via ``PipelineBuilder::record_store_arc``:
 .. code-block:: rust
 
    use std::sync::Arc;
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let record_store = Arc::new(RocksRecordStore::open("/tmp/zer_records")?);
@@ -142,12 +142,8 @@ the pipeline are immediately visible to judge lookups:
 .. code-block:: rust
 
    use std::sync::Arc;
-   use zer_judge::{
-       backend::JudgeBackend,
-       judge::{DebertaJudge, DebertaJudgeConfig},
-       spec::MiniLmSpec,
-   };
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_judge::{JudgeBackend, DebertaJudge, DebertaJudgeConfig, MiniLmSpec};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let record_store = Arc::new(RocksRecordStore::open("/tmp/zer_records")?);

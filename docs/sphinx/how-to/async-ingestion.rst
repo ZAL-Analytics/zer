@@ -48,7 +48,7 @@ Tokio task that owns the blocking index and per-record state. The returned
 
    use std::path::Path;
    use std::sync::Arc;
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let pipeline = Pipeline::builder()
@@ -142,7 +142,7 @@ or ``into_records(&config)``. Results are returned in the same order as the inpu
 
 .. code-block:: rust
 
-   use zer_pipeline::ingester::Ingester;
+   use zer_pipeline::Ingester;
 
    // rows: any iterator of IntoRecord: Vec<Record>, CSV rows, etc.
    let results = ingester.send_all(rows, 1).await?;
@@ -175,7 +175,7 @@ Full streaming example
    use std::path::Path;
    use std::sync::Arc;
    use zer_core::{record::{FieldValue, Record}, scoring::MatchBand};
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    #[tokio::main]

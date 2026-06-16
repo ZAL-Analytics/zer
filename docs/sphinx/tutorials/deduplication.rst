@@ -2,8 +2,9 @@ Tutorial: Person Deduplication
 ===============================
 
 This tutorial deduplicates a synthetic Dutch BRP (Basisregistratie Personen)
-dataset. The dataset contains deliberate duplicates, the same person
-registered multiple times with name variants, typos, and address differences, and zer finds them without any labelled training data.
+dataset containing deliberate duplicates: the same person registered multiple
+times with name variants, typos, and address differences. zer finds them without
+any labelled training data.
 
 The full runnable demo lives in ``demos/person_deduplication/``.
 
@@ -106,7 +107,6 @@ Build and run the pipeline
        .store(store)
        .config(PipelineConfig {
            registry_path: "/tmp/demo_persons.zsm".into(),
-           // Dedupe = within-source pairs only; no LinkMode::LinkOnly needed here
            ..PipelineConfig::default()
        })
        .build()?;

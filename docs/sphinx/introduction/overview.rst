@@ -87,10 +87,7 @@ link mode, the EM scorer settings, and the path of the model registry file
 
    use zer_adapters::{DatasetConfig, PolarsIngest};
    use zer_cluster::ZalEntityStore;
-   use zer_pipeline::{
-       config::{LinkMode, PipelineConfig},
-       pipeline::Pipeline,
-   };
+   use zer_pipeline::{LinkMode, PipelineConfig, Pipeline};
 
    let pipeline = Pipeline::builder()
        .schema(schema)

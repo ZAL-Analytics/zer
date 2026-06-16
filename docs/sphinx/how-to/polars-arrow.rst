@@ -66,10 +66,10 @@ column's name. The Polars type is converted to ``FieldValue`` as follows:
    * - ``String`` / ``StringOwned``
      - ``Text(String)``
      -
-   * - ``Int8`` … ``Int64``
+   * - ``Int8`` to ``Int64``
      - ``Int(i64)``
      - Widened to ``i64``
-   * - ``UInt8`` … ``UInt32``
+   * - ``UInt8`` to ``UInt32``
      - ``Int(i64)``
      - Widened to ``i64``
    * - ``UInt64``
@@ -84,7 +84,7 @@ column's name. The Polars type is converted to ``FieldValue`` as follows:
    * - ``Binary`` / ``BinaryOwned``
      - ``Bytes(Vec<u8>)``
      -
-   * - Date, Datetime, Duration, …
+   * - Date, Datetime, Duration, ...
      - ``Text(String)``
      - Polars Display representation (ISO-8601)
 

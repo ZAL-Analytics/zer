@@ -31,7 +31,7 @@ Name similarity (``FieldKind::Name``)
 Three functions are combined; the maximum of the three is used:
 
 **Jaro-Winkler**, positional string distance that gives more weight to
-common prefix matches. Score 1.0 for identical strings; ≈ 0.9 for a one-
+common prefix matches. Score 1.0 for identical strings; roughly 0.9 for a one-
 character edit in a short name.
 
 .. list-table::
@@ -55,7 +55,7 @@ character edit in a short name.
      - None
 
 **Token overlap**, for multi-token names. Computes Jaccard similarity over
-space-delimited tokens. "Alice Marie van den Berg" vs. "Alice Berg" → 2
+space-delimited tokens. "Alice Marie van den Berg" vs. "Alice Berg" gives 2
 shared tokens / 4 unique tokens = 0.50 (Partial).
 
 **Phonetic equality**, Double Metaphone codes are compared. Identical codes
@@ -99,8 +99,8 @@ Two functions are combined:
 with different word orderings ("Hoofdstraat Noord" vs. "Noord Hoofdstraat").
 
 **Street number edit distance**, extracts numeric tokens and computes edit
-distance. "Hoofdstraat 12A" vs. "Hoofdstraat 12" → Close; vs. "Kerkstraat 12"
-→ None (street names differ).
+distance. "Hoofdstraat 12A" vs. "Hoofdstraat 12" scores Close; "Kerkstraat 12"
+scores None (street names differ).
 
 Id similarity (``FieldKind::Id``)
 ------------------------------------

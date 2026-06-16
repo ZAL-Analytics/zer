@@ -3,8 +3,8 @@ Tutorial: ANPR Vehicle Passage Matching
 
 This tutorial links vehicle passages from ANPR (Automatic Number Plate
 Recognition) cameras. ANPR datasets contain OCR errors where similar-looking
-characters are confused: ``1`` ↔ ``I``, ``0`` ↔ ``O``, ``8`` ↔ ``B``, ``5`` ↔ ``S``,
-``2`` ↔ ``Z``. zer handles these with ``PlateOCRFuzzyKey``, which generates all
+characters are confused: ``1`` and ``I``, ``0`` and ``O``, ``8`` and ``B``, ``5`` and ``S``,
+``2`` and ``Z``. zer handles these with ``PlateOCRFuzzyKey``, which generates all
 single-character variant keys for every plate.
 
 This scenario is different from person linkage: the blocking strategy is
@@ -33,7 +33,7 @@ The same car passes a camera twice, but the second read has an OCR error:
    * - F3A2B891-C04
      - CAM-A12-001
      - 2025-06-01T10:04:03
-     - **CX-I80-W** *(1→I confusion)*
+     - **CX-I80-W** *(1-to-I confusion)*
 
 A naive exact-match on the plate string misses this pair entirely. zer finds it.
 
@@ -112,8 +112,8 @@ Use the ANPR domain category
 
    // Look up candidates
    let candidates = blocker.candidates(&true_passage, &schema, &index);
-   assert!(candidates.contains(&2));   // OCR passage found ✓
-   assert!(!candidates.contains(&3));  // unrelated excluded ✓
+   assert!(candidates.contains(&ocr_passage.id));    // OCR passage found ✓
+   assert!(!candidates.contains(&unrelated.id));     // unrelated excluded ✓
 
 The printed keys show how OCR fuzzy blocking works::
 
@@ -141,15 +141,15 @@ table:
 
    * - Confusion pair
      - Characters that look alike in ANPR camera images
-   * - ``0`` ↔ ``O``
+   * - ``0`` and ``O``
      - Zero vs letter O
-   * - ``1`` ↔ ``I``
+   * - ``1`` and ``I``
      - One vs letter I
-   * - ``8`` ↔ ``B``
+   * - ``8`` and ``B``
      - Eight vs letter B
-   * - ``5`` ↔ ``S``
+   * - ``5`` and ``S``
      - Five vs letter S
-   * - ``2`` ↔ ``Z``
+   * - ``2`` and ``Z``
      - Two vs letter Z
 
 The substitutions are **bidirectional**: the true plate emits an ``I``-variant

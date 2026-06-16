@@ -2,19 +2,17 @@ How to Tune the Scorer
 =======================
 
 The zer scorer uses a Fellegi-Sunter probabilistic model whose parameters are
-estimated by EM (Expectation-Maximization) directly from the comparison vectors, 
-no labelled training data is required. This guide explains how to inspect the
-estimated parameters and how to override the match/reject thresholds when the
-EM defaults do not match your precision/recall requirements.
+estimated by EM (Expectation-Maximization) directly from the comparison vectors,
+no labelled training data is required.
 
 How the thresholds work
 ------------------------
 
 After EM converges, the scorer produces two probability thresholds:
 
-* **upper_threshold**, pairs with ``match_probability ≥ upper`` are
+* **upper_threshold**, pairs with ``match_probability >= upper`` are
   ``AutoMatch``. Raise this to accept only higher-confidence matches.
-* **lower_threshold**, pairs with ``match_probability ≤ lower`` are
+* **lower_threshold**, pairs with ``match_probability <= lower`` are
   ``AutoReject``. Lower this to exclude weaker non-matches earlier.
 
 Pairs between the two thresholds are ``Borderline``, they are either
@@ -32,7 +30,7 @@ The simplest case: omit ``upper_threshold`` and ``lower_threshold`` from
 
 .. code-block:: rust
 
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let pipeline = Pipeline::builder()
@@ -54,7 +52,7 @@ pin them. Only the ones you set are overridden; the others remain EM-estimated.
 
 .. code-block:: rust
 
-   use zer_pipeline::config::PipelineConfig;
+   use zer_pipeline::PipelineConfig;
 
    // High-precision mode: only match pairs with ≥ 95% probability
    let tight = PipelineConfig {
@@ -84,7 +82,7 @@ Run the same batch under multiple configs to see the trade-off:
    use std::sync::Arc;
    use tempfile::TempDir;
    use zer_cluster::ZalEntityStore;
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
 
    async fn run_with(records: Vec<Record>, schema: Schema, config: PipelineConfig)
        -> BatchReport

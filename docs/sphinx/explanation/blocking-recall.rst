@@ -25,14 +25,14 @@ Recall vs. precision in blocking
      - True matches are permanently missed; output F1 degrades with no visible error
    * - Reduction ratio
      - Fraction of all pairs that are NOT candidates
-     - Low ratio (too many candidates) → comparator is slow; cost scales quadratically
+     - Low ratio (too many candidates) means the comparator is slow; cost scales quadratically
 
 The trade-off is asymmetric: **a missed candidate can never be recovered**,
 but a false candidate is simply eliminated by the scorer at low cost. This
 means it is almost always better to err toward more candidates (lower
 reduction ratio) than toward fewer candidates (lower recall).
 
-zer targets blocking recall ≥ 0.99 on standard Dutch administrative datasets
+zer targets blocking recall of at least 0.99 on standard Dutch administrative datasets
 by default.
 
 Why keys miss true matches
@@ -47,7 +47,7 @@ field the key is derived from:
   normalization. zer adds ``TransliteratedPhoneticKey`` for the
   ``WantedPersons`` category.
 * **DOB transcription error**, a year off by one: 1978 vs. 1979. zer adds
-  ``FuzzyYearKey(±1)`` for ``WantedPersons``.
+  ``FuzzyYearKey(+/-1)`` for ``WantedPersons``.
 * **Postcode formatting**, "1011 AB" and "1011AB". zer normalizes both to
   ``1011AB`` before generating the suffix key.
 * **OCR confusion**, "CX-180-W" and "CX-I80-W". zer generates all

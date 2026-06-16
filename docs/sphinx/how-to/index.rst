@@ -1,7 +1,7 @@
 How-To Guides
 =============
 
-Task-oriented recipes. Each guide answers one specific "how do I…" question.
+Task-oriented recipes. Each guide answers one specific "how do I..." question.
 
 .. toctree::
    :maxdepth: 1

@@ -35,7 +35,7 @@ Load both sources
 
 Each source gets its own ``DatasetConfig`` naming its source label and natural-key
 column. IDs are derived from ``FNV-1a(source:key)``, so BRP and KvK records
-never collide even if the raw key values overlap. no manual offset needed:
+never collide even if the raw key values overlap; no manual offset needed:
 
 .. code-block:: rust
 
@@ -109,7 +109,7 @@ Mode 2: LinkAndDedupe
 
 With ``LinkAndDedupe``, both counts are non-zero:
 ``within_source_pairs`` captures internal duplicates within BRP and KvK
-independently, while ``cross_source_pairs`` captures BRP ↔ KvK linkage.
+independently, while ``cross_source_pairs`` captures BRP-to-KvK linkage.
 
 Evaluate cross-source linkage
 -------------------------------
@@ -148,10 +148,10 @@ clusters for members from the same source:
    let view_lad = pipeline_lad.cluster_view();
    let mut predicted_within: HashSet<(String, String)> = HashSet::new();
 
-   for (_, members) in &view_lad {
-       let brp_keys: Vec<&str> = members.iter()
-           .filter(|m| m.source.as_deref() == Some("brp"))
-           .map(|m| m.record_key.as_str())
+   for (_, records) in &view_lad {
+       let brp_keys: Vec<&str> = records.iter()
+           .filter(|r| r.source.as_deref() == Some("brp"))
+           .map(|r| r.key.as_str())
            .collect();
        // Enumerate all within-source pairs in this cluster
        for i in 0..brp_keys.len() {

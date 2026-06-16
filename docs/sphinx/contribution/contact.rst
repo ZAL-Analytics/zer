@@ -14,8 +14,8 @@ Good topics for email:
 * Dataset contributions that cannot be published openly.
 * Academic collaboration or research partnerships.
 * Security disclosures (please do not open a public GitHub issue for
-  vulnerabilities,email us directly).
+  vulnerabilities; email us directly).
 
-For everything else,bugs, feature requests, benchmark results, dataset
-generators, documentation corrections,a GitHub issue is preferred so the
-discussion is visible to the whole community. See :doc:`reporting-issues`.
+Bugs, feature requests, benchmark results, dataset generators, and
+documentation corrections are best filed as GitHub issues so the discussion
+stays visible to the whole community. See :doc:`reporting-issues`.

@@ -112,7 +112,7 @@ Each script accepts parameters to control record count and random seed:
      - ``data/v1.1/examples/``, ``data/v1.1/tests/``
      - Crate examples and integration tests
 
-Example: generate a larger deduplcation dataset with a fixed seed:
+Example: generate a larger deduplication dataset with a fixed seed:
 
 .. code-block:: bash
 
@@ -150,7 +150,7 @@ so we can discuss the schema and noise model.
 
 For datasets that cannot be generated synthetically (e.g. real-world
 benchmarks under a permissive licence), reach out directly before sharing
-anything,see :doc:`contact`.
+anything; see :doc:`contact`.
 
 What to explore next
 ---------------------

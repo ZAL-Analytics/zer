@@ -97,7 +97,7 @@ zer is a good fit when you need to:
 * Deduplicate a registry with no reliable unique identifier (e.g. a person
   directory, a product catalogue, a patient index).
 * Link two or more datasets that represent the same population without a shared
-  key (e.g. BRP ↔ KvK ↔ HKS, or any cross-system identity matching task).
+  key (e.g. BRP, KvK, and HKS, or any cross-system identity matching task).
 * Match records despite OCR noise or transcription errors (e.g. ANPR licence
   plate reads, scanned document fields).
 * Resolve identities across registries that use different name conventions or

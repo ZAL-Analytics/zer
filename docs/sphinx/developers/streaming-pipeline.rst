@@ -6,9 +6,6 @@ A streaming pipeline keeps running: new records arrive continuously (from
 Kafka, a message queue, a database CDC feed, or an HTTP ingest endpoint) and
 the entity graph is updated incrementally without re-processing old records.
 
-This guide shows the key patterns for building a long-running zer process
-that handles a continuous record stream.
-
 Core idea: reuse a single Pipeline instance
 --------------------------------------------
 
@@ -20,7 +17,7 @@ across all calls.
 .. code-block:: rust
 
    use std::path::Path;
-   use zer_pipeline::{config::PipelineConfig, pipeline::Pipeline};
+   use zer_pipeline::{PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    // Open a persistent entity store so clusters survive restarts

@@ -79,7 +79,7 @@ Geo-cell blocking with H3
 --------------------------
 
 For location datasets (e.g. address matching, telemetry), block on the H3
-hexagonal grid cell at resolution 7 (~5 km² cells). Records in the same cell
+hexagonal grid cell at resolution 7 (~5 sq km cells). Records in the same cell
 are candidates; records in adjacent cells are found via multi-key expansion.
 
 Add the dependency:
@@ -155,7 +155,7 @@ field types; the blocker decides which records become candidate pairs.
 
    use zer_core::schema::{FieldKind, SchemaBuilder};
    use zer_blocking::CompositeBlocker;
-   use zer_pipeline::pipeline::Pipeline;
+   use zer_pipeline::Pipeline;
 
    let schema = SchemaBuilder::new()
        .field("iban", FieldKind::Id)

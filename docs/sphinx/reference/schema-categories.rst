@@ -54,7 +54,7 @@ multiple aliases.
      - Primary surname phonetic + DOB year
    * - ``TransliteratedPhoneticKey``
      - Cross-script variant for Arabic/Cyrillic input
-   * - ``FuzzyYearKey(±1)``
+   * - ``FuzzyYearKey(+/-1)``
      - Off-by-one year errors in estimated DOBs
    * - ``AliasPhoneticKey`` (per alias field)
      - Phonetic code of each alias surname + DOB year
@@ -79,8 +79,8 @@ may be from different cameras at different times and locations.
      - All single-character OCR confusion variants
    * - ``CameraTimeWindowKey(window=10 min)``
      - Camera ID + date + 10-minute time window bucket
-   * - ``GeoGridKey(resolution=0.01°)``
-     - ~1 km² geo grid cell from lat + lon pair
+   * - ``GeoGridKey(resolution=0.01 deg)``
+     - ~1 sq km geo grid cell from lat + lon pair
 
 CallDetailRecords
 ------------------

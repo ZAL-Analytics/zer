@@ -65,10 +65,7 @@ Build the pipeline with ``LinkOnly``
 
 .. code-block:: rust
 
-   use zer_pipeline::{
-       config::{LinkMode, PipelineConfig},
-       pipeline::Pipeline,
-   };
+   use zer_pipeline::{LinkMode, PipelineConfig, Pipeline};
    use zer_cluster::ZalEntityStore;
 
    let pipeline = Pipeline::builder()
@@ -94,8 +91,8 @@ the same source are never compared.
 Read the linked pairs
 ----------------------
 
-``LinkedPair`` now exposes ``record_key_a`` and ``record_key_b``. the natural
-key values from the source datasets. instead of raw numeric IDs:
+``LinkedPair`` now exposes ``record_key_a`` and ``record_key_b``: the natural
+key values from the source datasets, instead of raw numeric IDs.
 
 .. code-block:: rust
 
