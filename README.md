@@ -13,7 +13,7 @@
 Entity resolution (also called record linkage or deduplication) is the problem of deciding that two records refer to the same real-world entity even when there is no shared identifier. The same person might appear in multiple registries under slightly different names, with different address formats, and with OCR errors throughout.
 
 zer solves this with a six-stage pipeline:
-- **Schema → Blocker → Comparator → Scorer → Clusterer → Entity Store**
+- **Schema --> Blocker --> Comparator --> Scorer --> Clusterer --> Entity Store**
 
 Every stage is pluggable: swap in a custom blocker, similarity function, comparator, or storage backend. zer ships with built-in support for Dutch administrative data (BRP, KvK, SIS II, ANPR), phonetic name encoding, tussenvoegsel normalisation, and licence-plate variants, but works with any domain.
 
