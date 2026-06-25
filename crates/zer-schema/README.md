@@ -4,9 +4,9 @@ Schema inference and Fellegi-Sunter model registry for the zer entity-resolution
 
 This crate handles two concerns: automatically detecting the schema of an incoming dataset, and persisting trained Fellegi-Sunter parameters so they can be reused across pipeline runs without re-running EM.
 
-- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
-- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
-- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
+- **Documentation**: [docs.zal-analytics.nl](https://docs.zal-analytics.nl)
+- **Website**: [www.zal-analytics.nl](https://www.zal-analytics.nl)
+- **Support & feedback**: [info@zal-analytics.nl](mailto:info@zal-analytics.nl)
 
 ## What it provides
 

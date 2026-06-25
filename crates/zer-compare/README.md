@@ -4,9 +4,9 @@ Fellegi-Sunter field comparison, similarity functions, and EM scoring for the ze
 
 This crate is the CPU implementation of the comparison and scoring pipeline. For GPU-accelerated equivalents see [`zer-compute`](https://crates.io/crates/zer-compute).
 
-- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
-- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
-- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
+- **Documentation**: [docs.zal-analytics.nl](https://docs.zal-analytics.nl)
+- **Website**: [www.zal-analytics.nl](https://www.zal-analytics.nl)
+- **Support & feedback**: [info@zal-analytics.nl](mailto:info@zal-analytics.nl)
 
 ## What it provides
 

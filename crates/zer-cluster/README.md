@@ -4,9 +4,9 @@ Connected-components clustering and entity storage for the zer entity-resolution
 
 After the comparison and scoring phase produces a set of match/non-match decisions, this crate groups the matched record pairs into entity clusters using a connected-components algorithm, and persists the resolved entities to a SQLite store.
 
-- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
-- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
-- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
+- **Documentation**: [docs.zal-analytics.nl](https://docs.zal-analytics.nl)
+- **Website**: [www.zal-analytics.nl](https://www.zal-analytics.nl)
+- **Support & feedback**: [info@zal-analytics.nl](mailto:info@zal-analytics.nl)
 
 ## What it provides
 

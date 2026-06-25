@@ -4,9 +4,9 @@ ONNX-based neural judge for the zer entity-resolution library.
 
 Loads a DeBERTa-v3 or MiniLM NLI cross-encoder model via ONNX Runtime and uses it to adjudicate borderline record pairs that the Fellegi-Sunter scorer could not classify with high confidence. Models are hosted on HuggingFace at [arsalan-anwari/zjudge](https://huggingface.co/arsalan-anwari/zjudge).
 
-- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
-- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
-- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
+- **Documentation**: [docs.zal-analytics.nl](https://docs.zal-analytics.nl)
+- **Website**: [www.zal-analytics.nl](https://www.zal-analytics.nl)
+- **Support & feedback**: [info@zal-analytics.nl](mailto:info@zal-analytics.nl)
 
 ## Getting the models
 

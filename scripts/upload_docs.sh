@@ -5,7 +5,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_HOST="vimexx"
-REMOTE_PATH="/home/u214998p479997/domains/zal-analytics.ch/public_html/docs/zer/"
+REMOTE_PATH="/home/u214998p479997/domains/zal-analytics.nl/public_html/docs/zer/"
 
 DRY_RUN=""
 EXCLUDE_RES="--exclude='res/'"
@@ -116,8 +116,8 @@ PYEOF
     echo ""
     echo "Upload complete. Docs live at:"
     if [[ -n "$VERSION" ]]; then
-        echo "  https://zal-analytics.ch/docs/zer/$VERSION/"
+        echo "  https://zal-analytics.nl/docs/zer/$VERSION/"
     else
-        echo "  https://zal-analytics.ch/docs/zer/"
+        echo "  https://zal-analytics.nl/docs/zer/"
     fi
 fi

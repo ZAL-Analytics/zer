@@ -4,9 +4,9 @@ Blocking strategies and inverted index for candidate pair generation in the zer 
 
 Blocking drastically reduces the number of record pairs that need to be compared by grouping records into blocks; only pairs within the same block are compared. This crate provides a composable, pluggable set of blocking keys, with built-in keys optimized for Dutch administrative data.
 
-- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
-- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
-- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
+- **Documentation**: [docs.zal-analytics.nl](https://docs.zal-analytics.nl)
+- **Website**: [www.zal-analytics.nl](https://www.zal-analytics.nl)
+- **Support & feedback**: [info@zal-analytics.nl](mailto:info@zal-analytics.nl)
 
 ## What it provides
 

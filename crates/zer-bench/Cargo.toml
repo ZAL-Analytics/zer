@@ -1,6 +1,6 @@
 [package]
 name        = "zer-bench"
-version     = "1.1.0"
+version     = "1.1.1"
 edition     = "2021"
 description = "Benchmark harness for zer: throughput, accuracy, and competitor-library comparison"
 license     = "Apache-2.0"

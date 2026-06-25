@@ -3,7 +3,7 @@
 **Zero-shot probabilistic entity resolution.** Given multiple datasets with records about the same people, vehicles, or organisations, but no shared unique key and noisy data, zer finds which records belong together.
 
 [![crates.io](https://img.shields.io/crates/v/zer.svg)](https://crates.io/crates/zer)
-[![docs](https://img.shields.io/badge/docs-docs.zal--analytics.ch-blue)](https://docs.zal-analytics.ch/zer)
+[![docs](https://img.shields.io/badge/docs-docs.zal--analytics.ch-blue)](https://docs.zal-analytics.nl/zer)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 ---
@@ -122,7 +122,7 @@ CPU-only builds (`pipeline` only) have no external dependencies beyond Rust itse
 
 Rust ≥ 1.75 is always required. GPU and neural judge features need CUDA Toolkit ≥ 13.1, Vulkan SDK ≥ 1.3, and/or TensorRT ≥ 8.0 depending on the flags selected. CPU-only builds (`pipeline` only) have no external dependencies.
 
-See the [full installation guide](https://docs.zal-analytics.ch/zer/introduction/installation.html) for per-flag dependency tables, Linux package install commands, and GPU driver requirements.
+See the [full installation guide](https://docs.zal-analytics.nl/zer/introduction/installation.html) for per-flag dependency tables, Linux package install commands, and GPU driver requirements.
 
 ---
 
@@ -134,7 +134,7 @@ The `judge_*` features require ONNX model files not bundled with the crate. Down
 hf download arsalan-anwari/zjudge --local-dir ~/.cache/zer/models
 ```
 
-Set `ZER_MODEL_DIR` to override the default search path. Full model setup and layout details are in the [installation guide](https://docs.zal-analytics.ch/zer/introduction/installation.html).
+Set `ZER_MODEL_DIR` to override the default search path. Full model setup and layout details are in the [installation guide](https://docs.zal-analytics.nl/zer/introduction/installation.html).
 
 ---
 
@@ -174,7 +174,7 @@ Pass `--judge-target` to enable the neural judge and select its ONNX Runtime exe
 | `directml` | `judge_directml` | Windows DirectML |
 | `openvino` | `judge_openvino` | Intel OpenVINO |
 
-See the [benchmarks reference](https://docs.zal-analytics.ch/zer/reference/benchmarks.html) for throughput figures, accuracy tables, and full CLI documentation.
+See the [benchmarks reference](https://docs.zal-analytics.nl/zer/reference/benchmarks.html) for throughput figures, accuracy tables, and full CLI documentation.
 
 ---
 
@@ -194,7 +194,7 @@ hf download arsalan-anwari/dutch-law-enforcement-entity-resolution-dataset \
     --repo-type dataset --local-dir data/
 ```
 
-Generate demo-specific data and run (requires `data/base/`, see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for setup steps):
+Generate demo-specific data and run (requires `data/base/`, see the [dataset generation guide](https://docs.zal-analytics.nl/zer/contribution/datasets.html) for setup steps):
 
 ```bash
 ./scripts/generate_data.sh --demos
@@ -213,7 +213,7 @@ GPU demos pass a feature flag:
 cargo run -p person-deduplication --features cuda
 ```
 
-See [demos/README.md](demos/README.md) for the recommended reading order and what each demo teaches. For full dataset generation prerequisites and options, see the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html).
+See [demos/README.md](demos/README.md) for the recommended reading order and what each demo teaches. For full dataset generation prerequisites and options, see the [dataset generation guide](https://docs.zal-analytics.nl/zer/contribution/datasets.html).
 
 > The datasets contain **synthetic records only**, generated from statistical distributions of Dutch administrative data. No real personal information is included.
 
@@ -221,7 +221,7 @@ See [demos/README.md](demos/README.md) for the recommended reading order and wha
 
 ## Documentation
 
-Full documentation is at **[docs.zal-analytics.ch/zer](https://docs.zal-analytics.ch/zer)**, including:
+Full documentation is at **[docs.zal-analytics.nl/zer](https://docs.zal-analytics.nl/zer)**, including:
 
 - Installation guide (all feature flags, GPU drivers, ORT configuration)
 - Tutorials (deduplication, cross-source linkage, custom components)

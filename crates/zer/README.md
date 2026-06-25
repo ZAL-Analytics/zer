@@ -4,9 +4,9 @@ Zero-shot probabilistic entity resolution, with GPU acceleration and neural NLI 
 
 `zer` is the top-level facade crate. It re-exports all sub-crates under a single dependency and exposes feature flags to opt into GPU backends and the neural judge. Built-in optimizations for Dutch administrative data (BRP, KvK, SIS II, ANPR) are included; all components are pluggable for other domains.
 
-- **Documentation**: [docs.zal-analytics.ch](https://docs.zal-analytics.ch)
-- **Website**: [www.zal-analytics.ch](https://www.zal-analytics.ch)
-- **Support & feedback**: [info@zal-analytics.ch](mailto:info@zal-analytics.ch)
+- **Documentation**: [docs.zal-analytics.nl](https://docs.zal-analytics.nl)
+- **Website**: [www.zal-analytics.nl](https://www.zal-analytics.nl)
+- **Support & feedback**: [info@zal-analytics.nl](mailto:info@zal-analytics.nl)
 
 ## Feature flags
 
@@ -51,7 +51,7 @@ bash scripts/download_models.sh
 export ZER_MODEL_DIR=/path/to/your/models
 ```
 
-Datasets for tests and examples must be generated before use. See the [dataset generation guide](https://docs.zal-analytics.ch/zer/contribution/datasets.html) for prerequisites and full instructions.
+Datasets for tests and examples must be generated before use. See the [dataset generation guide](https://docs.zal-analytics.nl/zer/contribution/datasets.html) for prerequisites and full instructions.
 
 ## Sub-crates
 

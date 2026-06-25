@@ -4,7 +4,7 @@ Contact
 For questions, partnership enquiries, or anything not suited to a public
 GitHub issue, reach out to the team at ZAL Analytics:
 
-**Email**: `info@zal-analytics.ch <mailto:info@zal-analytics.ch>`_
+**Email**: `info@zal-analytics.nl <mailto:info@zal-analytics.nl>`_
 
 Good topics for email:
 
