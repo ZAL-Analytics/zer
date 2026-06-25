@@ -3,7 +3,7 @@
 **Zero-shot probabilistic entity resolution.** Given multiple datasets with records about the same people, vehicles, or organisations, but no shared unique key and noisy data, zer finds which records belong together.
 
 [![crates.io](https://img.shields.io/crates/v/zer.svg)](https://crates.io/crates/zer)
-[![docs](https://img.shields.io/badge/docs-docs.zal--analytics.ch-blue)](https://docs.zal-analytics.nl/zer)
+[![docs](https://img.shields.io/badge/docs-docs.zal--analytics.nl-blue)](https://docs.zal-analytics.nl/zer)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 ---
